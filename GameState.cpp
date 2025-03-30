@@ -1,47 +1,71 @@
 #include "GameState.h"
 
+
+void CheckGameState(Snake* snake) {
+    auto& gameState = GameState::Instance();
+
+    // Check if snake is outside play area
+    bool inPlayArea = snake[0].position.x >= GameConfig::PLAY_AREA_LEFT &&
+        snake[0].position.x <= GameConfig::PLAY_AREA_RIGHT &&
+        snake[0].position.y >= GameConfig::PLAY_AREA_TOP &&
+        snake[0].position.y <= GameConfig::PLAY_AREA_BOTTOM;
+
+    if (!inPlayArea) {
+        if (!gameState.isInLava) {
+            gameState.isInLava = true;
+            gameState.timeInLava = 0;
+        }
+
+        gameState.timeInLava += gameState.deltaTime;
+        if (gameState.timeInLava >= GameConfig::LAVA_WARNING_TIME) {
+            gameState.isGameRunning = false;
+        }
+    }
+    else {
+        gameState.ResetLavaTimer();
+    }
+}
+
 void GameState::SetDifficulty(GameDifficulty difficulty)
 {
-    currentDifficulty = difficulty; // ÉèÖÃÄÑ¶È
+    currentDifficulty = difficulty; 
 
-    // ¸ù¾ÝÄÑ¶È¸üÐÂÓÎÏ·²ÎÊý
     switch (currentDifficulty) {
     case GameDifficulty::Easy:
-        currentPlayerSpeed = GameConfig::Difficulty::Easy::PLAYER_SPEED; // ¸üÐÂÍæ¼ÒËÙ¶È
-        aiSnakeCount = GameConfig::Difficulty::Easy::AI_SNAKE_COUNT; // ¸üÐÂAIÉßÊýÁ¿
-        aiAggression = GameConfig::Difficulty::Easy::AI_AGGRESSION; // ¸üÐÂAI¹¥»÷ÐÔ
-        foodSpawnRate = GameConfig::Difficulty::Easy::FOOD_SPAWN_RATE; // ¸üÐÂÊ³ÎïÉú³ÉÂÊ
-        lavaWarningTime = GameConfig::Difficulty::Easy::LAVA_WARNING_TIME; // ¸üÐÂÈÛÑÒ¾¯¸æÊ±¼ä
+        currentPlayerSpeed = GameConfig::Difficulty::Easy::PLAYER_SPEED; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+        aiSnakeCount = GameConfig::Difficulty::Easy::AI_SNAKE_COUNT; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        aiAggression = GameConfig::Difficulty::Easy::AI_AGGRESSION; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        foodSpawnRate = GameConfig::Difficulty::Easy::FOOD_SPAWN_RATE; // ï¿½ï¿½ï¿½ï¿½Ê³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lavaWarningTime = GameConfig::Difficulty::Easy::LAVA_WARNING_TIME; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¾ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
         break;
 
     case GameDifficulty::Normal:
-        currentPlayerSpeed = GameConfig::Difficulty::Normal::PLAYER_SPEED; // ¸üÐÂÍæ¼ÒËÙ¶È
-        aiSnakeCount = GameConfig::Difficulty::Normal::AI_SNAKE_COUNT; // ¸üÐÂAIÉßÊýÁ¿
-        aiAggression = GameConfig::Difficulty::Normal::AI_AGGRESSION; // ¸üÐÂAI¹¥»÷ÐÔ
-        foodSpawnRate = GameConfig::Difficulty::Normal::FOOD_SPAWN_RATE; // ¸üÐÂÊ³ÎïÉú³ÉÂÊ
-        lavaWarningTime = GameConfig::Difficulty::Normal::LAVA_WARNING_TIME; // ¸üÐÂÈÛÑÒ¾¯¸æÊ±¼ä
+        currentPlayerSpeed = GameConfig::Difficulty::Normal::PLAYER_SPEED; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+        aiSnakeCount = GameConfig::Difficulty::Normal::AI_SNAKE_COUNT; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        aiAggression = GameConfig::Difficulty::Normal::AI_AGGRESSION; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        foodSpawnRate = GameConfig::Difficulty::Normal::FOOD_SPAWN_RATE; // ï¿½ï¿½ï¿½ï¿½Ê³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lavaWarningTime = GameConfig::Difficulty::Normal::LAVA_WARNING_TIME; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¾ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
         break;
 
     case GameDifficulty::Hard:
-        currentPlayerSpeed = GameConfig::Difficulty::Hard::PLAYER_SPEED; // ¸üÐÂÍæ¼ÒËÙ¶È
-        aiSnakeCount = GameConfig::Difficulty::Hard::AI_SNAKE_COUNT; // ¸üÐÂAIÉßÊýÁ¿
-        aiAggression = GameConfig::Difficulty::Hard::AI_AGGRESSION; // ¸üÐÂAI¹¥»÷ÐÔ
-        foodSpawnRate = GameConfig::Difficulty::Hard::FOOD_SPAWN_RATE; // ¸üÐÂÊ³ÎïÉú³ÉÂÊ
-        lavaWarningTime = GameConfig::Difficulty::Hard::LAVA_WARNING_TIME; // ¸üÐÂÈÛÑÒ¾¯¸æÊ±¼ä
+        currentPlayerSpeed = GameConfig::Difficulty::Hard::PLAYER_SPEED; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+        aiSnakeCount = GameConfig::Difficulty::Hard::AI_SNAKE_COUNT; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        aiAggression = GameConfig::Difficulty::Hard::AI_AGGRESSION; // ï¿½ï¿½ï¿½ï¿½AIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        foodSpawnRate = GameConfig::Difficulty::Hard::FOOD_SPAWN_RATE; // ï¿½ï¿½ï¿½ï¿½Ê³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        lavaWarningTime = GameConfig::Difficulty::Hard::LAVA_WARNING_TIME; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò¾ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
         break;
     }
 }
 
 void GameState::ResetLavaTimer()
 {
-    timeInLava = 0.0f; // ÖØÖÃÈÛÑÒ¼ÆÊ±Æ÷
-    isInLava = false; // ÉèÖÃÎª²»ÔÚÈÛÑÒÖÐ
+    timeInLava = 0.0f; 
+    isInLava = false;
 }
 
 void GameState::AddFoodEaten()
 {
-    foodEatenCount++; // Ôö¼Ó³ÔµôµÄÊ³ÎïÊýÁ¿
-    // Ã¿³Ô10¸öÊ³ÎïÖØÖÃ¼ÆÊýÆ÷
+    foodEatenCount++; 
     if (foodEatenCount >= 10) {
         foodEatenCount = 0;
     }
@@ -49,7 +73,6 @@ void GameState::AddFoodEaten()
 
 bool GameState::IsCollisionEnabled() const
 {
-    // ¼ì²éÊÇ·ñÆôÓÃÅö×²ÒÔ¼°ÎÞµÐÊ±¼äÊÇ·ñ½áÊø
     if (!GameConfig::ENABLE_COLLISION) return false;
     return !isInvulnerable;
 }
@@ -57,7 +80,8 @@ bool GameState::IsCollisionEnabled() const
 void GameState::UpdateGameTime(float dt)
 {
     gameStartTime += dt;
-    // ¼ì²éÎÞµÐÊ±¼äÊÇ·ñ½áÊø
+    
+    // æ›´æ–°æ— æ•Œæ—¶é—´çŠ¶æ€
     if (isInvulnerable && gameStartTime >= GameConfig::COLLISION_GRACE_PERIOD) {
         isInvulnerable = false;
     }

@@ -1,23 +1,16 @@
-/*
-    名称:       MainGame.cpp
-    创建时间:    2025/1/22 14:44:25
-    作者:     PC-20230225XVVJ\Administrator
-    
-    描述: Greedy Snake 游戏的主要实现文件。
-    包含核心游戏逻辑、渲染和输入处理。
-*/
 #include <graphics.h>
 #include <conio.h>
-#include <iostream>
+#include <tchar.h>
 #include <string>
 #include <vector>
 #include <thread>
 #include <windows.h>
-#include <mmsystem.h>
 #include <math.h>
 #include <queue>
 #include <algorithm>
-#include "Button.h"
+//#include <deque>
+#include <mutex>
+#include <ctime>
 #include "GameConfig.h"
 #include "Vector2.h"
 #include "Snake.h"
@@ -27,41 +20,13 @@
 #include "SpatialGrid.h"
 #include "Camera.h"
 #include "Food.h"
+#include "Setting.h"
+#include "StartInterface.h"
+#include "Button.h"
 #pragma comment(lib, "winmm.lib") // 多媒体函数所需
-#pragma warning(disable: 4996)	 // 禁用关于 _tcscpy 和 _stprintf 的安全警告
+//#pragma warning(disable: 4996)	 // 禁用关于 _tcscpy 和 _stprintf 的安全警告
 
 // #define DEBUG_DRAW_TEXT(value, x, y) DebugDrawText(std::wstring(_T(#value": ")) + std::to_wstring(value), x, y, HSLtoRGB(0, 0, 255));
-
-// 菜单选项枚举
-enum class MenuOption {
-    START, // 开始
-    SETTINGS, // 设置
-    ABOUT, // 关于
-    EXIT // 退出
-};
-
-// 设置结构
-struct GameSettings {
-    float musicVolume = GameConfig::DEFAULT_VOLUME; // 音乐音量
-    bool enableSound = true; // 启用声音
-    int difficulty = 1;  // 1: 简单, 2: 普通, 3: 困难
-    float snakeSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // 蛇速度
-};
-// 蛇段颜色生成类
-class ColorGenerator {
-public:
-    static int GenerateRandomColor() {
-        int red = GenerateColorComponent(); // 生成红色分量
-        int green = GenerateColorComponent(); // 生成绿色分量
-        int blue = GenerateColorComponent(); // 生成蓝色分量
-        return HSLtoRGB(red, green, blue); // 返回HSL颜色
-    }
-
-private:
-    static int GenerateColorComponent() {
-        return static_cast<int>((rand() % 5000 / 1000.0 + 1) * 255 / 6.0 + 0.5); // 生成颜色分量
-    }
-};
 
 // 屏幕尺寸
 const int windowWidth = GameConfig::WINDOW_WIDTH; // 窗口宽度
@@ -77,34 +42,43 @@ const int playAreaMarginY = GameConfig::PLAY_AREA_MARGIN; // 游戏区域Y边距
 Vector2 playerPosition = GameConfig::PLAYER_DEFAULT_POS; // 玩家位置
 Vector2 playerDirection(0, 1); // 玩家方向
 
-std::vector<Button> buttonList; // 按钮列表
-
 // 游戏计时
 float deltaTime = GameState::Instance().deltaTime; // 时间增量
 
 // 数组和集合
-FoodItem foodList[GameConfig::MAX_FOOD_COUNT]; // 食物列表
+FoodItem foodList[GameConfig::MAX_FOOD_COUNT];  // 食物列表
 std::vector<SnakeSegment> snakeSegments(5); // 蛇段列表
-
+  
 // AI蛇容器
-std::vector<AISnake> aiSnakeList;
+std::vector<AISnake> aiSnakeList;               // AI蛇列表
 
 // Global variables if not already defined
-std::vector<Snake> snake;
+Snake snake[1];                                // 玩家蛇
+int GetHistoryIndexAtDistance(const std::deque<Vector2>& positions, float targetDistance);
+void ShowDeathMessage(int score);
 
 // Function implementations
 void InitializePlayerSnake() {
-    // Initialize with 5 segments
-    snake.resize(5);
-    Vector2 startPos = GameConfig::PLAYER_DEFAULT_POS;
-    Vector2 startDir(0, 1);  // Starting direction downward
+    Vector2 startPos = GameConfig::PLAYER_DEFAULT_POS; // 声明并初始化startPos
+    Vector2 startDir(0, 1);  // 向下的起始方向
+                           
+    // 初始化蛇头
+    snake[0].position = startPos;
+    snake[0].direction = startDir;
+    snake[0].radius = GameConfig::INITIAL_SNAKE_SIZE;
+    snake[0].color = HSLtoRGB(255, 255, 255);  // 白色
+    snake[0].posRecords = std::queue<Vector2>();
     
-    for (int i = 0; i < 5; i++) {
-        snake[i].position = startPos - startDir * (i * GameConfig::SNAKE_SEGMENT_SPACING);
-        snake[i].direction = startDir;
-        snake[i].radius = GameConfig::INITIAL_SNAKE_SIZE;
-        snake[i].color = HSLtoRGB(255, 255, 255);  // White color
-        snake[i].posRecords = std::queue<Vector2>();
+    // 调整蛇身体段的大小
+    snake[0].segments.resize(4);  // 4个身体段 + 1个头 = 5个部分
+    
+    // 初始化蛇身体段
+    for (size_t i = 0; i < snake[0].segments.size(); i++) {
+        snake[0].segments[i].position = startPos - startDir * ((i+1) * GameConfig::SNAKE_SEGMENT_SPACING);
+        snake[0].segments[i].direction = startDir;
+        snake[0].segments[i].radius = GameConfig::INITIAL_SNAKE_SIZE;
+        snake[0].segments[i].color = HSLtoRGB(255, 255, 255);  // 白色
+        snake[0].segments[i].posRecords = std::queue<Vector2>();
     }
 }
 
@@ -118,15 +92,20 @@ void UpdateCamera() {
 }
 
 void UpdatePlayerSnake(float deltaTime) {
-    // Update head
+    // 更新头部               
     snake[0].direction = GameState::Instance().targetDirection;
     snake[0].position = snake[0].position + snake[0].GetVelocity() * deltaTime;
     snake[0].Update(deltaTime);
 
-    // Update body segments
-    for (size_t i = 1; i < snake.size(); i++) {
-        snake[i].UpdateBody(snake[i-1], snake[i]);
-        snake[i].Update(deltaTime);
+    // 更新身体段
+    for (size_t i = 0; i < snake[0].segments.size(); i++) {
+        if (i == 0) {
+            snake[0].UpdateBody(snake[0], snake[0].segments[i]);
+        }
+        else {
+            snake[0].UpdateBody(snake[0].segments[i-1], snake[0].segments[i]);
+        }
+        snake[0].segments[i].Update(deltaTime);
     }
 }
 
@@ -135,270 +114,181 @@ void UpdateAISnakes(float deltaTime) {
         aiSnake.Update(std::vector<FoodItem>(foodList, foodList + GameConfig::MAX_FOOD_COUNT), 
                       deltaTime, 
                       snake[0].position);
-    }
-}
-
-void UpdateFoods() {
-    for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; i++) {
-        if (rand() % 100 < (GameState::Instance().foodSpawnRate * 100)) {
-            InitFood(i, GameState::Instance().currentPlayerSpeed);
-        }
-    }
-}
-
-void DrawGameArea() {
-    // Clear screen
-    setbkcolor(RGB(30, 30, 30));
-    cleardevice();
-    
-    // Draw game boundaries
-    setlinecolor(RGB(100, 100, 100));
-    Vector2 topLeft(GameConfig::PLAY_AREA_LEFT, GameConfig::PLAY_AREA_TOP);
-    Vector2 bottomRight(GameConfig::PLAY_AREA_RIGHT, GameConfig::PLAY_AREA_BOTTOM);
-    Vector2 cameraPos = GameState::Instance().camera.position;
-    
-    rectangle(topLeft.x - cameraPos.x, topLeft.y - cameraPos.y,
-             bottomRight.x - cameraPos.x, bottomRight.y - cameraPos.y);
-}
-
-void DrawFoods() {
-    for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; i++) {
-        Vector2 screenPos = foodList[i].position - GameState::Instance().camera.position;
-        DrawCircleWithCamera(screenPos, foodList[i].collisionRadius, foodList[i].colorValue);
-    }
-}
-
-void DrawUI() {
-    auto& gameState = GameState::Instance();
-    
-    // Draw score
-    settextstyle(24, 0, _T("Arial"));
-    settextcolor(WHITE);
-    TCHAR scoreText[50];
-    _stprintf(scoreText, _T("Score: %d"), gameState.foodEatenCount);
-    outtextxy(10, 10, scoreText);
-    
-    // Draw warning if in lava
-    if (gameState.isInLava) {
-        settextcolor(RGB(255, 0, 0));
-        TCHAR warningText[50];
-        float timeLeft = GameConfig::LAVA_WARNING_TIME - gameState.timeInLava;
-        _stprintf(warningText, _T("WARNING! Return to play area! %.1f"), timeLeft);
-        outtextxy(GameConfig::WINDOW_WIDTH/2 - 150, 10, warningText);
-    }
-}
-
-void CheckCollisions() {
-    auto& gameState = GameState::Instance();
-    
-    // Skip collision check during invulnerability period
-    if (!gameState.IsCollisionEnabled()) {
-        return;
-    }
-    
-    // Check collisions with AI snakes
-    if (CollisionManager::CheckSnakeCollision(snake[0].position, snake[0].radius, aiSnakeList)) {
-        gameState.isCollisionFlashing = true;
-        gameState.collisionFlashTimer = GameConfig::COLLISION_FLASH_DURATION;
-    }
-    
-    // Check food collisions
-    for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; i++) {
-        if (CollisionManager::CheckCircleCollision(
-            snake[0].position, snake[0].radius,
-            foodList[i].position, foodList[i].collisionRadius)) {
-            // Handle food collection
-            InitFood(i, gameState.currentPlayerSpeed);
-            gameState.AddFoodEaten();
-            
-            // Grow snake
-            float growthAmount = (gameState.foodEatenCount == 0) ? 
-                GameConfig::SNAKE_GROWTH_LARGE : GameConfig::SNAKE_GROWTH_SMALL;
-            snake[0].radius = min(snake[0].radius + growthAmount, GameConfig::MAX_SNAKE_SIZE);
-        }
-    }
-}
-
-void CheckGameState() {
-    auto& gameState = GameState::Instance();
-    
-    // Check if snake is outside play area
-    bool inPlayArea = snake[0].position.x >= GameConfig::PLAY_AREA_LEFT &&
-                     snake[0].position.x <= GameConfig::PLAY_AREA_RIGHT &&
-                     snake[0].position.y >= GameConfig::PLAY_AREA_TOP &&
-                     snake[0].position.y <= GameConfig::PLAY_AREA_BOTTOM;
-    
-    if (!inPlayArea) {
-        if (!gameState.isInLava) {
-            gameState.isInLava = true;
-            gameState.timeInLava = 0;
+        
+        float snakeSpeed = GameState::Instance().currentPlayerSpeed * 0.75f; // 设置为玩家蛇速度的75%
+        aiSnake.position = aiSnake.position + aiSnake.direction * snakeSpeed * deltaTime;
+        
+        aiSnake.RecordPos();
+        
+        for (size_t i = 0; i < aiSnake.segments.size(); i++) {
+            if (i == 0) {
+                aiSnake.UpdateBody(aiSnake, aiSnake.segments[i]);
+            } else {
+                aiSnake.UpdateBody(aiSnake.segments[i-1], aiSnake.segments[i]);
+            }
+            aiSnake.segments[i].Update(deltaTime);
         }
         
-        gameState.timeInLava += gameState.deltaTime;
-        if (gameState.timeInLava >= GameConfig::LAVA_WARNING_TIME) {
-            gameState.isGameRunning = false;
+        for (auto& segment : aiSnake.segments) {
+            segment.color = aiSnake.color;
+            segment.radius = aiSnake.radius;
         }
-    } else {
-        gameState.ResetLavaTimer();
     }
+}
+
+int GetHistoryIndexAtDistance(const std::deque<Vector2>& positions, float targetDistance) {
+    if (positions.size() < 2) return 0;
+    
+    float currentDistance = 0.0f;
+    
+    // 从    最近的位置向后查找
+    for (int i = positions.size() - 2; i >= 0; i--) {
+        float segmentLength = (positions[i+1] - positions[i]).GetLength();
+        currentDistance += segmentLength;
+        
+        if (currentDistance >= targetDistance) {
+            // 找到大于等于目标距离的位置
+            // 如果需要的话，可以在这里进行插值以获得更精确的位置
+            return i;
+        }
+    }
+    
+    // 如果找不到足够远的点，就返回最早的历史点
+    return 0;
 }
 
 // 初始化AI蛇
 void InitializeAISnakes() {
     auto& gameState = GameState::Instance();
-    aiSnakeList.resize(gameState.aiSnakeCount); // 调整AI蛇列表大小
+    aiSnakeList.resize(gameState.aiSnakeCount);
     
     for (auto& aiSnake : aiSnakeList) {
-        aiSnake.Init(); // 初始化AI蛇
+        aiSnake.Init();
         
         // 根据难度调整AI行为
         aiSnake.aggressionFactor = gameState.aiAggression; // 设置攻击性因子
-        aiSnake.speedMultiplier = GameConfig::AI_MIN_SPEED + 
-            (gameState.aiAggression * (GameConfig::AI_MAX_SPEED - GameConfig::AI_MIN_SPEED)); // 设置速度乘数
+        
+        aiSnake.speedMultiplier = 1.0f; 
     }
     
     for (int i = 0; i < gameState.aiSnakeCount; ++i) {
         // 在中心周围以圆形分布生成蛇
-        float angle = (i * 360.0f / gameState.aiSnakeCount) * 3.14159f / 180.0f; // 计算角度
-        float distance = rand() % static_cast<int>(GameConfig::AI_SPAWN_RADIUS); // 随机生成距离
+        float angle = (i * 360.0f / gameState.aiSnakeCount) * 3.14159f / 180.0f;
+        float distance = rand() % static_cast<int>(GameConfig::AI_SPAWN_RADIUS);
         
-        float x = windowWidth/2 + cos(angle) * distance; // 计算X坐标
-        float y = windowHeight/2 + sin(angle) * distance; // 计算Y坐标
+        float x = windowWidth/2 + cos(angle) * distance;
+        float y = windowHeight/2 + sin(angle) * distance;
         
         // 确保位置在安全区域内
-        x = (((GameConfig::PLAY_AREA_LEFT + 100.0f) >((((GameConfig::PLAY_AREA_RIGHT - 100.0f) < (x)) ? (GameConfig::PLAY_AREA_RIGHT - 100.0f) : (x)))) ? (GameConfig::PLAY_AREA_LEFT + 100.0f) : ((((GameConfig::PLAY_AREA_RIGHT - 100.0f) < (x)) ? (GameConfig::PLAY_AREA_RIGHT - 100.0f) : (x))));
-        y = (((GameConfig::PLAY_AREA_TOP + 100.0f) > ((((GameConfig::PLAY_AREA_BOTTOM - 100.0f) < (y)) ? (GameConfig::PLAY_AREA_BOTTOM - 100.0f) : (y)))) ? (GameConfig::PLAY_AREA_TOP + 100.0f) : ((((GameConfig::PLAY_AREA_BOTTOM - 100.0f) < (y)) ? (GameConfig::PLAY_AREA_BOTTOM - 100.0f) : (y))));
+        x = max(GameConfig::PLAY_AREA_LEFT + 100.0f, min(GameConfig::PLAY_AREA_RIGHT - 100.0f, x));
+        y = max(GameConfig::PLAY_AREA_TOP + 100.0f, min(GameConfig::PLAY_AREA_BOTTOM - 100.0f, y));
         
         // 随机起始方向
-        float dirAngle = (rand() % 360) * 3.14159f / 180.0f; // 随机角度
-        Vector2 direction(cos(dirAngle), sin(dirAngle)); // 计算方向
+        float dirAngle = (rand() % 360) * 3.14159f / 180.0f;
+        Vector2 direction(cos(dirAngle), sin(dirAngle));
         
-        // 初始化AI蛇的随机速度
-        aiSnakeList[i].position = Vector2(x, y); // 设置位置
-        aiSnakeList[i].direction = direction; // 设置方向
-        aiSnakeList[i].radius = GameConfig::INITIAL_SNAKE_SIZE * 0.8f; // 设置半径
-        aiSnakeList[i].color = HSLtoRGB(rand() % 360, 200, 200); // 设置颜色
+        // 初始化AI蛇的位置和方向
+        aiSnakeList[i].position = Vector2(x, y);
+        aiSnakeList[i].direction = direction;
+        aiSnakeList[i].radius = GameConfig::INITIAL_SNAKE_SIZE * 0.8f;
+        aiSnakeList[i].color = HSLtoRGB(rand() % 360, 200, 200);
         
-        // 初始化段
+        // 初始化蛇的身体段，确保间距相等
         for (int j = 0; j < 5; j++) {
-            aiSnakeList[i].segments[j].position = aiSnakeList[i].position - direction * (j + 1) * GameConfig::SNAKE_SEGMENT_SPACING; // 设置段位置
-            aiSnakeList[i].segments[j].direction = direction; // 设置段方向
-            aiSnakeList[i].segments[j].radius = aiSnakeList[i].radius; // 设置段半径
-            aiSnakeList[i].segments[j].color = aiSnakeList[i].color; // 设置段颜色
+            // 设置固定间距
+            aiSnakeList[i].segments[j].position = aiSnakeList[i].position - 
+                direction * (j + 1) * GameConfig::SNAKE_SEGMENT_SPACING;
+            aiSnakeList[i].segments[j].direction = direction;
+            aiSnakeList[i].segments[j].radius = aiSnakeList[i].radius;
+            aiSnakeList[i].segments[j].color = aiSnakeList[i].color;
+        }
+        
+        // 初始化位置历史记录
+        aiSnakeList[i].recordedPositions.clear();
+        for (int j = 0; j < 20; j++) {
+            // 从尾部到头部填充初始历史记录
+            aiSnakeList[i].recordedPositions.push_back(
+                aiSnakeList[i].position - direction * j * (GameConfig::SNAKE_SEGMENT_SPACING / 4.0f));
         }
     }
 }
 
-void EnterChanges(void)
-{
-    ExMessage Message; // 消息
-    Vector2 mouseWorldPos; // 鼠标世界位置
+void EnterChanges(void) {
+    ExMessage Message;
+    Vector2 mouseWorldPos;
 
-    while (GameState::Instance().isGameRunning) // 游戏运行时
-    {
-        Message = getmessage(EX_MOUSE | EX_KEY); // 获取消息
-
-        switch (Message.message) // 处理消息
-        {
-        case WM_RBUTTONDOWN: // 右键按下
-            GameState::Instance().isMouseControlEnabled = true; // 启用鼠标控制
-            break;
-        case WM_MOUSEMOVE: // 鼠标移动
-            if (!GameState::Instance().isMouseControlEnabled)
-                break; // 如果未启用鼠标控制，退出
-            mouseWorldPos = Vector2(Message.x, Message.y) + GameState::Instance().camera.position; // 更新鼠标世界位置
-            GameState::Instance().targetDirection = (mouseWorldPos - snake.back().position).GetNormalize(); // 更新目标方向
-            break;
-        case WM_LBUTTONDOWN: // 左键按下
-            GameState::Instance().originalSpeed = GameState::Instance().currentPlayerSpeed; // 记录原始速度
-            GameState::Instance().currentPlayerSpeed *= 2; // 加速
-            GameState::Instance().recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL / 2; // 减少记录间隔
-            break;
-        case WM_LBUTTONUP: // 左键抬起
-            GameState::Instance().currentPlayerSpeed = GameState::Instance().originalSpeed; // 恢复原始速度
-            GameState::Instance().recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // 恢复记录间隔
-            break;
-        case WM_KEYDOWN: // 键盘按下
-            GameState::Instance().isMouseControlEnabled = false; // 禁用鼠标控制
-            switch (Message.vkcode) // 处理按键
-            {
-            case VK_UP: // 上键
-                GameState::Instance().targetDirection = Vector2(0, -1); // 设置目标方向
+    while (GameState::Instance().isGameRunning) {
+        if (peekmessage(&Message, EX_MOUSE | EX_KEY)) {
+            switch (Message.message) {
+            case WM_RBUTTONDOWN:
+                GameState::Instance().isMouseControlEnabled = true;
                 break;
-            case VK_DOWN: // 下键
-                GameState::Instance().targetDirection = Vector2(0, 1); // 设置目标方向
+            case WM_MOUSEMOVE:
+                if (!GameState::Instance().isMouseControlEnabled)
+                    break;
+                mouseWorldPos = Vector2(Message.x, Message.y) + GameState::Instance().camera.position;
+                GameState::Instance().targetDirection = (mouseWorldPos - snake[0].position).GetNormalize();
                 break;
-            case VK_LEFT: // 左键
-                GameState::Instance().targetDirection = Vector2(-1, 0); // 设置目标方向
+            case WM_LBUTTONDOWN:
+                GameState::Instance().originalSpeed = GameState::Instance().currentPlayerSpeed;
+                GameState::Instance().currentPlayerSpeed *= 2;
+                GameState::Instance().recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL / 2;
                 break;
-            case VK_RIGHT: // 右键
-                GameState::Instance().targetDirection = Vector2(1, 0); // 设置目标方向
+            case WM_LBUTTONUP:
+                GameState::Instance().currentPlayerSpeed = GameState::Instance().originalSpeed;
+                GameState::Instance().recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL;
                 break;
-            case VK_ESCAPE: // ESC键
-                GameState::Instance().isGameRunning = false; // 结束游戏
-                break;
-            }
-            break;
-        }
-    }
-}
-
-// 替换原有的CheckCollision函数调用
-// CheckCollision(pos1, radius1, pos2, radius2) -> CollisionManager::CheckCircleCollision(pos1, radius1, pos2, radius2)
-// ... existing code ...
-
-// 将绘制逻辑拆分为多个函数
-void DrawVisibleObjects() {
-    // 计算可见区域
-    Vector2 cameraPos = GameState::Instance().camera.position;
-    float screenLeft = cameraPos.x;
-    float screenRight = cameraPos.x + GameConfig::WINDOW_WIDTH;
-    float screenTop = cameraPos.y;
-    float screenBottom = cameraPos.y + GameConfig::WINDOW_HEIGHT;
-    
-    // 扩展可见区域，考虑到大型对象可能部分可见
-    float margin = 100.0f;  // 足够大的边距
-    screenLeft -= margin;
-    screenRight += margin;
-    screenTop -= margin;
-    screenBottom += margin;
-    
-    // 只绘制可见区域内的食物
-    for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; ++i) {
-        const auto& food = foodList[i];
-        if (food.position.x >= screenLeft && food.position.x <= screenRight &&
-            food.position.y >= screenTop && food.position.y <= screenBottom) {
-            Vector2 foodScreenPos = food.position - cameraPos;
-            DrawCircleWithCamera(foodScreenPos, food.collisionRadius, food.colorValue);
-        }
-    }
-    
-    // 只绘制可见区域内的AI蛇
-    for (const auto& aiSnake : aiSnakeList) {
-        if (aiSnake.position.x >= screenLeft && aiSnake.position.x <= screenRight &&
-            aiSnake.position.y >= screenTop && aiSnake.position.y <= screenBottom) {
-            // 绘制AI蛇头
-            Vector2 windowPos = aiSnake.position - cameraPos;
-            DrawCircleWithCamera(windowPos, aiSnake.radius, aiSnake.color);
-            DrawSnakeEyes(windowPos, aiSnake.direction, aiSnake.radius);
-            
-            // 绘制AI蛇身
-            for (const auto& segment : aiSnake.segments) {
-                if (segment.position.x >= screenLeft && segment.position.x <= screenRight &&
-                    segment.position.y >= screenTop && segment.position.y <= screenBottom) {
-                    Vector2 segmentPos = segment.position - cameraPos;
-                    DrawCircleWithCamera(segmentPos, segment.radius, segment.color);
+            case WM_KEYDOWN:
+                GameState::Instance().isMouseControlEnabled = false;
+                switch (Message.vkcode) {
+                case VK_UP:
+                    GameState::Instance().targetDirection = Vector2(0, -1);
+                    break;
+                case VK_DOWN:
+                    GameState::Instance().targetDirection = Vector2(0, 1);
+                    break;
+                case VK_LEFT:
+                    GameState::Instance().targetDirection = Vector2(-1, 0);
+                    break;
+                case VK_RIGHT:
+                    GameState::Instance().targetDirection = Vector2(1, 0);
+                    break;
+                case VK_ESCAPE:
+                    GameState::Instance().isGameRunning = false;
+                    break;
                 }
+                break;
             }
         }
     }
-    
-    // 绘制玩家蛇
-    // 玩家蛇总是可见的，因为相机跟随玩家
-    for (const auto& segment : snake) {
-        Vector2 segmentPos = segment.position - cameraPos;
-        DrawCircleWithCamera(segmentPos, segment.radius, segment.color); 
+}
+
+void InitSnake(int i, const Vector2& pos, const Vector2& currentDir) {
+    if (i == 0) {
+        // 初始化蛇头
+        snake[0].position = pos;
+        snake[0].color = HSLtoRGB(255, 255, 255);
+        snake[0].radius = GameConfig::INITIAL_SNAKE_SIZE;
+        snake[0].direction = currentDir;
+        snake[0].currentTime = 0;
+        snake[0].posRecords = std::queue<Vector2>();
+    } else {
+        // 初始化蛇身体段
+        int segmentIndex = i - 1;
+        if (segmentIndex < 0 || segmentIndex >= static_cast<int>(snake[0].segments.size())) {
+            snake[0].segments.resize(segmentIndex + 1);
+        }
+        snake[0].segments[segmentIndex].position = pos - currentDir * (i * GameConfig::SNAKE_SEGMENT_SPACING);
+        snake[0].segments[segmentIndex].color = HSLtoRGB(255, 255, 255);
+        snake[0].segments[segmentIndex].radius = GameConfig::INITIAL_SNAKE_SIZE;
+        snake[0].segments[segmentIndex].direction = currentDir;
+        snake[0].segments[segmentIndex].currentTime = 0;
+        snake[0].segments[segmentIndex].posRecords = std::queue<Vector2>();
     }
+}
+
+void ChangeGlobalSpeed(float newSpeed) {
+    GameState::Instance().currentPlayerSpeed = newSpeed; // 改变全局速度
 }
 
 void Draw() {
@@ -411,80 +301,46 @@ void Draw() {
         // 绘制游戏区域
         DrawGameArea();
         
-        // 绘制食物
-        DrawVisibleObjects();
+        // 更新和绘制游戏对象
+        UpdatePlayerSnake(GameState::Instance().deltaTime);
+        UpdateAISnakes(GameState::Instance().deltaTime);
+        UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
+        
+        // 创建临时PlayerSnake对象来绘制玩家蛇
+        PlayerSnake playerSnakeObj;
+        playerSnakeObj.position = snake[0].position;
+        playerSnakeObj.direction = snake[0].direction;
+        playerSnakeObj.radius = snake[0].radius;
+        playerSnakeObj.color = snake[0].color;
+        
+        // 复制蛇身体段
+        playerSnakeObj.segments.resize(snake[0].segments.size());
+        for (size_t i = 0; i < snake[0].segments.size(); ++i) {
+            playerSnakeObj.segments[i] = snake[0].segments[i];
+        }
+        
+        DrawVisibleObjects(foodList, GameConfig::MAX_FOOD_COUNT, 
+                          aiSnakeList.data(), 
+                          static_cast<int>(aiSnakeList.size()), 
+                          playerSnakeObj);
 
         // 绘制UI元素
         DrawUI();
 
-        // 检查游戏状态
-        CheckGameState();
+        CheckGameState(snake);  
+        
+        // 检查碰撞
+        CheckCollisions();
 
         EndBatchDraw();
+        
+        // 添加帧率控制
+        Sleep(1000 / 60);  // 限制约60FPS
     }
-}
-
-// ... 其他拆分函数实现 ...
-
-
-
-void InitSnake(int i, const Vector2& pos, const Vector2& currentDir) {
-    snake[i].position = pos - currentDir * (i * GameConfig::SNAKE_SEGMENT_SPACING); // 初始化蛇段位置
-    snake[i].color = HSLtoRGB(255, 255, 255); // 设置颜色
-    snake[i].radius = GameConfig::INITIAL_SNAKE_SIZE;  // 使用初始大小
-    snake[i].direction = currentDir; // 设置方向
-    snake[i].currentTime = 0; // 当前时间
-    snake[i].posRecords = std::queue<Vector2>(); // 初始化位置记录
-}
-
-// 将重复的食物位置生成逻辑提取为函数
-Vector2 GenerateRandomPosition() {
-    float x = GameConfig::PLAY_AREA_LEFT + 
-              rand() % (GameConfig::PLAY_AREA_RIGHT - GameConfig::PLAY_AREA_LEFT);
-    float y = GameConfig::PLAY_AREA_TOP + 
-              rand() % (GameConfig::PLAY_AREA_BOTTOM - GameConfig::PLAY_AREA_TOP);
-    return Vector2(x, y);
-}
-
-void InitFood(int i, float speed) {
-    foodList[i].position = GenerateRandomPosition();
-    foodList[i].moveSpeed = speed;
-    foodList[i].colorValue = ColorGenerator::GenerateRandomColor();
-    foodList[i].collisionRadius = (rand() % 5000) / 1000.0f + 2;
-
-    // 根据难度调整食物生成概率
-    if (rand() % 100 < (GameState::Instance().foodSpawnRate * 100)) {
-        foodList[i].position = GenerateRandomPosition();
-    }
-}
-
-void ChangeGlobalSpeed(float newSpeed) {
-    GameState::Instance().currentPlayerSpeed = newSpeed; // 改变全局速度
-}
-
-bool IsCircleInScreen(const Vector2& center, float r) {
-    Vector2 minPoint = Vector2(center.x - r, center.y - r); // 计算最小点
-    Vector2 maxPoint = Vector2(center.x + r, center.y + r); // 计算最大点
-
-    return !(maxPoint.x < 0 || minPoint.x > GameConfig::WINDOW_WIDTH || maxPoint.y < 0 || minPoint.y > GameConfig::WINDOW_HEIGHT); // 检查是否在屏幕内
-}
-
-void DrawCircleWithCamera(const Vector2& screenPos, float r, int c) {
-    if (!IsCircleInScreen(screenPos, r)) {
-        return; // 如果不在屏幕内，返回
-    }
-    setlinecolor(c); // 设置线条颜色
-    setfillcolor(c); // 设置填充颜色
-    fillcircle(screenPos.x, screenPos.y, r); // 绘制圆
-}
-
-void DebugDrawText(const std::wstring& text, int x, int y, int color) {
-    settextcolor(color); // 设置文本颜色
-    outtextxy(x, y, text.c_str()); // 绘制文本
 }
 
 void PlayBackgroundMusic() {
-    mciSendString(_T("open ..\\Resource\\Greed-Snake.mp3 alias Greed-Snake"), NULL, NULL, NULL); // 打开音乐文件
+    mciSendString(_T("open ..\\Resource\\Greed-Snake-Start-Animation.mp3 alias Greed-Snake"), NULL, NULL, NULL); // 打开音乐文件
     mciSendString(_T("play Greed-Snake repeat"), NULL, NULL, NULL); // 播放音乐
     SetVolume(GameConfig::DEFAULT_VOLUME);  // 设置初始音量
 }
@@ -652,7 +508,6 @@ void ShowSettings() {
         }
     }
 }
-
 // 关于对话框
 void ShowAbout() {
     // 填充整个窗口
@@ -729,33 +584,6 @@ void ShowAbout() {
     }
 }
 
-// 设置应用函数
-void ApplySettings(const GameSettings& settings) {
-    GameState::Instance().currentPlayerSpeed = settings.snakeSpeed; // 设置当前玩家速度
-    
-    if(settings.enableSound) {
-        mciSendString(_T("resume Greed-Snake"), NULL, NULL, NULL); // 恢复音乐
-        SetVolume(settings.musicVolume); // 设置音量
-    } else {
-        mciSendString(_T("pause Greed-Snake"), NULL, NULL, NULL); // 暂停音乐
-    }
-}
-
-void DrawMenu() {
-    ExMessage m; // 消息
-    peekmessage(&m, EX_MOUSE); // 预取消息
-    Vector2 mousePos = Vector2(m.x, m.y); // 鼠标位置
-
-    // for (int i = 0; i < ButtonType::Num; ++i) {
-    //     buttonList[i].DrawButton(mousePos); // 绘制按钮
-    // }
-    // 将 ButtonType::Num 替换为 buttonList.size()
-    for (int i = 0; i < buttonList.size(); ++i) {
-        buttonList[i].DrawButton(mousePos); // 绘制按钮
-    }
-}
-
-// 在消息处理循环中添加退出图标点击事件
 void HandleMouseInput() {
     ExMessage msg = getmessage(EX_MOUSE); // 获取消息
     if (msg.message == WM_LBUTTONDOWN) { // 左键按下
@@ -782,26 +610,13 @@ bool IsInSafeArea(const Vector2& pos) {
            pos.y <= GameConfig::PLAY_AREA_BOTTOM; // 检查是否在安全区域
 }
 
-// 音量控制函数
-void SetVolume(float volume) {
-    // 确保音量在0到1之间
-    volume = (((0.0f) >((((1.0f) < (volume)) ? (1.0f) : (volume)))) ? (0.0f) : ((((1.0f) < (volume)) ? (1.0f) : (volume))));
-    
-    // 将音量转换为Windows音量范围（0-1000）
-    int windowsVolume = static_cast<int>(volume * 1000); // 转换音量
-
-    TCHAR command[100]; // 命令缓冲区
-    _stprintf(command, _T("setaudio Greed-Snake volume to %d"), windowsVolume); // 格式化命令
-    mciSendString(command, NULL, 0, NULL); // 发送命令
-}
-
 // 播放开始动画
 void PlayStartAnimation() {
     // 定义帧文件的路径和文件扩展名
-    const TCHAR* path = _T("..\\Resource\\Greed-Snake-Start-Animation-Frames\\"); // 帧文件路径
+    const TCHAR* path = _T(".\\Resource\\Greed-Snake-Start-Animation-Frames\\"); // 帧文件路径
     const TCHAR* ext = _T(".bmp"); // 文件扩展名
 
-    mciSendString(_T("open ..\\Resource\\Greed-Snake-Start-Animation.mp3 alias Start-Animation"), NULL, NULL, NULL); // 打开动画音乐
+    mciSendString(_T("open .\\Resource\\Greed-Snake-Start-Animation.mp3 alias Start-Animation"), NULL, NULL, NULL); // 打开动画音乐
     mciSendString(_T("play Start-Animation"), NULL, NULL, NULL); // 播放动画音乐
     Sleep(6000); // 等待6秒
 
@@ -849,7 +664,7 @@ public:
         // 初始化食物
         foodItems.resize(GameConfig::MAX_FOOD_COUNT);
         for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; ++i) {
-            InitFood(i, GameState::Instance().currentPlayerSpeed);
+            InitFood(foodList, i, GameState::Instance().currentPlayerSpeed);
         }
         
         // 初始化玩家蛇
@@ -875,7 +690,7 @@ public:
         UpdateAISnakes(deltaTime);
         
         // 更新食物
-        UpdateFoods();
+        UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
         
         // 检查碰撞
         CheckCollisions();
@@ -892,8 +707,8 @@ public:
         // 绘制游戏区域
         DrawGameArea();
         
-        // 绘制食物
-        DrawFoods();
+        // 绘制食物 - 使用正确的函数签名
+        DrawFoods(foodItems.data(), foodItems.size());  // 如果需要，应该传递正确的参数
 
         // 绘制AI蛇
         for (const auto& aiSnake : aiSnakes) {
@@ -908,112 +723,310 @@ public:
         
         EndBatchDraw();
     }
-    
-    // ... 其他方法 ...
 };
 
-// 添加网格系统来优化碰撞检测
-class SpatialGrid {
-private:
-    struct Cell {
-        std::vector<int> foodIndices;
-        std::vector<int> aiSnakeIndices;
-        bool hasPlayerSnake = false;
-    };
+void InitGlobal() {
+    playerPosition = GameConfig::PLAYER_DEFAULT_POS; // 初始化玩家位置
     
-    std::vector<Cell> grid;
-    int gridWidth, gridHeight;
-    float cellSize;
+    // 不使用resize，初始化蛇头和预置几个身体段
+    snake[0].position = GameConfig::PLAYER_DEFAULT_POS;
+    snake[0].direction = Vector2(0, 1);
+    snake[0].radius = GameConfig::INITIAL_SNAKE_SIZE;
+    snake[0].color = HSLtoRGB(255, 255, 255);
     
-public:
-    SpatialGrid(float worldWidth, float worldHeight, float cellSize) 
-        : cellSize(cellSize) {
-        gridWidth = static_cast<int>(worldWidth / cellSize) + 1;
-        gridHeight = static_cast<int>(worldHeight / cellSize) + 1;
-        grid.resize(gridWidth * gridHeight);
+    // 预置4个身体段
+    snake[0].segments.resize(4);
+    for (size_t i = 0; i < snake[0].segments.size(); i++) {
+        snake[0].segments[i].position = GameConfig::PLAYER_DEFAULT_POS - Vector2(0, 1) * ((i+1) * GameConfig::SNAKE_SEGMENT_SPACING);
+        snake[0].segments[i].direction = Vector2(0, 1);
+        snake[0].segments[i].radius = GameConfig::INITIAL_SNAKE_SIZE;
+        snake[0].segments[i].color = HSLtoRGB(255, 255, 255);
     }
+}
+
+void ShowDeathMessage(int score) {
+    // 保存当前画面状态
+    BeginBatchDraw();
     
-    void Clear() {
-        for (auto& cell : grid) {
-            cell.foodIndices.clear();
-            cell.aiSnakeIndices.clear();
-            cell.hasPlayerSnake = false;
-        }
-    }
+    // 创建半透明遮罩
+    setfillcolor(RGB(0, 0, 0));  // 使用纯黑色
+    solidrectangle(0, 0, GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
     
-    void AddFood(int foodIndex, const Vector2& position) {
-        int cellX = static_cast<int>((position.x - GameConfig::PLAY_AREA_LEFT) / cellSize);
-        int cellY = static_cast<int>((position.y - GameConfig::PLAY_AREA_TOP) / cellSize);
-        
-        if (IsValidCell(cellX, cellY)) {
-            grid[cellY * gridWidth + cellX].foodIndices.push_back(foodIndex);
-        }
-    }
+    // 绘制消息框
+    const int msgBoxWidth = 400;
+    const int msgBoxHeight = 250;
+    const int msgBoxX = (GameConfig::WINDOW_WIDTH - msgBoxWidth) / 2;
+    const int msgBoxY = (GameConfig::WINDOW_HEIGHT - msgBoxHeight) / 2;
     
-    void AddAISnake(int snakeIndex, const Vector2& position) {
-        int cellX = static_cast<int>((position.x - GameConfig::PLAY_AREA_LEFT) / cellSize);
-        int cellY = static_cast<int>((position.y - GameConfig::PLAY_AREA_TOP) / cellSize);
-        
-        if (IsValidCell(cellX, cellY)) {
-            grid[cellY * gridWidth + cellX].aiSnakeIndices.push_back(snakeIndex);
-        }
-    }
+    // 绘制消息框背景
+    setfillcolor(RGB(50, 50, 50));
+    solidroundrect(msgBoxX, msgBoxY, msgBoxX + msgBoxWidth, msgBoxY + msgBoxHeight, 20, 20);
     
-    void AddPlayerSnake(const Vector2& position) {
-        int cellX = static_cast<int>((position.x - GameConfig::PLAY_AREA_LEFT) / cellSize);
-        int cellY = static_cast<int>((position.y - GameConfig::PLAY_AREA_TOP) / cellSize);
-        
-        if (IsValidCell(cellX, cellY)) {
-            grid[cellY * gridWidth + cellX].hasPlayerSnake = true;
-        }
-    }
+    // 绘制边框
+    setlinecolor(RGB(150, 150, 150));
+    roundrect(msgBoxX, msgBoxY, msgBoxX + msgBoxWidth, msgBoxY + msgBoxHeight, 20, 20);
     
-    std::vector<int> GetNearbyFoods(const Vector2& position, float radius) {
-        std::vector<int> result;
-        GetNearbyCellContents(position, radius, [&](const Cell& cell) {
-            result.insert(result.end(), cell.foodIndices.begin(), cell.foodIndices.end());
-        });
-        return result;
-    }
+    // 绘制标题
+    settextstyle(32, 0, _T("Arial"));
+    settextcolor(RGB(255, 50, 50));
+    const TCHAR* title = _T("游戏结束");
+    int titleWidth = textwidth(title);
+    outtextxy(msgBoxX + (msgBoxWidth - titleWidth) / 2, msgBoxY + 30, title);
     
-    std::vector<int> GetNearbyAISnakes(const Vector2& position, float radius) {
-        std::vector<int> result;
-        GetNearbyCellContents(position, radius, [&](const Cell& cell) {
-            result.insert(result.end(), cell.aiSnakeIndices.begin(), cell.aiSnakeIndices.end());
-        });
-        return result;
-    }
+    // 绘制分数
+    settextstyle(24, 0, _T("Arial"));
+    settextcolor(RGB(255, 255, 255));
+    TCHAR scoreText[50];
+    _stprintf(scoreText, _T("您的得分: %d"), score);
+    int scoreWidth = textwidth(scoreText);
+    outtextxy(msgBoxX + (msgBoxWidth - scoreWidth) / 2, msgBoxY + 100, scoreText);
     
-    bool IsPlayerSnakeNearby(const Vector2& position, float radius) {
-        bool found = false;
-        GetNearbyCellContents(position, radius, [&](const Cell& cell) {
-            if (cell.hasPlayerSnake) found = true;
-        });
-        return found;
-    }
+    // 绘制按钮
+    const int btnWidth = 120;
+    const int btnHeight = 40;
+    const int btnY = msgBoxY + msgBoxHeight - 70;
     
-private:
-    bool IsValidCell(int x, int y) const {
-        return x >= 0 && x < gridWidth && y >= 0 && y < gridHeight;
-    }
+    // 重新开始按钮
+    setfillcolor(RGB(100, 150, 100));
+    solidroundrect(msgBoxX + msgBoxWidth/2 - btnWidth - 20, btnY, 
+                  msgBoxX + msgBoxWidth/2 - 20, btnY + btnHeight, 10, 10);
     
-    template <typename Func>
-    void GetNearbyCellContents(const Vector2& position, float radius, Func callback) {
-        int minCellX = static_cast<int>((position.x - radius - GameConfig::PLAY_AREA_LEFT) / cellSize);
-        int maxCellX = static_cast<int>((position.x + radius - GameConfig::PLAY_AREA_LEFT) / cellSize);
-        int minCellY = static_cast<int>((position.y - radius - GameConfig::PLAY_AREA_TOP) / cellSize);
-        int maxCellY = static_cast<int>((position.y + radius - GameConfig::PLAY_AREA_TOP) / cellSize);
-        
-        minCellX = std::max(0, minCellX);
-        maxCellX = std::min(gridWidth - 1, maxCellX);
-        minCellY = std::max(0, minCellY);
-        maxCellY = std::min(gridHeight - 1, maxCellY);
-        
-        for (int y = minCellY; y <= maxCellY; ++y) {
-            for (int x = minCellX; x <= maxCellX; ++x) {
-                callback(grid[y * gridWidth + x]);
+    settextstyle(20, 0, _T("Arial"));
+    settextcolor(RGB(255, 255, 255));
+    //const TCHAR* restartText = _T("重新开始");  // 用正确的中文代替 "xxxx
+    const TCHAR* restartText = _T("xxxx");  // 用正确的中文代替 "xxxx"
+    int restartWidth = textwidth(restartText);
+    outtextxy(msgBoxX + msgBoxWidth/2 - btnWidth/2 - 20, 
+             btnY + (btnHeight - textheight(restartText))/2, restartText);
+    
+    // 返回菜单按钮
+    setfillcolor(RGB(150, 100, 100));
+    solidroundrect(msgBoxX + msgBoxWidth/2 + 20, btnY, 
+                  msgBoxX + msgBoxWidth/2 + btnWidth + 20, btnY + btnHeight, 10, 10);
+    
+    const TCHAR* menuText = _T("返回菜单");
+    int menuWidth = textwidth(menuText);
+    outtextxy(msgBoxX + msgBoxWidth/2 + 20 + (btnWidth - menuWidth)/2, 
+             btnY + (btnHeight - textheight(menuText))/2, menuText);
+    
+    // 显示当前帧
+    EndBatchDraw();
+    
+    // 等待用户点击
+    bool waitingForClick = true;
+    while (waitingForClick) {
+        // 使用阻塞方式获取消息，确保我们能接收到点击
+        ExMessage msg = getmessage(EX_MOUSE);
+        if (msg.message == WM_LBUTTONDOWN) {
+            // 检查是否点击"重新开始"按钮
+            if (msg.x >= msgBoxX + msgBoxWidth/2 - btnWidth - 20 && 
+                msg.x <= msgBoxX + msgBoxWidth/2 - 20 &&
+                msg.y >= btnY && msg.y <= btnY + btnHeight) {
+                
+                // 重新开始游戏
+                GameState::Instance().isGameRunning = true;
+                GameState::Instance().gameStartTime = 0.0f;
+                GameState::Instance().isInvulnerable = true;
+                GameState::Instance().foodEatenCount = 0;
+                
+                // 重新初始化游戏组件
+                InitGlobal();
+                InitializePlayerSnake();
+                for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; ++i) {
+                    InitFood(foodList, i, GameState::Instance().currentPlayerSpeed);
+                }
+                InitializeAISnakes();
+                
+                waitingForClick = false;
+            }
+            // 检查是否点击"返回菜单"按钮
+            else if (msg.x >= msgBoxX + msgBoxWidth/2 + 20 && 
+                     msg.x <= msgBoxX + msgBoxWidth/2 + btnWidth + 20 &&
+                     msg.y >= btnY && msg.y <= btnY + btnHeight) {
+                
+                // 返回主菜单
+                GameState::Instance().returnToMenu = true;
+                waitingForClick = false;
             }
         }
     }
-};
+}
+
+int main() {
+    // 初始化游戏窗口
+    initgraph(GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
+
+    // 播放开始动画
+    PlayStartAnimation();
+
+    LoadButton(); // 加载按钮
+
+    // 加载并缩放背景图像
+    IMAGE backgroundImage;
+    loadimage(&backgroundImage, _T(".\\Resource\\Greed-Snake-BG.png")); // 加载背景图像
+
+    // 缩放背景以适应窗口
+    IMAGE scaledBG;
+    scaledBG.Resize(GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
+    StretchBlt(GetImageHDC(&scaledBG), 0, 0, GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT,
+        GetImageHDC(&backgroundImage), 0, 0, backgroundImage.getwidth(), backgroundImage.getheight(), SRCCOPY);
+
+GAME_START_INTERFACE:
+    putimage(0, 0, &scaledBG); // 绘制背景
+
+    // 设置菜单文本样式
+    settextstyle(32, 0, _T("Arial"));
+    settextcolor(RGB(255, 255, 255));
+    setbkmode(TRANSPARENT);
+
+    // 显示主菜单
+    DrawMenu();
+
+    // 菜单循环
+    MenuOption selectedOption = MenuOption::START; // 选中的菜单选项
+    while (true) {
+        ExMessage m = getmessage(EX_MOUSE);
+        const Vector2 mousePos = Vector2(m.x, m.y);
+        if (m.message == WM_LBUTTONDOWN) {
+            if (buttonList[StartGame].IsOnButton(mousePos)) {
+                cleardevice();  // 清除屏幕而不是创建新窗口
+                goto START_GAME;  // 跳转到游戏初始化
+            }
+            else if (buttonList[Setting].IsOnButton(mousePos)) {
+                ShowSettings(); // 显示设置
+                putimage(0, 0, &scaledBG);  // 恢复背景
+                DrawMenu(); // 重新绘制菜单
+                continue;
+            }
+            else if (buttonList[About].IsOnButton(mousePos)) {
+                ShowAbout(); // 显示关于
+                putimage(0, 0, &scaledBG);  // 恢复背景
+                DrawMenu(); // 重新绘制菜单
+                continue;
+            }
+            else if (buttonList[Exit].IsOnButton(mousePos)) {
+                closegraph(); // 关闭图形窗口
+                return 0; // 退出程序
+            }
+        }
+    }
+
+START_GAME:
+    GameState::Instance().Initial();
+    InitGlobal();
+
+    PlayBackgroundMusic();
+
+    // 初始化玩家蛇
+    Vector2 centerPos(windowWidth / 2, (windowHeight / 2));
+    snake[0].position = centerPos;
+    snake[0].direction = Vector2(1, 0);
+    snake[0].radius = GameConfig::INITIAL_SNAKE_SIZE;
+    snake[0].color = HSLtoRGB(255, 255, 255);
+
+    // 初始化蛇身体段
+    snake[0].segments.resize(4);
+    for (int i = 0; i < snake[0].segments.size(); i++) {
+        snake[0].segments[i].position = centerPos - Vector2(1, 0) * ((i+1) * GameConfig::SNAKE_SEGMENT_SPACING);
+        snake[0].segments[i].direction = Vector2(1, 0);
+        snake[0].segments[i].radius = GameConfig::INITIAL_SNAKE_SIZE;
+        snake[0].segments[i].color = HSLtoRGB(255, 255, 255);
+    }
+
+    // 初始化食物位置
+    for (int i = 0; i < GameConfig::MAX_FOOD_COUNT; ++i) {
+        InitFood(foodList, i, GameState::Instance().currentPlayerSpeed);
+    }
+
+    // 初始化AI蛇
+    InitializeAISnakes();
+
+    // 启动绘制和输入线程
+    std::thread draw(Draw);
+    std::thread input(EnterChanges);
+
+    // 主游戏循环
+    while (true) {
+        // 更新游戏时间
+        if (GameState::Instance().isGameRunning) {
+            GameState::Instance().UpdateGameTime(GameState::Instance().deltaTime);
+        }
+        
+        // 处理游戏结束情况
+        if (!GameState::Instance().isGameRunning && GameState::Instance().showDeathMessage) {
+            // 首先等待绘制线程进入安全状态
+            Sleep(50);  // 简单的同步方法，让绘制线程完成当前帧
+            
+            // 显示死亡消息并重置标志
+            ShowDeathMessage(GameState::Instance().foodEatenCount);
+            GameState::Instance().showDeathMessage = false;
+            
+            // 如果选择了"返回主菜单"，退出游戏循环
+            if (GameState::Instance().returnToMenu) {
+                break;
+            }
+        }
+        
+        // 如果游戏仍在运行但没有死亡消息，继续游戏
+        if (!GameState::Instance().isGameRunning && !GameState::Instance().showDeathMessage) {
+            break;  // 如果游戏已经结束且死亡消息已处理，退出游戏循环
+        }
+        
+        Sleep(10);  // 减少CPU使用率
+    }
+
+    // 清理游戏资源
+    GameState::Instance().isGameRunning = false;  // 确保绘制线程退出
+    input.join();
+    draw.join();
+
+    StopBackgroundMusic();
+    Sleep(500);  // 短暂延迟确保资源清理
+    
+    if (GameState::Instance().returnToMenu) {
+        GameState::Instance().returnToMenu = false;
+        goto GAME_START_INTERFACE;  // 跳转到主菜单
+    }
+
+    closegraph(); // 关闭图形窗口
+    return 0; // 退出程序
+}
+
+void CheckCollisions() {
+    auto& gameState = GameState::Instance();
+    
+    // 简化检查玩家是否处于无敌状态的代码
+    if (!gameState.IsCollisionEnabled()) {
+        if (gameState.isInvulnerable) {
+            // 在蛇头附近显示无敌状态文字
+            settextcolor(RGB(255, 255, 0));  // 明黄色
+            settextstyle(18, 0, _T("微软雅黑"));
+            
+            Vector2 textPos = snake[0].position - gameState.camera.position;
+            textPos.y -= 40;  // 在蛇头上方显示
+            
+            // 显示剩余无敌时间
+            TCHAR invulnerableText[50];
+            float remainingInvulnerableTime = GameConfig::COLLISION_GRACE_PERIOD - gameState.gameStartTime;
+            if (remainingInvulnerableTime < 0) remainingInvulnerableTime = 0;
+            _stprintf(invulnerableText, _T("无敌: %.1fs"), remainingInvulnerableTime);
+            
+            // 计算文本宽度并居中显示
+            int textWidth = textwidth(invulnerableText);
+            outtextxy(textPos.x - textWidth/2, textPos.y, invulnerableText);
+        }
+        return;
+    }
+
+    CollisionManager::CheckCollisions(
+        snake, 
+        aiSnakeList.data(), 
+        static_cast<int>(aiSnakeList.size()), 
+        foodList, 
+        GameConfig::MAX_FOOD_COUNT
+    );
+
+    CheckGameState(snake);
+}
+
 

@@ -45,6 +45,9 @@
     <ClInclude Include="Food.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="StartInterface.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Button.cpp">
@@ -60,6 +63,24 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="GameState.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Collisions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Setting.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Setting.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="StartInterface.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Food.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,5 +111,10 @@
     <Media Include="Resource\Greed-Snake-Start-Animation.mp4">
       <Filter>资源文件</Filter>
     </Media>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Geed-Snake.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

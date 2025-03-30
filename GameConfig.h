@@ -1,4 +1,6 @@
+#pragma once
 #include "Vector2.h"
+#include <graphics.h>
 
 // 游戏配置参数
 namespace GameConfig {
@@ -29,8 +31,8 @@ namespace GameConfig {
     constexpr float AI_DIRECTION_CHANGE_TIME = 2.0f; // AI方向改变时间
     constexpr float AI_VIEW_RANGE = 300.0f; // AI视野范围
     constexpr float AI_SPAWN_RADIUS = 2000.0f;  // 添加生成半径以分散AI蛇
-    constexpr float AI_MIN_SPEED = 0.5f;        // 最小速度乘数
-    constexpr float AI_MAX_SPEED = 0.9f;        // 最大速度乘数
+    constexpr float AI_MIN_SPEED = 0.5f;        // AI最小速度倍率
+    constexpr float AI_MAX_SPEED = 0.9f;        // AI最大速度倍率
     constexpr float DEFAULT_VOLUME = 1.0f;  // 默认音量级别
     constexpr float VOLUME_STEP = 0.1f;     // 音量调整步长
     constexpr float MAX_SNAKE_SIZE = 20.0f; // 设置蛇的最大大小
@@ -39,7 +41,7 @@ namespace GameConfig {
     // 在GameConfig命名空间中添加碰撞相关配置
     constexpr float COLLISION_FLASH_DURATION = 0.5f;     // 碰撞闪烁持续时间
     constexpr bool ENABLE_COLLISION = true;              // 是否启用碰撞
-    constexpr float COLLISION_GRACE_PERIOD = 2.0f;       // 游戏开始后的无敌时间（秒）
+    constexpr float COLLISION_GRACE_PERIOD = 3.0f;       // 游戏开始后的无敌时间（秒）- 改为3秒
     
     // 难度相关配置
     namespace Difficulty {
@@ -71,3 +73,27 @@ namespace GameConfig {
         };
     }
 }
+
+enum ButtonType {
+    StartGame, // 开始游戏
+    Setting, // 设置
+    About, // 关于
+    Exit, // 退出
+    Num // 按钮数量
+};
+
+// 蛇段颜色生成类
+class ColorGenerator {
+public:
+    static int GenerateRandomColor() {
+        int red = GenerateColorComponent(); // 生成红色分量
+        int green = GenerateColorComponent(); // 生成绿色分量
+        int blue = GenerateColorComponent(); // 生成蓝色分量
+        return HSLtoRGB(red, green, blue); // 返回HSL颜色
+    }
+
+private:
+    static int GenerateColorComponent() {
+        return static_cast<int>((rand() % 5000 / 1000.0 + 1) * 255 / 6.0 + 0.5); // 生成颜色分量
+    }
+};

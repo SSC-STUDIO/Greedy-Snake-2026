@@ -1,3 +1,4 @@
+#pragma once
 #include "GameConfig.h"
 #include "GameState.h"
 #include "Vector2.h"
@@ -5,6 +6,8 @@
 #include "Rendering.h"
 #include "Food.h"
 #include <queue>
+
+struct FoodItem;
 
 struct SnakeSegment {
     Vector2 position; // 蛇段位置
@@ -28,6 +31,7 @@ public:
     int color = HSLtoRGB(255, 255, 255);
     float radius = GameConfig::INITIAL_SNAKE_SIZE;
     float currentTime = 0;
+    std::vector<Snake> segments;
 
     virtual void Update(float deltaTime);
 
@@ -40,6 +44,12 @@ public:
     Vector2 GetRecordTime() const;
     void UpdateBody(const Snake& lastBody, Snake& currentBody);
     virtual void Draw(const Camera& camera) const;
+
+    // 声明碰撞检测方法，但不在头文件实现
+    virtual bool CheckCollisionWith(const Snake& other) const;
+    
+    // 声明碰撞检测方法，但不在头文件实现
+    virtual bool CheckCollisionWithPoint(const Vector2& point, float pointRadius) const;
 };
 
 // 玩家蛇类
@@ -50,6 +60,7 @@ public:
     void Update(float deltaTime) override;
 
     void Draw(const Camera& camera) const override;
+    bool CheckCollisionWith(const Snake& other) const override;
 };
 
 // AI蛇类
@@ -59,6 +70,7 @@ public:
     float speedMultiplier = 1.0f; // 速度乘数
     float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION; // 添加攻击性因子
     std::vector<Snake> segments;  // 添加AI蛇身体的段
+    std::deque<Vector2> recordedPositions; // 添加位置历史记录，用于身体段的平滑跟随
 
     AISnake() {
         Init(); // 初始化
@@ -69,4 +81,5 @@ public:
     void Update(const std::vector<FoodItem>& foodItems, float deltaTime, const Vector2& playerHeadPos);
 
     void UpdateSegments();
+    bool CheckCollisionWith(const Snake& other) const override;
 };
