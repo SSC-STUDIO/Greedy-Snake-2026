@@ -60,6 +60,54 @@ void DrawEatAISnakeEffect(const Vector2& position, int color, float radius) {
     fillcircle(screenPos.x, screenPos.y, radius * 1.2f);
 }
 
+// Add helper function for AI snake hitting player animation effects
+void DrawAISnakeHitPlayerEffect(const Vector2& position, int color, float radius) {
+    // Get screen position
+    Vector2 screenPos = position - GameState::Instance().camera.position;
+    
+    // Draw warning/danger effect with red color
+    setlinecolor(RGB(255, 0, 0));
+    setlinestyle(PS_SOLID, 3);
+    
+    // Draw concentric circles that appear like a danger zone
+    for (int i = 1; i <= 4; i++) {
+        float expandRatio = 0.5f + i * 0.4f;
+        circle(screenPos.x, screenPos.y, radius * expandRatio);
+    }
+    
+    // Draw "X" shape to indicate collision/impact
+    int xSize = radius * 2.0f;
+    setlinestyle(PS_SOLID, 4);
+    line(screenPos.x - xSize, screenPos.y - xSize, screenPos.x + xSize, screenPos.y + xSize);
+    line(screenPos.x + xSize, screenPos.y - xSize, screenPos.x - xSize, screenPos.y + xSize);
+    
+    // Draw red impact flash
+    setfillcolor(RGB(255, 50, 50));
+    setfillstyle(BS_SOLID, NULL, NULL);
+    float flashRadius = radius * 2.0f;
+    fillcircle(screenPos.x, screenPos.y, flashRadius);
+    
+    // Draw white center to indicate impact point
+    setfillcolor(RGB(255, 255, 255));
+    fillcircle(screenPos.x, screenPos.y, radius * 0.8f);
+    
+    // Draw shockwave particles
+    int numParticles = 12;
+    for (int i = 0; i < numParticles; i++) {
+        float angle = (float)i / numParticles * 2 * 3.14159f;
+        float particleRadius = radius * 0.25f;
+        float distance = radius * 2.0f;
+        
+        // Calculate particle position
+        float x = screenPos.x + cos(angle) * distance;
+        float y = screenPos.y + sin(angle) * distance;
+        
+        // Draw particle
+        setfillcolor(RGB(255, 0, 0));
+        solidcircle(x, y, particleRadius);
+    }
+}
+
 bool CollisionManager::CheckCircleCollision(const Vector2& pos1, float radius1, const Vector2& pos2, float radius2) {
     float distance = (pos1 - pos2).GetLength();
     return distance < (radius1 + radius2);
@@ -172,6 +220,11 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
             
         if (playerHeadHitAI) {
             if (!gameState.isInvulnerable) {
+                // Create animation effect when player hits AI snake and dies
+                if (GameConfig::ANIMATIONS_ON) {
+                    DrawAISnakeHitPlayerEffect(snake[0].position, snake[0].color, snake[0].radius);
+                }
+                
                 // When player head collides with AI snake, if player has no invincibility, player dies
                 gameState.isCollisionFlashing = true;
                 gameState.collisionFlashTimer = GameConfig::COLLISION_FLASH_DURATION;
@@ -183,12 +236,14 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
         
         // Check if AI snake (both head and body) collided with player (head or body)
         bool aiCollidedWithPlayer = false;
+        Vector2 collisionPosition; // Store collision position for animation
         
         // First check if AI head hit player head
         if (CheckCircleCollision(
             aiSnake.position, aiSnake.radius,
             snake[0].position, snake[0].radius)) {
             aiCollidedWithPlayer = true;
+            collisionPosition = (aiSnake.position + snake[0].position) * 0.5f; // Calculate midpoint of collision
         }
         
         // Check if AI head hit player body segments
@@ -198,6 +253,7 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
                     aiSnake.position, aiSnake.radius,
                     snake[0].segments[j].position, snake[0].segments[j].radius)) {
                     aiCollidedWithPlayer = true;
+                    collisionPosition = (aiSnake.position + snake[0].segments[j].position) * 0.5f; // Calculate midpoint of collision
                     break;
                 }
             }
@@ -210,6 +266,7 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
                     aiSnake.segments[j].position, aiSnake.segments[j].radius,
                     snake[0].position, snake[0].radius)) {
                     aiCollidedWithPlayer = true;
+                    collisionPosition = (aiSnake.segments[j].position + snake[0].position) * 0.5f; // Calculate midpoint of collision
                     break;
                 }
             }
@@ -223,6 +280,7 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
                         aiSnake.segments[j].position, aiSnake.segments[j].radius,
                         snake[0].segments[k].position, snake[0].segments[k].radius)) {
                         aiCollidedWithPlayer = true;
+                        collisionPosition = (aiSnake.segments[j].position + snake[0].segments[k].position) * 0.5f; // Calculate midpoint of collision
                         break;
                     }
                 }
@@ -232,6 +290,11 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
         
         // If AI snake collided with any part of player snake, convert AI to food
         if (aiCollidedWithPlayer) {
+            // Show animation effect for AI-player collision
+            if (GameConfig::ANIMATIONS_ON) {
+                DrawAISnakeHitPlayerEffect(collisionPosition, aiSnake.color, aiSnake.radius);
+            }
+            
             // Save the AI snake's data for animation effects
             Vector2 aiHeadPos = aiSnake.position;
             int aiColor = aiSnake.color;
@@ -372,6 +435,25 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
             if (CheckCircleCollision(
                 aiSnakes[i].position, aiSnakes[i].radius,
                 aiSnakes[j].position, aiSnakes[j].radius)) {
+
+                // Calculate collision position (midpoint between the two snake heads)
+                Vector2 collisionPos = (aiSnakes[i].position + aiSnakes[j].position) * 0.5f;
+                
+                // Show collision animation effect
+                if (GameConfig::ANIMATIONS_ON) {
+                    // Use a blend of the two snake colors for the collision effect
+                    int color1 = aiSnakes[i].color;
+                    int color2 = aiSnakes[j].color;
+                    int blendedColor = RGB(
+                        (GetRValue(color1) + GetRValue(color2)) / 2,
+                        (GetGValue(color1) + GetGValue(color2)) / 2,
+                        (GetBValue(color1) + GetBValue(color2)) / 2
+                    );
+                    
+                    // Draw smaller impact effect at collision point
+                    float effectRadius = (aiSnakes[i].radius + aiSnakes[j].radius) / 2;
+                    DrawAISnakeHitPlayerEffect(collisionPos, blendedColor, effectRadius);
+                }
 
                 // Collision rebound - snakes move in opposite directions
                 Vector2 collisionDir = (aiSnakes[i].position - aiSnakes[j].position).GetNormalize();

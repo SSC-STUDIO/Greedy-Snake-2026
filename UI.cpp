@@ -21,7 +21,7 @@ void ShowAbout() {
     outtextxy(50, 250, _T("Controls:"));
     outtextxy(50, 280, _T("- Arrow keys or mouse to control the snake"));
     outtextxy(50, 310, _T("- Hold left mouse button to accelerate"));
-    outtextxy(50, 340, _T("- ESC to end game"));
+    outtextxy(50, 340, _T("- ESC to pause game"));
 
     // Add a Back button instead of waiting for any key
     int aboutButtonWidth = 150;

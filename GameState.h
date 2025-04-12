@@ -29,6 +29,7 @@ public:
         instance.recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL;
         instance.isMouseControlEnabled = true;
         instance.isGameRunning = true;
+        instance.isPaused = false;
         instance.playerPosition = Vector2();
         instance.targetDirection = Vector2(0, 1);
         instance.deltaTime = 1.0f / 30.0f;
@@ -55,6 +56,7 @@ public:
     float recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // Record interval
     bool isMouseControlEnabled = true; // Whether mouse control is enabled
     bool isGameRunning = true; // Whether the game is running
+    bool isPaused = false; // Whether the game is paused
     Camera camera; // Camera
     Vector2 playerPosition; // Player position
     Vector2 targetDirection{ 0, 1 }; // Target direction
@@ -99,6 +101,8 @@ public:
     void UpdateGameTime(float dt);
 
     void ShowDeathMessage(); // Modified to non-const, so it can modify member variables
+
+    void ShowPauseMenu();
 
     // Add mutex for thread synchronization
     std::mutex stateMutex;

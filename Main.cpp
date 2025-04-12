@@ -153,23 +153,37 @@ bool graphicsInitialized = false;
 
 // Modify the Draw function to ensure thread safety when initializing graphics
 void Draw() {
-    
     // Set graphics as initialized
     graphicsInitialized = true;
     
     // The rest of the Draw function...
     BeginBatchDraw();
     while (GameState::Instance().isGameRunning) {
-        // Update camera
-        UpdateCamera();
-
-        // Draw game area
-        DrawGameArea();
+        auto& gameState = GameState::Instance();
         
-        // Update and draw game objects
-        UpdatePlayerSnake(GameState::Instance().deltaTime);
-        UpdateAISnakes(GameState::Instance().deltaTime);
-        UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
+        // Skip all updates if the game is paused, just maintain the current display
+        if (!gameState.isPaused) {
+            // Update camera
+            UpdateCamera();
+            
+            // Update game objects only when not paused
+            UpdatePlayerSnake(gameState.deltaTime);
+            UpdateAISnakes(gameState.deltaTime);
+            UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
+            
+            // Check collision and game state only when not paused
+            CheckGameState(snake);  
+            CheckCollisions();
+            
+            // Update animation timer only when not paused
+            animationTimer += gameState.deltaTime;
+            if (animationTimer > 1000.0f) {
+                animationTimer = 0.0f;
+            }
+        }
+        
+        // Always draw the current state of the game
+        DrawGameArea();
         
         // Create temporary PlayerSnake object to draw player snake
         PlayerSnake playerSnakeObj;
@@ -189,22 +203,13 @@ void Draw() {
                           static_cast<int>(aiSnakeList.size()), 
                           playerSnakeObj);
 
-        // Update growth animation effect
-        UpdateGrowthAnimation(GameState::Instance().deltaTime);
+        // Update growth animation effect only when not paused
+        if (!gameState.isPaused) {
+            UpdateGrowthAnimation(gameState.deltaTime);
+        }
                           
         // Draw UI elements
         DrawUI();
-
-        CheckGameState(snake);  
-        
-        // Check collisions
-        CheckCollisions();
-        
-        // Update animation timer
-        animationTimer += GameState::Instance().deltaTime;
-        if (animationTimer > 1000.0f) {
-            animationTimer = 0.0f;
-        }
         
         FlushBatchDraw();
         // Add frame rate control
@@ -316,7 +321,17 @@ int main() {
             // Game running loop
             bool gameRunning = true;
             while (gameRunning) {
-                // Update game time
+                // Check for pause - when paused, wait for user action before continuing
+                if (GameState::Instance().isPaused) {
+                    // Display pause menu and wait for user input
+                    GameState::Instance().ShowPauseMenu();
+                    
+                    // Continue the loop after the user has made a selection
+                    // The ShowPauseMenu function only returns after a selection is made
+                    continue;
+                }
+                
+                // Update game time - only happens when not paused
                 if (GameState::Instance().isGameRunning) {
                     GameState::Instance().UpdateGameTime(GameState::Instance().deltaTime);
                 }

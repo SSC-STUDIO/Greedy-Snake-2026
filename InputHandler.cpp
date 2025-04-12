@@ -46,7 +46,7 @@ void EnterChanges() {
                     GameState::Instance().targetDirection = Vector2(1, 0);
                     break;
                 case VK_ESCAPE:
-                    GameState::Instance().isGameRunning = false;
+                    GameState::Instance().isPaused = true;
                     break;
                 }
                 break;

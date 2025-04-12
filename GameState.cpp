@@ -77,6 +77,9 @@ bool GameState::IsCollisionEnabled() const
 
 void GameState::UpdateGameTime(float dt)
 {
+    // Don't update time if game is paused
+    if (isPaused) return;
+    
     gameStartTime += dt;
     
     if (isInvulnerable && gameStartTime >= GameConfig::COLLISION_GRACE_PERIOD) {
@@ -184,4 +187,142 @@ void GameState::ShowDeathMessage() {
         
         Sleep(50);
     }
+}
+
+void GameState::ShowPauseMenu() {
+    // Draw semi-transparent overlay
+    setfillcolor(RGB(0, 0, 0, 180)); // Semi-transparent black
+    solidrectangle(0, 0, GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
+    
+    // Draw pause menu box
+    int pauseBoxWidth = 400;
+    int pauseBoxHeight = 300;
+    int pauseBoxX = (GameConfig::WINDOW_WIDTH - pauseBoxWidth) / 2;
+    int pauseBoxY = (GameConfig::WINDOW_HEIGHT - pauseBoxHeight) / 2;
+    
+    // Draw the pause menu box
+    setfillcolor(RGB(40, 40, 40));
+    solidroundrect(pauseBoxX, pauseBoxY, pauseBoxX + pauseBoxWidth, pauseBoxY + pauseBoxHeight, 15, 15);
+    
+    // Draw menu title
+    settextstyle(32, 0, _T("Arial"));
+    settextcolor(WHITE);
+    const TCHAR* pauseTitle = _T("GAME PAUSED");
+    int titleWidth = textwidth(pauseTitle);
+    outtextxy(pauseBoxX + (pauseBoxWidth - titleWidth) / 2, pauseBoxY + 30, pauseTitle);
+    
+    // Draw menu buttons
+    int btnWidth = 280;
+    int btnHeight = 50;
+    int btnX = pauseBoxX + (pauseBoxWidth - btnWidth) / 2;
+    int btnY = pauseBoxY + 100;
+    int btnSpacing = 20;
+    
+    // Resume button
+    setfillcolor(RGB(60, 120, 60));
+    solidroundrect(btnX, btnY, btnX + btnWidth, btnY + btnHeight, 10, 10);
+    settextstyle(24, 0, _T("Arial"));
+    const TCHAR* resumeText = _T("Resume Game");
+    int resumeWidth = textwidth(resumeText);
+    outtextxy(btnX + (btnWidth - resumeWidth) / 2, btnY + (btnHeight - textheight(resumeText)) / 2, resumeText);
+    
+    // Main menu button
+    btnY += btnHeight + btnSpacing;
+    setfillcolor(RGB(80, 80, 150));
+    solidroundrect(btnX, btnY, btnX + btnWidth, btnY + btnHeight, 10, 10);
+    const TCHAR* menuText = _T("Return to Main Menu");
+    int menuWidth = textwidth(menuText);
+    outtextxy(btnX + (btnWidth - menuWidth) / 2, btnY + (btnHeight - textheight(menuText)) / 2, menuText);
+    
+    // Exit game button
+    btnY += btnHeight + btnSpacing;
+    setfillcolor(RGB(150, 60, 60));
+    solidroundrect(btnX, btnY, btnX + btnWidth, btnY + btnHeight, 10, 10);
+    const TCHAR* exitText = _T("Exit Game");
+    int exitWidth = textwidth(exitText);
+    outtextxy(btnX + (btnWidth - exitWidth) / 2, btnY + (btnHeight - textheight(exitText)) / 2, exitText);
+    
+    // Draw key hints
+    settextstyle(16, 0, _T("Arial"));
+    const TCHAR* promptText = _T("Press ESC to resume, M for menu, Q to quit");
+    int promptWidth = textwidth(promptText);
+    outtextxy(pauseBoxX + (pauseBoxWidth - promptWidth) / 2, 
+              pauseBoxY + pauseBoxHeight - 30,
+              promptText);
+    
+    FlushBatchDraw();
+    
+    // Process user input for pause menu
+    bool pauseActive = true;
+    ExMessage msg;
+    flushmessage(); // Clear any pending messages to ensure we only process new inputs
+    
+    // Button areas
+    int resumeBtnY = pauseBoxY + 100;
+    int menuBtnY = resumeBtnY + btnHeight + btnSpacing;
+    int exitBtnY = menuBtnY + btnHeight + btnSpacing;
+    
+    // Keep looping until the user makes a selection
+    // This is critical to block the main thread until a choice is made
+    while (pauseActive) {
+        // Check for key presses
+        if (_kbhit()) {
+            int key = _getch();
+            if (key == VK_ESCAPE) {
+                this->isPaused = false;
+                pauseActive = false;
+            }
+            else if (key == 'm' || key == 'M') {
+                this->isPaused = false;
+                this->isGameRunning = false;
+                this->returnToMenu = true;
+                pauseActive = false;
+            }
+            else if (key == 'q' || key == 'Q') {
+                this->isPaused = false;
+                this->isGameRunning = false;
+                pauseActive = false;
+                exit(0); // Force exit the game
+            }
+        }
+        
+        // Poll for mouse events
+        if (peekmessage(&msg, EX_MOUSE)) {
+            if (msg.message == WM_LBUTTONDOWN) {
+                // Check if clicked on resume button
+                if (msg.x >= btnX && msg.x <= btnX + btnWidth && 
+                    msg.y >= resumeBtnY && msg.y <= resumeBtnY + btnHeight) {
+                    this->isPaused = false;
+                    pauseActive = false;
+                }
+                
+                // Check if clicked on main menu button
+                if (msg.x >= btnX && msg.x <= btnX + btnWidth && 
+                    msg.y >= menuBtnY && msg.y <= menuBtnY + btnHeight) {
+                    this->isPaused = false;
+                    this->isGameRunning = false;
+                    this->returnToMenu = true;
+                    pauseActive = false;
+                }
+                
+                // Check if clicked on exit button
+                if (msg.x >= btnX && msg.x <= btnX + btnWidth && 
+                    msg.y >= exitBtnY && msg.y <= exitBtnY + btnHeight) {
+                    this->isPaused = false;
+                    this->isGameRunning = false;
+                    pauseActive = false;
+                    exit(0); // Force exit the game
+                }
+            }
+        }
+        
+        // Redraw the pause menu to ensure it remains visible
+        // This is important to prevent the menu from being overwritten by other drawing operations
+        FlushBatchDraw();
+        
+        Sleep(50); // Reduce CPU usage but still be responsive
+    }
+    
+    // Make sure the pause flag is cleared when exiting
+    this->isPaused = false;
 }

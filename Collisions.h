@@ -20,3 +20,4 @@ public:
                                FoodItem* foodList, int foodCount);
 };
 void DrawEatAISnakeEffect(const Vector2& position, int color, float radius);
+void DrawAISnakeHitPlayerEffect(const Vector2& position, int color, float radius);
