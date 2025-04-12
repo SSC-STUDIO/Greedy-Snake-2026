@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{d380e808-4a2f-4957-9e22-cd34110db774}</ProjectGuid>
+    <ProjectGuid>{a0c6b846-3550-42be-9d43-ce83baf894bc}</ProjectGuid>
     <RootNamespace>GreedSnakeRemake</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -132,23 +132,32 @@
     <ClInclude Include="Collisions.h" />
     <ClInclude Include="Food.h" />
     <ClInclude Include="GameConfig.h" />
+    <ClInclude Include="GameInitializer.h" />
     <ClInclude Include="GameState.h" />
+    <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Rendering.h" />
+    <ClInclude Include="Setting.h" />
     <ClInclude Include="Snake.h" />
+    <ClInclude Include="SoundManager.h" />
     <ClInclude Include="StartInterface.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="Vector2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="Collisions.cpp" />
     <ClCompile Include="Food.cpp" />
+    <ClCompile Include="GameConfig.cpp" />
+    <ClCompile Include="GameInitializer.cpp" />
     <ClCompile Include="GameState.cpp" />
+    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="Setting.cpp" />
-    <ClCompile Include="Setting.h" />
     <ClCompile Include="Snake.cpp" />
+    <ClCompile Include="SoundManager.cpp" />
     <ClCompile Include="StartInterface.cpp" />
+    <ClCompile Include="UI.cpp" />
     <ClCompile Include="Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>

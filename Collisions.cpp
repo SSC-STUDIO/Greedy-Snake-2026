@@ -1,6 +1,7 @@
 #include "Collisions.h"
 #include "Snake.h"
-#pragma warning(disable: 4996)	 // 禁用关于 _tcscpy 和 _stprintf 的安全警告
+#include "Food.h"
+#pragma warning(disable: 4996)	 // Disable security warnings for _tcscpy and _stprintf
 
 bool CollisionManager::CheckCircleCollision(const Vector2& pos1, float radius1, const Vector2& pos2, float radius2) {
     float distance = (pos1 - pos2).GetLength();
@@ -17,45 +18,95 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
 
     if (!gameState.IsCollisionEnabled()) {
         if (gameState.isInvulnerable) {
-            // 在蛇头附近显示无敌状态
-            settextcolor(RGB(255, 255, 0));  // 明黄色
+            // Display invincibility status near snake head
+            settextcolor(RGB(255, 255, 0));  // Bright yellow
             settextstyle(18, 0, _T("微软雅黑"));
 
             Vector2 textPos = snake[0].position - GameState::Instance().camera.position;
-            textPos.y -= 40;  // 在蛇头上方显示
+            textPos.y -= 40;  // Display above snake head
 
-            // 显示剩余无敌时间
+            // Show remaining invincibility time
             TCHAR invulnerableText[50];
             float remainingInvulnerableTime = GameConfig::COLLISION_GRACE_PERIOD - gameState.gameStartTime;
             if (remainingInvulnerableTime < 0) remainingInvulnerableTime = 0;
-            _stprintf(invulnerableText, _T("无敌: %.1fs"), remainingInvulnerableTime);
+            _stprintf(invulnerableText, _T("Invincible: %.1fs"), remainingInvulnerableTime);
 
-            // 计算文本宽度并居中显示
+            // Calculate text width and center the display
             int textWidth = textwidth(invulnerableText);
             outtextxy(textPos.x - textWidth / 2, textPos.y, invulnerableText);
         }
         return;
     }
 
-    // 1. 检查玩家与AI蛇的碰撞
-    bool playerHitAI = false;
+    // 1. Check player collision with AI snakes
     for (int i = 0; i < aiSnakeCount; ++i) {
-        const AISnake& aiSnake = aiSnakes[i];
-        if (aiSnake.CheckCollisionWith(snake[0]) || snake[0].CheckCollisionWith(aiSnake)) {
-            playerHitAI = true;
-            break;
+        AISnake& aiSnake = aiSnakes[i];
+        
+        // Skip AI snakes that have been removed
+        if (aiSnake.radius <= 0) continue;
+        
+        // Check collision between player head and AI snake
+        bool playerHeadHitAI = CheckCircleCollision(
+            snake[0].position, snake[0].radius,
+            aiSnake.position, aiSnake.radius);
+            
+        if (playerHeadHitAI) {
+            if (!gameState.isInvulnerable) {
+                // When player head collides with AI snake, if player has no invincibility, player dies
+                gameState.isCollisionFlashing = true;
+                gameState.collisionFlashTimer = GameConfig::COLLISION_FLASH_DURATION;
+                gameState.isGameRunning = false;
+                gameState.showDeathMessage = true;
+                gameState.finalScore = gameState.foodEatenCount;
+            }
+        }
+        
+        // Check if AI snake head collided with player body
+        bool aiHitPlayerBody = false;
+        
+        // Check collision between AI snake and player body (excluding head, only check body segments)
+        for (size_t j = 0; j < snake[0].segments.size(); ++j) {
+            if (CheckCircleCollision(
+                aiSnake.position, aiSnake.radius,
+                snake[0].segments[j].position, snake[0].segments[j].radius)) {
+                aiHitPlayerBody = true;
+                break;
+            }
+        }
+        
+        // If AI snake head hits player body, convert AI snake to food
+        if (aiHitPlayerBody) {
+            // Find an available food slot
+            for (int j = 0; j < foodCount; ++j) {
+                if (foodList[j].collisionRadius <= 0) {
+                    // Set AI snake position as food position
+                    foodList[j].position = aiSnake.position;
+                    foodList[j].colorValue = aiSnake.color;
+                    foodList[j].collisionRadius = aiSnake.radius * 0.8f; // Food slightly smaller
+                    
+                    // Remove this AI snake
+                    aiSnake.radius = 0; // Set radius to 0 to indicate removal
+                    break;
+                }
+            }
         }
     }
 
-    // 2. 检查AI蛇之间的碰撞
+    // 2. Check collisions between AI snakes
     for (int i = 0; i < aiSnakeCount; i++) {
+        // Skip AI snakes that have been removed
+        if (aiSnakes[i].radius <= 0) continue;
+        
         for (int j = i + 1; j < aiSnakeCount; j++) {
-            // 检查头与头的碰撞
+            // Skip AI snakes that have been removed
+            if (aiSnakes[j].radius <= 0) continue;
+            
+            // Check head-to-head collision
             if (CheckCircleCollision(
                 aiSnakes[i].position, aiSnakes[i].radius,
                 aiSnakes[j].position, aiSnakes[j].radius)) {
 
-                // 碰撞反弹 - 两蛇向相反方向移动
+                // Collision rebound - snakes move in opposite directions
                 Vector2 collisionDir = (aiSnakes[i].position - aiSnakes[j].position).GetNormalize();
                 aiSnakes[i].direction = collisionDir;
                 aiSnakes[j].direction = -collisionDir;
@@ -63,53 +114,42 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
         }
     }
 
-    // 3. 如果玩家与AI蛇碰撞
-    if (playerHitAI) {
-        gameState.isCollisionFlashing = true;
-        gameState.collisionFlashTimer = GameConfig::COLLISION_FLASH_DURATION;
-
-        // 玩家死亡
-        if (!gameState.isInvulnerable) {
-            // 简化：只设置游戏状态和死亡消息标志
-            gameState.isGameRunning = false;
-            gameState.showDeathMessage = true;
-            gameState.finalScore = gameState.foodEatenCount;  // 保存最终得分
-        }
-    }
-
-    // 4. 检查玩家与食物的碰撞
+    // 3. Check player collision with food
     for (int i = 0; i < foodCount; i++) {
-        if (foodList[i].collisionRadius > 0 && // 只检查有效的食物
+        if (foodList[i].collisionRadius > 0 && // Only check valid food
             CheckCircleCollision(
                 snake[0].position, snake[0].radius,
                 foodList[i].position, foodList[i].collisionRadius)) {
 
-            // 将食物标记为已吃掉
+            // Mark food as eaten
             foodList[i].collisionRadius = 0;
 
-            // 处理食物收集
+            // Handle food collection
             gameState.AddFoodEaten();
 
-            // 增长蛇身
+            // Grow snake body
             float growthAmount = (gameState.foodEatenCount == 0) ?
                 GameConfig::SNAKE_GROWTH_LARGE : GameConfig::SNAKE_GROWTH_SMALL;
             snake[0].radius = min(snake[0].radius + growthAmount, GameConfig::MAX_SNAKE_SIZE);
         }
     }
 
-    // 5. 检查AI蛇与食物的碰撞
+    // 4. Check AI snake collision with food
     for (int i = 0; i < aiSnakeCount; ++i) {
+        // Skip AI snakes that have been removed
+        if (aiSnakes[i].radius <= 0) continue;
+        
         AISnake& aiSnake = aiSnakes[i];
         for (int j = 0; j < foodCount; j++) {
-            if (foodList[j].collisionRadius > 0 && // 只检查有效的食物
+            if (foodList[j].collisionRadius > 0 && // Only check valid food
                 CheckCircleCollision(
                     aiSnake.position, aiSnake.radius,
                     foodList[j].position, foodList[j].collisionRadius)) {
 
-                // 将食物标记为已吃掉
+                // Mark food as eaten
                 foodList[j].collisionRadius = 0;
 
-                // AI蛇吃到食物后也会变大
+                // AI snake also grows after eating food
                 aiSnake.radius = min(aiSnake.radius + GameConfig::SNAKE_GROWTH_SMALL, GameConfig::MAX_SNAKE_SIZE);
             }
         }

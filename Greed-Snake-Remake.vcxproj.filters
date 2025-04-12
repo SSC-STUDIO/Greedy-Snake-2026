@@ -18,31 +18,46 @@
     <ClInclude Include="Button.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Collisions.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="GameConfig.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="GameState.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Rendering.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Snake.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Vector2.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Camera.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Collisions.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Food.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="GameConfig.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameInitializer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GameState.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="InputHandler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Setting.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Snake.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SoundManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="StartInterface.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,34 +65,46 @@
     <ClCompile Include="Button.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Main.cpp">
+    <ClCompile Include="Collisions.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Vector2.cpp">
+    <ClCompile Include="Food.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Snake.cpp">
+    <ClCompile Include="GameConfig.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameInitializer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="GameState.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Collisions.cpp">
+    <ClCompile Include="InputHandler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Setting.h">
-      <Filter>头文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Setting.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Rendering.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Setting.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Snake.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SoundManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="StartInterface.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Food.cpp">
+    <ClCompile Include="UI.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Vector2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

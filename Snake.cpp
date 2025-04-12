@@ -3,17 +3,17 @@
 
 Vector2 SnakeSegment::GetVelocity() const
 {
-    return direction.GetNormalize() * GameState::Instance().currentPlayerSpeed; // 获取速度
+    return direction.GetNormalize() * GameState::Instance().currentPlayerSpeed; // Get velocity
 }
 bool SnakeSegment::CanRecordPosition() const {
-    return timeSinceLastRecord >= GameState::Instance().recordInterval; // 是否需要记录位置
+    return timeSinceLastRecord >= GameState::Instance().recordInterval; // Check if position needs to be recorded
 }
 
 void Snake::Update(float deltaTime)
 {
     currentTime += deltaTime;
 
-    // 更新逻辑
+    // Update logic
     if (IsBeginRecord()) {
         RecordPos();
         currentTime = 0;
@@ -39,7 +39,7 @@ void Snake::RecordPos()
 
     if (distanceToLast >= GameConfig::SNAKE_SEGMENT_SPACING) {
         posRecords.push(position);
-        // 需要记录的记录
+        // Record needed positions
         while (posRecords.size() > 2) {
             posRecords.pop();
         }
@@ -56,11 +56,11 @@ Vector2 Snake::GetRecordTime() const
 
 void Snake::UpdateBody(const Snake& lastBody, Snake& currentBody)
 {
-    Vector2 targetPos = lastBody.GetRecordTime(); // 获取目标位置
-    Vector2 direction = (targetPos - currentBody.position).GetNormalize(); // 计算方向
+    Vector2 targetPos = lastBody.GetRecordTime(); // Get target position
+    Vector2 direction = (targetPos - currentBody.position).GetNormalize(); // Calculate direction
 
-    // 计算固定位置
-    currentBody.position = targetPos - direction * GameConfig::SNAKE_SEGMENT_SPACING; // 更新位置
+    // Calculate fixed position
+    currentBody.position = targetPos - direction * GameConfig::SNAKE_SEGMENT_SPACING; // Update position
 }
 
 void Snake::Draw(const Camera& camera) const
@@ -73,7 +73,7 @@ void PlayerSnake::Update(float deltaTime)
 {
     Snake::Update(deltaTime);
 
-    // 更新身体
+    // Update body segments
     for (size_t i = 0; i < segments.size(); i++) {
         if (i == 0) {
             UpdateBody(*this, segments[i]);
@@ -87,15 +87,15 @@ void PlayerSnake::Update(float deltaTime)
 
 void PlayerSnake::Draw(const Camera& camera) const
 {
-    // 绘制身体
+    // Draw body segments
     for (const auto& segment : segments) {
         segment.Draw(camera);
     }
 
-    // 绘制头部
+    // Draw head
     Snake::Draw(camera);
 
-    // 绘制眼睛
+    // Draw eyes
     Vector2 windowPos = position - camera.position;
     DrawSnakeEyes(windowPos, direction, radius);
 }
@@ -104,48 +104,48 @@ void AISnake::Init()
 {
     segments.resize(5);
     
-    // 初始化段和记录
+    // Initialize segments and records
     for (auto& segment : segments) {
         segment.posRecords = std::queue<Vector2>();
     }
     
-    // 清空历史记录队列
+    // Clear history record queue
     while (!posRecords.empty()) {
         posRecords.pop();
     }
     
-    // 使用与玩家蛇相同的记录逻辑，而不是维护recordedPositions
+    // Use the same recording logic as player snake, rather than maintaining recordedPositions
     currentTime = 0;
 }
 
 void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, const Vector2& playerHeadPos)
 {
-    // AI行为决策部分 - 确定方向
+    // AI behavior decision part - determine direction
     directionChangeTimer += deltaTime;
     
-    // 检查是否需要改变方向
+    // Check if direction needs to be changed
     if (directionChangeTimer >= GameConfig::AI_DIRECTION_CHANGE_TIME) {
-        // 根据攻击性确定行为
+        // Determine behavior based on aggression factor
         if (rand() % 100 < static_cast<int>(aggressionFactor * 100)) {
-            // 高攻击性时偏向追逐玩家
+            // When aggression is high, tend to chase the player
             Vector2 toPlayer = playerHeadPos - position;
             float distToPlayer = toPlayer.GetLength();
             
             if (distToPlayer < GameConfig::AI_VIEW_RANGE * 2) {
-                // 玩家在视野范围内时追逐
+                // Chase player when in view range
                 direction = toPlayer.GetNormalize();
             } else {
-                // 随机移动
+                // Random movement
                 float angle = (rand() % 360) * 3.14159f / 180.0f;
                 direction = Vector2(cos(angle), sin(angle));
             }
         } else {
-            // 低攻击性时偏向寻找食物
+            // When aggression is low, tend to look for food
             float closestDist = GameConfig::AI_VIEW_RANGE;
             Vector2 closestFood = position;
             bool foodFound = false;
             
-            // 找最近的食物
+            // Find the nearest food
             for (const auto& food : foodItems) {
                 if (food.collisionRadius <= 0) continue;
                 
@@ -160,7 +160,7 @@ void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, co
             if (foodFound) {
                 direction = (closestFood - position).GetNormalize();
             } else {
-                // 随机移动
+                // Random movement
                 float angle = (rand() % 360) * 3.14159f / 180.0f;
                 direction = Vector2(cos(angle), sin(angle));
             }
@@ -169,7 +169,7 @@ void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, co
         directionChangeTimer = 0.0f;
     }
     
-    // 避开边界
+    // Avoid boundaries
     const float borderAvoidDistance = 200.0f;
     Vector2 borderAvoidDir(0, 0);
     int borderCount = 0;
@@ -199,14 +199,14 @@ void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, co
         direction = (direction + borderAvoidDir * 3.0f).GetNormalize();
     }
     
-    // 修改速度计算，将AI蛇的速度设置为玩家速度的0.25倍
+    // Modify speed calculation, set AI snake speed to 0.25x player speed
     Vector2 velocity = direction.GetNormalize() * GameState::Instance().currentPlayerSpeed * 0.25f;
     position = position + velocity * deltaTime;
     
-    // 使用基类的Update来处理位置记录
+    // Use base class Update to handle position recording
     Snake::Update(deltaTime);
 
-    // 更新身体段，使用与PlayerSnake相同的逻辑
+    // Update body segments using the same logic as PlayerSnake
     for (size_t i = 0; i < segments.size(); i++) {
         if (i == 0) {
             UpdateBody(*this, segments[i]);
@@ -219,11 +219,11 @@ void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, co
 }
 
 bool PlayerSnake::CheckCollisionWith(const Snake& other) const {
-    // 首先检查头部碰撞
+    // First check head collision
     if (Snake::CheckCollisionWith(other))
         return true;
         
-    // 然后检查身体段
+    // Then check body segments
     for (const auto& segment : segments) {
         if (CollisionManager::CheckCircleCollision(
                 other.position, other.radius,
@@ -236,11 +236,11 @@ bool PlayerSnake::CheckCollisionWith(const Snake& other) const {
 }
 
 bool AISnake::CheckCollisionWith(const Snake& other) const {
-    // 首先检查头部碰撞
+    // First check head collision
     if (Snake::CheckCollisionWith(other))
         return true;
         
-    // 然后检查身体段
+    // Then check body segments
     for (const auto& segment : segments) {
         if (CollisionManager::CheckCircleCollision(
                 other.position, other.radius,
@@ -253,7 +253,7 @@ bool AISnake::CheckCollisionWith(const Snake& other) const {
 }
 
 bool Snake::CheckCollisionWith(const Snake& other) const {
-    // 基类只检查头部碰撞
+    // Base class only checks head collision
     return CollisionManager::CheckCircleCollision(
         position, radius, other.position, other.radius);
 }

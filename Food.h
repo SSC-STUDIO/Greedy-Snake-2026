@@ -4,14 +4,14 @@
 #include "GameState.h" 
 #include <graphics.h>
 
-// 食物结构体
+// Food structure
 struct FoodItem {
-    Vector2 position; // 食物位置
-    int colorValue = HSLtoRGB(255, 255, 255);  // 默认白色
-    float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE;    // 默认碰撞半径
+    Vector2 position; // Food position
+    int colorValue = HSLtoRGB(255, 255, 255);  // Default white
+    float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE;    // Default collision radius
 };
 
-// 将重复的食物位置生成逻辑提取为函数
+// Extract repeated food position generation logic into a function
 Vector2 GenerateRandomPosition();
 
 void InitFood(FoodItem* foodList, int i, float speed);

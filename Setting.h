@@ -4,16 +4,21 @@
 #include <tchar.h>
 #include <windows.h>
 #pragma comment(lib, "winmm.lib") 
-#pragma warning(disable: 4996)	 // 禁用关于 _tcscpy 和 _stprintf 的安全警告
+#pragma warning(disable: 4996)	 // Disable security warnings for _tcscpy and _stprintf functions
 
-// 设置结构
+// Game settings structure
 struct GameSettings {
-    float musicVolume = GameConfig::DEFAULT_VOLUME; // 音乐音量
-    bool enableSound = true; // 启用声音
-    int difficulty = 1;  // 1: 简单, 2: 普通, 3: 困难
-    float snakeSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // 蛇速度
+    float volume;         // Volume (0.0-1.0)
+    int difficulty;       // Difficulty (0-Easy, 1-Normal, 2-Hard)
+    bool soundOn;         // Sound toggle
+    int snakeSpeed;       // Snake speed (0-Slow, 1-Normal, 2-Fast)
 };
 
+// Set volume (0.0-1.0)
 void SetVolume(float volume);
+
+// Apply settings
 void ApplySettings(const GameSettings& settings);
+
+// Display settings interface
 void ShowSettings(int windowWidth, int windowHeight);

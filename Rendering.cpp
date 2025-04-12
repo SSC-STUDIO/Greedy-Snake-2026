@@ -1,32 +1,32 @@
 #include "Rendering.h"
-#pragma warning(disable: 4996)	 // 禁用关于 _tcscpy 和 _stprintf 的安全警告
+#pragma warning(disable: 4996)	 // Disable security warnings for _tcscpy and _stprintf
 
 void DrawGameArea() {
-    // ���Ʊ���
+    // Draw background
     setbkcolor(RGB(30, 30, 30));
     cleardevice();
 
-    // ��ȡ�����λ��
+    // Get camera position
     Vector2 cameraPos = GameState::Instance().camera.position;
 
-    // ����ɼ�����
+    // Calculate visible area
     float screenLeft = cameraPos.x;
     float screenRight = cameraPos.x + GameConfig::WINDOW_WIDTH;
     float screenTop = cameraPos.y;
     float screenBottom = cameraPos.y + GameConfig::WINDOW_HEIGHT;
 
-    // �����ҽ�������Ϸ�߽��������- ����ɫ����
-    // ���ȼ����Щ�߽�����Ұ��
-    setfillcolor(RGB(80, 20, 20)); // ����ɫ
+    // Draw lava area outside game boundaries - dark red color
+    // First check which boundaries are in view
+    setfillcolor(RGB(80, 20, 20)); // Dark red
 
-    // ��鲢�����ϱ߽����ҽ�����
+    // Check and draw top boundary lava area
     if (screenTop < GameConfig::PLAY_AREA_TOP) {
         solidrectangle(0, 0,
             GameConfig::WINDOW_WIDTH,
             GameConfig::PLAY_AREA_TOP - cameraPos.y);
     }
 
-    // ��鲢�����±߽����ҽ�����
+    // Check and draw bottom boundary lava area
     if (screenBottom > GameConfig::PLAY_AREA_BOTTOM) {
         solidrectangle(0,
             GameConfig::PLAY_AREA_BOTTOM - cameraPos.y,
@@ -34,14 +34,14 @@ void DrawGameArea() {
             GameConfig::WINDOW_HEIGHT);
     }
 
-    // ��鲢������߽����ҽ�����
+    // Check and draw left boundary lava area
     if (screenLeft < GameConfig::PLAY_AREA_LEFT) {
         solidrectangle(0, 0,
             GameConfig::PLAY_AREA_LEFT - cameraPos.x,
             GameConfig::WINDOW_HEIGHT);
     }
 
-    // ��鲢�����ұ߽����ҽ�����
+    // Check and draw right boundary lava area
     if (screenRight > GameConfig::PLAY_AREA_RIGHT) {
         solidrectangle(GameConfig::PLAY_AREA_RIGHT - cameraPos.x,
             0,
@@ -49,8 +49,8 @@ void DrawGameArea() {
             GameConfig::WINDOW_HEIGHT);
     }
 
-    // ������Ϸ�߽���
-    setlinecolor(RGB(150, 50, 50)); // �߽�����ɫ
+    // Draw game boundary lines
+    setlinecolor(RGB(150, 50, 50)); // Boundary line color
     Vector2 topLeft(GameConfig::PLAY_AREA_LEFT, GameConfig::PLAY_AREA_TOP);
     Vector2 bottomRight(GameConfig::PLAY_AREA_RIGHT, GameConfig::PLAY_AREA_BOTTOM);
 
@@ -70,21 +70,21 @@ void DrawFoods(const FoodItem* foodList, int foodCount) {
 void DrawVisibleObjects(const FoodItem* foodList, int foodCount, 
                         const AISnake* aiSnakes, int aiSnakeCount,
                         const PlayerSnake& playerSnake) {
-    // 计算可见区域
+    // Calculate visible area
     Vector2 cameraPos = GameState::Instance().camera.position;
     float screenLeft = cameraPos.x;
     float screenRight = cameraPos.x + GameConfig::WINDOW_WIDTH;
     float screenTop = cameraPos.y;
     float screenBottom = cameraPos.y + GameConfig::WINDOW_HEIGHT;
 
-    // 扩展可见区域，考虑到大型对象可能部分可见
-    float margin = 100.0f;  // 足够大的边距
+    // Extend visible area to account for large objects that might be partially visible
+    float margin = 100.0f;  // Large enough margin
     screenLeft -= margin;
     screenRight += margin;
     screenTop -= margin;
     screenBottom += margin;
 
-    // 只绘制可见区域内的食物
+    // Only draw food items in visible area
     for (int i = 0; i < foodCount; ++i) {
         const auto& food = foodList[i];
         if (food.position.x >= screenLeft && food.position.x <= screenRight &&
@@ -94,17 +94,17 @@ void DrawVisibleObjects(const FoodItem* foodList, int foodCount,
         }
     }
 
-    // 只绘制可见区域内的AI蛇
+    // Only draw AI snakes in visible area
     for (int i = 0; i < aiSnakeCount; ++i) {
         const auto& snake = aiSnakes[i];
         if (snake.position.x >= screenLeft && snake.position.x <= screenRight &&
             snake.position.y >= screenTop && snake.position.y <= screenBottom) {
-            // 绘制AI蛇头
+            // Draw AI snake head
             Vector2 windowPos = snake.position - cameraPos;
             DrawCircleWithCamera(windowPos, snake.radius, snake.color);
             DrawSnakeEyes(windowPos, snake.direction, snake.radius);
 
-            // 绘制AI蛇身 - 修改这部分，不使用基于范围的for循环
+            // Draw AI snake body - modify this part to not use range-based for loop
             for (size_t j = 0; j < snake.segments.size(); ++j) {
                 const auto& segment = snake.segments[j];
                 if (segment.position.x >= screenLeft && segment.position.x <= screenRight &&
@@ -116,17 +116,17 @@ void DrawVisibleObjects(const FoodItem* foodList, int foodCount,
         }
     }
 
-    // 绘制玩家蛇头和身体
-    // 检查玩家头部是否在可见区域
+    // Draw player snake head and body
+    // Check if player head is in visible area
     if (playerSnake.position.x >= screenLeft && playerSnake.position.x <= screenRight &&
         playerSnake.position.y >= screenTop && playerSnake.position.y <= screenBottom) {
-        // 绘制头部
+        // Draw head
         Vector2 headPos = playerSnake.position - cameraPos;
         DrawCircleWithCamera(headPos, playerSnake.radius, playerSnake.color);
         DrawSnakeEyes(headPos, playerSnake.direction, playerSnake.radius);
     }
     
-    // 绘制玩家蛇身体 - 同样修改为不使用基于范围的for循环
+    // Draw player snake body - similarly modified to not use range-based for loop
     for (size_t i = 0; i < playerSnake.segments.size(); ++i) {
         const auto& segment = playerSnake.segments[i];
         if (segment.position.x >= screenLeft && segment.position.x <= screenRight &&
@@ -139,68 +139,69 @@ void DrawVisibleObjects(const FoodItem* foodList, int foodCount,
 
 void DrawCircleWithCamera(const Vector2& screenPos, float r, int c) {
     if (!IsCircleInScreen(screenPos, r)) {
-        return; // ���������Ļ�ڣ�����
+        return; // Not in screen, skip drawing
     }
-    setlinecolor(c); // ����������ɫ
-    setfillcolor(c); // ���������ɫ
-    fillcircle(screenPos.x, screenPos.y, r); // ����Բ
+    setlinecolor(c); // Set circle outline color
+    setfillcolor(c); // Set circle fill color
+    fillcircle(screenPos.x, screenPos.y, r); // Draw circle
 }
 
 void DebugDrawText(const std::wstring& text, int x, int y, int color) {
-    settextcolor(color); // �����ı���ɫ
-    outtextxy(x, y, text.c_str()); // �����ı�
+    settextcolor(color); // Set text color
+    outtextxy(x, y, text.c_str()); // Draw text
 }
-void DrawSnakeEyes(const Vector2& position, const Vector2& direction, float radius) {
-    // ͳһ�����ߵ��۾���ʽ
-    float eyeRadius = radius * 0.3f;  // �۾���С����
 
-    // �淶����������
+void DrawSnakeEyes(const Vector2& position, const Vector2& direction, float radius) {
+    // Unified eye style for all snakes
+    float eyeRadius = radius * 0.3f;  // Eye size scale
+
+    // Standardize direction calculations
     Vector2 normalizedDir = direction.GetNormalize();
-    // ���㴹ֱ�ڷ�������������������۷ֲ���
+    // Calculate perpendicular direction for eye distribution
     Vector2 perpDir(-normalizedDir.y, normalizedDir.x);
 
-    // �����۾�λ�ã�ʹ������� - ��Сǰ�ƣ�������ͷ����
-    Vector2 eyeOffset = normalizedDir * (radius * 0.25f);  // ������һ��
-    Vector2 sideOffset = perpDir * (radius * 0.4f);  // �������Ҽ��
+    // Calculate eye positions - smaller forward offset, fit inside head
+    Vector2 eyeOffset = normalizedDir * (radius * 0.25f);  // Forward a bit
+    Vector2 sideOffset = perpDir * (radius * 0.4f);  // Side by side
 
-    // ����������λ��
+    // Calculate actual eye positions
     Vector2 leftEyePos = position + eyeOffset + sideOffset;
     Vector2 rightEyePos = position + eyeOffset - sideOffset;
 
-    // �����۰�
+    // Draw eye whites
     setfillcolor(WHITE);
     fillcircle(leftEyePos.x, leftEyePos.y, eyeRadius);
     fillcircle(rightEyePos.x, rightEyePos.y, eyeRadius);
 
-    // ����ͫ�ױ�������ͫ�׸��������
-    float pupilRadius = eyeRadius * 0.7f;  // ����ͫ�ױ���
+    // Draw pupils, make them slightly larger for expression
+    float pupilRadius = eyeRadius * 0.7f;  // Pupil scale
     setfillcolor(BLACK);
 
-    // ͫ��λ�ô��ƫ�ƣ��Եø��ӿ���
-    // ������Ӱ��Ŵ�1.5����������ת����������
-    float pupilOffsetFactor = 1.5f;  // ����ƫ��ϵ����ʹ������������
+    // Offset pupils to give more expressive look
+    // Increase offset by 1.5x to make eyes look more alive
+    float pupilOffsetFactor = 1.5f;  // Offset factor to make eyes more expressive
 
-    // ����ͫ��λ�ò�Ҫ�����۰�
-    float maxPupilOffset = eyeRadius - pupilRadius * 0.9f;  // ��һ��߾࣬ȷ������ȫ����
+    // Calculate pupil position without exceeding eye white
+    float maxPupilOffset = eyeRadius - pupilRadius * 0.9f;  // Some margin to ensure visibility
 
-    // ������ŵ�ͫ��ƫ��
+    // Calculate scaled pupil offset
     Vector2 pupilOffset = normalizedDir * (maxPupilOffset * pupilOffsetFactor);
 
-    // ȷ��ͫ�ײ��ᳬ���۰׷�Χ
+    // Ensure pupils don't exceed eye white bounds
     float pupilOffsetLength = pupilOffset.GetLength();
     if (pupilOffsetLength > maxPupilOffset) {
         pupilOffset = pupilOffset * (maxPupilOffset / pupilOffsetLength);
     }
 
-    // ���������۵�ͫ�ף�λ�ô��ƫ��
+    // Draw pupils in both eyes, with offset
     fillcircle(leftEyePos.x + pupilOffset.x, leftEyePos.y + pupilOffset.y, pupilRadius);
     fillcircle(rightEyePos.x + pupilOffset.x, rightEyePos.y + pupilOffset.y, pupilRadius);
 
-    // ����ͫ�׸߹⣬����������
+    // Add eye highlights for depth
     setfillcolor(WHITE);
     float highlightRadius = pupilRadius * 0.3f;
 
-    // ��ͫ�������ӷ���߹⣬λ���������߷����෴
+    // Place highlights in opposite direction of gaze for better contrast
     Vector2 highlightOffset = normalizedDir * (-pupilRadius * 0.3f);
 
     fillcircle(leftEyePos.x + pupilOffset.x + highlightOffset.x,
@@ -212,10 +213,10 @@ void DrawSnakeEyes(const Vector2& position, const Vector2& direction, float radi
 }
 
 bool IsCircleInScreen(const Vector2& center, float r) {
-    Vector2 minPoint = Vector2(center.x - r, center.y - r); // ������С��
-    Vector2 maxPoint = Vector2(center.x + r, center.y + r); // ��������
+    Vector2 minPoint = Vector2(center.x - r, center.y - r); // Min corner
+    Vector2 maxPoint = Vector2(center.x + r, center.y + r); // Max corner
 
-    return !(maxPoint.x < 0 || minPoint.x > GameConfig::WINDOW_WIDTH || maxPoint.y < 0 || minPoint.y > GameConfig::WINDOW_HEIGHT); // ����Ƿ�����Ļ��
+    return !(maxPoint.x < 0 || minPoint.x > GameConfig::WINDOW_WIDTH || maxPoint.y < 0 || minPoint.y > GameConfig::WINDOW_HEIGHT); // Check if visible on screen
 }
 
 void DrawUI() {

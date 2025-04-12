@@ -3,14 +3,14 @@
 #include "Button.h"
 #include <graphics.h>
 
-extern std::vector<Button> buttonList; // 按钮列表
+extern std::vector<Button> buttonList; // Button list
 
-// 菜单选项枚举
+// Menu option enumeration
 enum class MenuOption {
-    START, // 开始
-    SETTINGS, // 设置
-    ABOUT, // 关于
-    EXIT // 退出
+    START, // Start
+    SETTINGS, // Settings
+    ABOUT, // About
+    EXIT // Exit
 };
 void LoadButton();
 

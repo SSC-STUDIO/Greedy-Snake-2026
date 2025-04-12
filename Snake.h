@@ -10,19 +10,19 @@
 struct FoodItem;
 
 struct SnakeSegment {
-    Vector2 position; // 蛇段位置
-    Vector2 direction; // 蛇段方向
-    std::queue<Vector2> positionHistory; // 位置历史记录
-    int colorValue = HSLtoRGB(255, 255, 255);      // 默认白色
-    float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE;        // 默认碰撞半径
-    float timeSinceLastRecord = 0; // 距离上次记录的时间
+    Vector2 position; // Snake segment position
+    Vector2 direction; // Snake segment direction
+    std::queue<Vector2> positionHistory; // Position history record
+    int colorValue = HSLtoRGB(255, 255, 255);      // Default white
+    float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE;        // Default collision radius
+    float timeSinceLastRecord = 0; // Time since last record
 
     Vector2 GetVelocity() const;
 
     bool CanRecordPosition() const;
 };
 
-// Snake类
+// Snake class
 class Snake {
 public:
     Vector2 position;
@@ -50,7 +50,7 @@ public:
     virtual bool CheckCollisionWithPoint(const Vector2& point, float pointRadius) const;
 };
 
-// 玩家蛇类
+// Player snake class
 class PlayerSnake : public Snake {
 public:
     std::vector<Snake> segments;
@@ -61,17 +61,17 @@ public:
     bool CheckCollisionWith(const Snake& other) const override;
 };
 
-// AI蛇类
+// AI snake class
 class AISnake : public Snake {
 public:
-    float directionChangeTimer = 0.0f; // 方向改变计时器
-    float speedMultiplier = 1.0f; // 速度乘数
-    float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION; // 添加攻击性因子
-    std::vector<Snake> segments;  // 添加AI蛇身体的段
+    float directionChangeTimer = 0.0f; // Direction change timer
+    float speedMultiplier = 1.0f; // Speed multiplier
+    float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION; // Add aggression factor
+    std::vector<Snake> segments;  // Add AI snake body segments
     std::deque<Vector2> recordedPositions; 
 
     AISnake() {
-        Init(); // 初始化
+        Init(); // Initialize
     }
 
     void Init();

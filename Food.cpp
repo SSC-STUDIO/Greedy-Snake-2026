@@ -9,9 +9,9 @@ Vector2 GenerateRandomPosition() {
 }
 
 void InitFood(FoodItem* foodList, int i, float speed) {
-    // 添加参数检查
+    // Add parameter check
     if (!foodList || i < 0 || i >= GameConfig::MAX_FOOD_COUNT) {
-        return; // 参数无效，提前返回
+        return; // Invalid parameters, return early
     }
     
     foodList[i].position = GenerateRandomPosition();
@@ -21,7 +21,7 @@ void InitFood(FoodItem* foodList, int i, float speed) {
 
 void UpdateFoods(FoodItem* foodList, int foodCount) {
     for (int i = 0; i < foodCount; i++) {
-        // ֻ��ʳ�ﲻ����ʱ����ײ�뾶Ϊ0����������ʳ��
+        // Only respawn food when collision radius is 0, indicating the food was eaten
         if (foodList[i].collisionRadius <= 0) {
             if (rand() % 100 < (GameState::Instance().foodSpawnRate * 100)) {
                 InitFood(foodList, i, GameState::Instance().currentPlayerSpeed);

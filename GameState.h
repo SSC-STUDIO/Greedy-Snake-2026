@@ -3,24 +3,27 @@
 #include "GameConfig.h"
 #include "Camera.h"
 #include "Snake.h"
-#include <mutex> // 添加互斥锁头文件
+#include <mutex> // Mutex header
+#include <easyx.h>
+#include <conio.h> // Support for _kbhit() and _getch()
+#include <windows.h> // Support for GetAsyncKeyState
+#pragma warning(disable: 4996)
 
-
-// 使用前向声明而不是直接包含
+// Use forward declarations instead of direct include
 class Snake;
 class PlayerSnake;
 class AISnake;
 
-// 游戏状态管理
+// Game state management
 class GameState {
 public:
     static GameState& Instance() {
-        static GameState instance; // 单例
+        static GameState instance; // Singleton
         return instance;
     }
 
     void Initial() {
-        // 不使用赋值，而是重置每个成员
+        // Reset each member instead of using assignment
         auto& instance = Instance();
         instance.currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED;
         instance.recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL;
@@ -45,41 +48,45 @@ public:
         instance.finalScore = 0;
         instance.returnToMenu = false;
         instance.currentDifficulty = GameDifficulty::Normal;
+        instance.difficulty = 1; // Default to normal difficulty
     }
 
-    float currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // 当前玩家速度
-    float recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // 记录间隔
-    bool isMouseControlEnabled = true; // 是否启用鼠标控制
-    bool isGameRunning = true; // 游戏是否运行
-    Camera camera; // 相机
-    Vector2 playerPosition; // 玩家位置
-    Vector2 targetDirection{ 0, 1 }; // 目标方向
-    float deltaTime = 1.0f / 30.0f; // 时间增量
-    float originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // 原始速度
-    float timeInLava = 0.0f;  // 在熔岩中花费的时间
-    bool isInLava = false;    // 蛇是否在熔岩中
-    int foodEatenCount = 0;  // 吃掉的食物数量
-    float aiAggression = GameConfig::Difficulty::Normal::AI_AGGRESSION; // AI攻击性
-    float foodSpawnRate = GameConfig::Difficulty::Normal::FOOD_SPAWN_RATE; // 食物生成率
-    int aiSnakeCount = GameConfig::Difficulty::Normal::AI_SNAKE_COUNT; // AI蛇数量
-    float lavaWarningTime = GameConfig::Difficulty::Normal::LAVA_WARNING_TIME; // 熔岩警告时间
+    float currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Current player speed
+    float recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // Record interval
+    bool isMouseControlEnabled = true; // Whether mouse control is enabled
+    bool isGameRunning = true; // Whether the game is running
+    Camera camera; // Camera
+    Vector2 playerPosition; // Player position
+    Vector2 targetDirection{ 0, 1 }; // Target direction
+    float deltaTime = 1.0f / 30.0f; // Time increment
+    float originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Original speed
+    float timeInLava = 0.0f;  // Time spent in lava
+    bool isInLava = false;    // Whether snake is in lava
+    int foodEatenCount = 0;  // Number of food items eaten
+    float aiAggression = GameConfig::Difficulty::Normal::AI_AGGRESSION; // AI aggression
+    float foodSpawnRate = GameConfig::Difficulty::Normal::FOOD_SPAWN_RATE; // Food spawn rate
+    int aiSnakeCount = GameConfig::Difficulty::Normal::AI_SNAKE_COUNT; // AI snake count
+    float lavaWarningTime = GameConfig::Difficulty::Normal::LAVA_WARNING_TIME; // Lava warning time
 
-    float collisionFlashTimer = 0.0f;      // 碰撞闪烁计时器
-    bool isCollisionFlashing = false;      // 是否在碰撞闪烁中
-    float gameStartTime = 0.0f;            // 游戏开始时间
-    bool isInvulnerable = true;            // 是否处于无敌状态
-    bool showDeathMessage = false;         // 是否显示死亡消息
-    int finalScore = 0;                    // 最终得分
+    float collisionFlashTimer = 0.0f;      // Collision flash timer
+    bool isCollisionFlashing = false;      // Whether in collision flash
+    float gameStartTime = 0.0f;            // Game start time
+    bool isInvulnerable = true;            // Whether invulnerable
+    bool showDeathMessage = false;         // Whether to show death message
+    int finalScore = 0;                    // Final score
 
-    bool returnToMenu = false;  // 是否返回主菜单
+    bool returnToMenu = false;  // Whether to return to menu
+    
+    // Add difficulty setting member
+    int difficulty = 1;  // Game difficulty: 0-Easy, 1-Normal, 2-Hard
 
     enum class GameDifficulty {
-        Easy, // 简单
-        Normal, // 普通
-        Hard // 困难
+        Easy, // Easy
+        Normal, // Normal
+        Hard // Hard
     };
 
-    GameDifficulty currentDifficulty = GameDifficulty::Normal; // 当前难度
+    GameDifficulty currentDifficulty = GameDifficulty::Normal; // Current difficulty
 
     void SetDifficulty(GameDifficulty difficulty);
 
@@ -91,11 +98,13 @@ public:
 
     void UpdateGameTime(float dt);
 
-    // 添加互斥锁用于线程同步
+    void ShowDeathMessage(); // Modified to non-const, so it can modify member variables
+
+    // Add mutex for thread synchronization
     std::mutex stateMutex;
 
 private:
-    GameState() = default; // 私有构造函数
+    GameState() = default; // Private constructor
 };
 
 void CheckGameState(Snake* snake);
