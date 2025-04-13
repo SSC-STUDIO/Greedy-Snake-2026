@@ -30,6 +30,10 @@
 #pragma comment(lib, "winmm.lib") // Required for multimedia functions
 #pragma warning(disable: 4996)	 // Disable security warnings for _tcscpy and _stprintf
 
+// Define the extern variables declared in GameConfig.h
+bool GameConfig::SOUND_ON = true;
+bool GameConfig::ANIMATIONS_ON = true;
+
 // Screen dimensions
 const int windowWidth = GameConfig::WINDOW_WIDTH;
 const int windowHeight = GameConfig::WINDOW_HEIGHT;
@@ -62,11 +66,6 @@ std::vector<AISnake> aiSnakeList;
 
 // Player snake
 Snake snake[1];
-
-// Global variables if not already defined
-// Forward declarations for functions in other files
-int GetHistoryIndexAtDistance(const std::deque<Vector2>& positions, float targetDistance);
-void CheckCollisions();
 
 // Game system class
 class GameSystem {
@@ -146,74 +145,88 @@ public:
     }
 };
 
-// Remove mutex and condition variable
-bool graphicsInitialized = false;
-
 // Modify the Draw function to ensure thread safety when initializing graphics
 void Draw() {
-    // Set graphics as initialized
-    graphicsInitialized = true;
-    
-    // The rest of the Draw function...
-    BeginBatchDraw();
-    while (GameState::Instance().isGameRunning) {
-        auto& gameState = GameState::Instance();
+    // 添加错误处理
+    try {
+        // The rest of the Draw function...
         
-        // Skip all updates if the game is paused, just maintain the current display
-        if (!gameState.isPaused) {
-            // Update camera
-            UpdateCamera();
+        while (GameState::Instance().GetIsGameRunning()) {
+            auto& gameState = GameState::Instance();
+            BeginBatchDraw();
             
-            // Update game objects only when not paused
-            UpdatePlayerSnake(gameState.deltaTime);
-            UpdateAISnakes(gameState.deltaTime);
-            UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
+            // 安全地获取暂停状态
+            bool isPaused = gameState.GetIsPaused();
             
-            // Check collision and game state only when not paused
-            CheckGameState(snake);  
-            CheckCollisions();
-            
-            // Update animation timer only when not paused
-            animationTimer += gameState.deltaTime;
-            if (animationTimer > 1000.0f) {
-                animationTimer = 0.0f;
+            // Skip all updates if the game is paused, just maintain the current display
+            if (!isPaused) {
+                // Update camera
+                UpdateCamera();
+                
+                // Update game objects only when not paused
+                UpdatePlayerSnake(gameState.deltaTime);
+                UpdateAISnakes(gameState.deltaTime);
+                UpdateFoods(foodList, GameConfig::MAX_FOOD_COUNT);
+                
+                // Check collision and game state only when not paused
+                CheckGameState(snake);  
+                CheckCollisions();
+                
+                // Update animation timer only when not paused
+                {
+                    std::lock_guard<std::mutex> lock(gameState.stateMutex);
+                    animationTimer += gameState.deltaTime;
+                    if (animationTimer > 1000.0f) {
+                        animationTimer = 0.0f;
+                    }
+                }
             }
-        }
-        
-        // Always draw the current state of the game
-        DrawGameArea();
-        
-        // Create temporary PlayerSnake object to draw player snake
-        PlayerSnake playerSnakeObj;
-        playerSnakeObj.position = snake[0].position;
-        playerSnakeObj.direction = snake[0].direction;
-        playerSnakeObj.radius = snake[0].radius;
-        playerSnakeObj.color = snake[0].color;
-        
-        // Copy snake body segments
-        playerSnakeObj.segments.resize(snake[0].segments.size());
-        for (size_t i = 0; i < snake[0].segments.size(); ++i) {
-            playerSnakeObj.segments[i] = snake[0].segments[i];
-        }
-        
-        DrawVisibleObjects(foodList, GameConfig::MAX_FOOD_COUNT, 
-                          aiSnakeList.data(), 
-                          static_cast<int>(aiSnakeList.size()), 
-                          playerSnakeObj);
+            
+            // Always draw the current state of the game
+            DrawGameArea();
+            
+            // Create thread-safe copy of snake object
+            PlayerSnake playerSnakeObj;
+            {
+                std::lock_guard<std::mutex> lock(gameState.stateMutex);
+                playerSnakeObj.position = snake[0].position;
+                playerSnakeObj.direction = snake[0].direction;
+                playerSnakeObj.radius = snake[0].radius;
+                playerSnakeObj.color = snake[0].color;
+                
+                // Copy snake body segments
+                playerSnakeObj.segments.resize(snake[0].segments.size());
+                for (size_t i = 0; i < snake[0].segments.size(); ++i) {
+                    playerSnakeObj.segments[i] = snake[0].segments[i];
+                }
+            }
+            
+            DrawVisibleObjects(foodList, GameConfig::MAX_FOOD_COUNT, 
+                              aiSnakeList.data(), 
+                              static_cast<int>(aiSnakeList.size()), 
+                              playerSnakeObj);
 
-        // Update growth animation effect only when not paused
-        if (!gameState.isPaused) {
-            UpdateGrowthAnimation(gameState.deltaTime);
-        }
+            // Update growth animation effect only when not paused
+            if (!isPaused) {
+                UpdateGrowthAnimation(gameState.deltaTime);
+            }
                           
-        // Draw UI elements
-        DrawUI();
-        
-        FlushBatchDraw();
-        // Add frame rate control
-        Sleep(1000 / 60);  // Limit to approximately 60 FPS
+            // Draw UI elements
+            DrawUI();
+            
+            EndBatchDraw();
+            // Add frame rate control
+            Sleep(1000 / 60);  // Limit to approximately 60 FPS
+        }
     }
-    EndBatchDraw();
+    catch (const std::exception& e) {
+        // 捕获并记录严重错误
+        OutputDebugStringA(e.what());
+        MessageBox(GetHWnd(), _T("Drawing thread encountered an error"), _T("Error"), MB_OK | MB_ICONERROR);
+        
+        // 确保游戏能正常退出
+        GameState::Instance().SetIsGameRunning(false);
+    }
 }
 
 int main() {
@@ -312,52 +325,114 @@ int main() {
             // Initialize AI snakes
             InitializeAISnakes();
 
-            // Start drawing and input threads
-            std::thread draw(Draw);
-            std::thread input(EnterChanges);
+            // 添加线程异常处理
+            std::exception_ptr drawThreadException = nullptr;
+            std::exception_ptr inputThreadException = nullptr;
+            
+            // 使用异步函数调用，可以捕获异常
+            std::thread draw([&drawThreadException]() {
+                try {
+                    Draw();
+                } catch(...) {
+                    drawThreadException = std::current_exception();
+                }
+            });
+            
+            std::thread input([&inputThreadException]() {
+                try {
+                    EnterChanges();
+                } catch(...) {
+                    inputThreadException = std::current_exception();
+                }
+            });
 
             // Game running loop
             bool gameRunning = true;
             while (gameRunning) {
-                // Check for pause - when paused, wait for user action before continuing
-                if (GameState::Instance().isPaused) {
-                    // Display pause menu and wait for user input
-                    GameState::Instance().ShowPauseMenu();
-                    
-                    // Continue the loop after the user has made a selection
-                    // The ShowPauseMenu function only returns after a selection is made
-                    continue;
+                // 检查线程是否发生异常
+                if (drawThreadException) {
+                    try {
+                        std::rethrow_exception(drawThreadException);
+                    } catch (const std::exception& e) {
+                        MessageBox(GetHWnd(), _T("Drawing thread error occurred"), _T("Error"), MB_OK | MB_ICONERROR);
+                        OutputDebugStringA(e.what());
+                    }
+                    GameState::Instance().SetIsGameRunning(false);
+                    gameRunning = false;
+                    break;
+                }
+                
+                if (inputThreadException) {
+                    try {
+                        std::rethrow_exception(inputThreadException);
+                    } catch (const std::exception& e) {
+                        MessageBox(GetHWnd(), _T("Input thread error occurred"), _T("Error"), MB_OK | MB_ICONERROR);
+                        OutputDebugStringA(e.what());
+                    }
+                    GameState::Instance().SetIsGameRunning(false);
+                    gameRunning = false;
+                    break;
+                }
+                
+                // 检查是否通过ESC菜单选择退出游戏
+                bool shouldExit;
+                {
+                    std::lock_guard<std::mutex> lock(GameState::Instance().stateMutex);
+                    shouldExit = GameState::Instance().exitGame;
+                }
+                
+                if (shouldExit) {
+                    quitProgram = true;
+                    gameRunning = false;
+                    GameState::Instance().SetIsGameRunning(false);
+                    break;
+                }
+                
+                // 安全地获取游戏状态
+                bool isGameRunning, isPaused, showDeathMessage;
+                {
+                    std::lock_guard<std::mutex> lock(GameState::Instance().stateMutex);
+                    isGameRunning = GameState::Instance().isGameRunning;
+                    isPaused = GameState::Instance().isPaused;
+                    showDeathMessage = GameState::Instance().showDeathMessage;
                 }
                 
                 // Update game time - only happens when not paused
-                if (GameState::Instance().isGameRunning) {
+                if (isGameRunning && !isPaused) {
                     GameState::Instance().UpdateGameTime(GameState::Instance().deltaTime);
                 }
                 
                 // Handle game end conditions
-                if (!GameState::Instance().isGameRunning && GameState::Instance().showDeathMessage) {
+                if (!isGameRunning && showDeathMessage) {
                     // Stop drawing and input threads to prevent interference
-                    GameState::Instance().isGameRunning = false;
+                    GameState::Instance().SetIsGameRunning(false);
                     
-                    // Wait for drawing and input threads to end
-                    input.join();
-                    draw.join();
+                    // 安全地等待线程结束
+                    if (input.joinable()) input.join();
+                    if (draw.joinable()) draw.join();
                     
-                    // Ensure screen state is correct
-                    BeginBatchDraw();
                     cleardevice();
-                    EndBatchDraw();
                     
                     // Show death message after game ends, ensure in main thread
                     GameState::Instance().ShowDeathMessage();
-                    GameState::Instance().showDeathMessage = false;
+                    {
+                        std::lock_guard<std::mutex> lock(GameState::Instance().stateMutex);
+                        GameState::Instance().showDeathMessage = false;
+                    }
                     
                     // Set flag to exit game loop
                     gameRunning = false;
                 }
                 
+                // 重新安全地获取游戏状态
+                {
+                    std::lock_guard<std::mutex> lock(GameState::Instance().stateMutex);
+                    isGameRunning = GameState::Instance().isGameRunning;
+                    showDeathMessage = GameState::Instance().showDeathMessage;
+                }
+                
                 // Continue game if still running without death message
-                if (!GameState::Instance().isGameRunning && !GameState::Instance().showDeathMessage) {
+                if (!isGameRunning && !showDeathMessage) {
                     gameRunning = false;  // Exit game loop if game ended and death message processed
                 }
                 
@@ -365,19 +440,25 @@ int main() {
             }
 
             // Clean up game resources
-            if (GameState::Instance().isGameRunning) {
-                GameState::Instance().isGameRunning = false;  // Ensure drawing thread exits
-                input.join();
-                draw.join();
+            {
+                std::lock_guard<std::mutex> lock(GameState::Instance().stateMutex);
+                if (GameState::Instance().isGameRunning) {
+                    GameState::Instance().isGameRunning = false;  // Ensure drawing thread exits
+                }
             }
-
-            StopBackgroundMusic();
+            
+            // 安全地等待线程结束
+            if (input.joinable()) input.join();
+            if (draw.joinable()) draw.join();
+            
             Sleep(500);  // Short delay to ensure resource cleanup
             
             // Determine what to do next
             if (GameState::Instance().returnToMenu) {
                 GameState::Instance().returnToMenu = false;
                 startGame = false;  // Exit game loop and return to menu loop
+            } else if (GameState::Instance().exitGame) {
+                quitProgram = true;  // 如果选择了退出，则设置标志退出整个程序
             } else {
                 // Keep startGame true to restart game
             }
@@ -389,39 +470,4 @@ int main() {
     closegraph(); // Close graphics window
     return 0; // Exit program
 }
-
-// Game Update function
-void GameUpdate(std::chrono::steady_clock::time_point& lastTime, float& accumulator, float& totalElapsedTime) {
-    // Calculate delta time
-    auto currentTime = std::chrono::steady_clock::now();
-    float deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
-    lastTime = currentTime;
-
-    // Prevent large time steps
-    if (deltaTime > 0.25f) {
-        deltaTime = 0.25f;
-    }
-
-    // Update accumulator
-    accumulator += deltaTime;
-
-    // Advance animation timer
-    animationTimer += deltaTime;
-    if (animationTimer > 1000.0f) {
-        animationTimer = 0.0f;
-    }
-
-    // ... existing code ...
-}
-
-void GameRender(PlayerSnake& snake, AISnake aiSnakes[], FoodItem foodItems[], const int foodCount) {
-    // ... existing code ...
-    
-    // Update growth animation if active
-    UpdateGrowthAnimation(0.016f);
-    
-    // Continue with existing rendering
-    // ... existing code ...
-}
-
 

@@ -79,7 +79,7 @@ If you encounter any issues or have any suggestions during use, please contact u
 
 Email: 961521953@qq.com
 
-GitHub Issues: https://github.com/Crs10259/System-Safety-Tools/issues
+GitHub Issues: https://github.com/Crs10259/Greed-Snake-Remake/issues
 
 ## License 许可证
 

@@ -23,6 +23,9 @@ public:
     }
 
     void Initial() {
+        // Use a lock to protect initialization
+        std::lock_guard<std::mutex> lock(stateMutex);
+        
         // Reset each member instead of using assignment
         auto& instance = Instance();
         instance.currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED;
@@ -30,6 +33,7 @@ public:
         instance.isMouseControlEnabled = true;
         instance.isGameRunning = true;
         instance.isPaused = false;
+        instance.isMenuShowing = false; // 初始化菜单显示状态
         instance.playerPosition = Vector2();
         instance.targetDirection = Vector2(0, 1);
         instance.deltaTime = 1.0f / 30.0f;
@@ -50,13 +54,60 @@ public:
         instance.returnToMenu = false;
         instance.currentDifficulty = GameDifficulty::Normal;
         instance.difficulty = 1; // Default to normal difficulty
+        
+        // Reset static members
+        exitGame = false;
+        lastTime = GetTickCount();
+    }
+    
+    // Thread-safe getters and setters for commonly accessed state
+    bool GetIsPaused() {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return isPaused;
+    }
+    
+    void SetIsPaused(bool paused) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        isPaused = paused;
+    }
+    
+    bool GetIsMenuShowing() {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return isMenuShowing;
+    }
+    
+    void SetIsMenuShowing(bool showing) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        isMenuShowing = showing;
+    }
+    
+    bool GetIsGameRunning() {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return isGameRunning;
+    }
+    
+    void SetIsGameRunning(bool running) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        isGameRunning = running;
+    }
+    
+    Vector2 GetTargetDirection() {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return targetDirection;
+    }
+    
+    void SetTargetDirection(const Vector2& direction) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        targetDirection = direction;
     }
 
+    // Variables that need to be accessed frequently should use the getter/setter methods
     float currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Current player speed
     float recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // Record interval
     bool isMouseControlEnabled = true; // Whether mouse control is enabled
     bool isGameRunning = true; // Whether the game is running
     bool isPaused = false; // Whether the game is paused
+    bool isMenuShowing = false; // 指示暂停菜单是否正在显示
     Camera camera; // Camera
     Vector2 playerPosition; // Player position
     Vector2 targetDirection{ 0, 1 }; // Target direction
@@ -90,6 +141,10 @@ public:
 
     GameDifficulty currentDifficulty = GameDifficulty::Normal; // Current difficulty
 
+    // Static members for game timing and control
+    static DWORD lastTime; // Last time measured for game timing
+    static bool exitGame; // Whether to exit the game completely
+
     void SetDifficulty(GameDifficulty difficulty);
 
     void ResetLavaTimer();
@@ -100,6 +155,9 @@ public:
 
     void UpdateGameTime(float dt);
 
+    // Update game state for a frame
+    void Update(float deltaTime);
+
     void ShowDeathMessage(); // Modified to non-const, so it can modify member variables
 
     void ShowPauseMenu();
@@ -107,8 +165,12 @@ public:
     // Add mutex for thread synchronization
     std::mutex stateMutex;
 
+    unsigned int worldSeed = 0; // 世界生成种子
+
 private:
     GameState() = default; // Private constructor
+    GameState(const GameState&) = delete;
+    GameState& operator=(const GameState&) = delete;
 };
 
 void CheckGameState(Snake* snake);

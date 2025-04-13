@@ -22,3 +22,7 @@ void DrawSnakeEyes(const Vector2& position, const Vector2& direction, float radi
 bool IsCircleInScreen(const Vector2& center, float r);
 void DrawUI();
 void DrawEnhancedFood(const Vector2& screenPos, float radius, int color, int index);
+
+// 新增函数声明
+void DrawSnakeSegment(const Vector2& screenPos, float radius, int color, int segmentIndex);
+void DrawPauseMenu();

@@ -54,6 +54,10 @@ public:
 class PlayerSnake : public Snake {
 public:
     std::vector<Snake> segments;
+    bool isInvincible = false;           // Whether player is invincible
+    float invincibilityTimer = 0.0f;     // Invincibility timer
+    int livesRemaining = 3;              // Remaining lives
+    int score = 0;                       // Player score
 
     void Update(float deltaTime) override;
 
@@ -69,6 +73,13 @@ public:
     float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION; // Add aggression factor
     std::vector<Snake> segments;  // Add AI snake body segments
     std::deque<Vector2> recordedPositions; 
+    
+    // 添加AI蛇死亡动画相关状态
+    bool isDying = false;           // 是否正在死亡
+    float deathTimer = 0.0f;        // 死亡动画计时器
+    int dyingSegmentIndex = -1;     // 当前正在消失的段索引，-1表示头部
+    float segmentFadeTime = 0.2f;   // 每个段消失所需的时间
+    int foodValueOnDeath = 0;       // 死亡时提供的食物价值
 
     AISnake() {
         Init(); // Initialize
@@ -80,6 +91,12 @@ public:
 
     // 添加Draw方法重写
     void Draw(const Camera& camera) const override;
+    
+    // 处理AI蛇的死亡，更新死亡动画
+    void UpdateDeathAnimation(float deltaTime);
+    
+    // 开始死亡过程
+    void StartDying(int foodValue);
 
     // void UpdateSegments();
     bool CheckCollisionWith(const Snake& other) const override;

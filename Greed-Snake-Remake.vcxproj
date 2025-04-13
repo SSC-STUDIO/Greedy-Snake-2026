@@ -145,7 +145,6 @@
     <ClCompile Include="UI\Button.cpp" />
     <ClCompile Include="Gameplay\Collisions.cpp" />
     <ClCompile Include="Gameplay\Food.cpp" />
-    <ClCompile Include="Core\GameConfig.cpp" />
     <ClCompile Include="Gameplay\GameInitializer.cpp" />
     <ClCompile Include="Gameplay\GameState.cpp" />
     <ClCompile Include="Utils\InputHandler.cpp" />

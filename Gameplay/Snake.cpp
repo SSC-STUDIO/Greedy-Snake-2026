@@ -124,6 +124,11 @@ void PlayerSnake::Draw(const Camera& camera) const
 
 void AISnake::Init()
 {
+    // Reset death state
+    isDying = false;
+    deathTimer = 0.0f;
+    dyingSegmentIndex = -1;
+    
     segments.resize(5);
     
     // Initialize segments and records
@@ -142,6 +147,12 @@ void AISnake::Init()
 
 void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, const Vector2& playerHeadPos)
 {
+    // If dying, update death animation and return
+    if (isDying) {
+        UpdateDeathAnimation(deltaTime);
+        return;
+    }
+    
     // AI behavior decision part - determine direction
     directionChangeTimer += deltaTime;
     
@@ -238,6 +249,91 @@ void AISnake::Update(const std::vector<FoodItem>& foodItems, float deltaTime, co
         }
         segments[i].Update(deltaTime);
     }
+    
+    // Check if AI snake eats food, if so, increase body length
+    for (const auto& food : foodItems) {
+        if (food.collisionRadius <= 0) continue;
+        
+        if (CheckCollisionWithPoint(food.position, food.collisionRadius)) {
+            // If AI snake eats food, increase body length based on food size
+            float growthAmount = food.collisionRadius / 10.0f;
+            
+            // Increase AI snake body length
+            Snake newSegment;
+            if (!segments.empty()) {
+                newSegment = segments.back();  // Copy the last segment
+            } else {
+                newSegment = *this;  // If no segments, copy the head
+            }
+            
+            // Set new segment position and direction
+            if (!segments.empty()) {
+                Vector2 lastSegPos = segments.back().position;
+                Vector2 dir = segments.back().direction;
+                newSegment.position = lastSegPos - dir * GameConfig::SNAKE_SEGMENT_SPACING;
+            } else {
+                Vector2 dir = direction;
+                newSegment.position = position - dir * GameConfig::SNAKE_SEGMENT_SPACING;
+            }
+            
+            // Add to body segments array
+            segments.push_back(newSegment);
+            
+            // Limit maximum length when body length exceeds a certain value
+            const int maxSegments = 20;
+            if (segments.size() > maxSegments) {
+                segments.resize(maxSegments);
+            }
+            
+            break;  // Exit loop after finding one food
+        }
+    }
+}
+
+// Implement AI snake death animation update
+void AISnake::UpdateDeathAnimation(float deltaTime) {
+    // Update death timer
+    deathTimer += deltaTime;
+    
+    // Calculate which segment should currently disappear
+    int targetSegmentIndex = static_cast<int>(deathTimer / segmentFadeTime) - 1;
+    
+    // If segment index has changed, handle segment disappearance logic
+    if (targetSegmentIndex > dyingSegmentIndex) {
+        dyingSegmentIndex = targetSegmentIndex;
+        
+        // If head disappears, generate food
+        if (dyingSegmentIndex == -1) {
+            // Food generation logic is handled in collision detection
+            radius = 0;  // Head disappears
+        }
+        // If body segment disappears
+        else if (dyingSegmentIndex >= 0 && dyingSegmentIndex < segments.size()) {
+            // Play effect sound when body segment disappears
+            if (GameConfig::SOUND_ON) {
+                PlaySound(_T(".\\Resource\\SoundEffects\\Pop.wav"), NULL, SND_FILENAME | SND_ASYNC);
+            }
+            
+            // Set corresponding segment radius to 0 to indicate disappearance
+            segments[dyingSegmentIndex].radius = 0;
+        }
+        // If all segments have disappeared
+        else if (dyingSegmentIndex >= segments.size()) {
+            // Completely destroy AI snake
+            for (auto& segment : segments) {
+                segment.radius = 0;
+            }
+            isDying = false;  // Death process ends
+        }
+    }
+}
+
+// Start AI snake death process
+void AISnake::StartDying(int foodValue) {
+    isDying = true;
+    deathTimer = 0.0f;
+    dyingSegmentIndex = -1;  // Start disappearing from the head
+    foodValueOnDeath = foodValue;  // Record food value provided at death
 }
 
 void AISnake::Draw(const Camera& camera) const

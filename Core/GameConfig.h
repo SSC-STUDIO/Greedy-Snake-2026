@@ -4,8 +4,8 @@
 
 // Game configuration parameters
 namespace GameConfig {
-    constexpr int NUM_FRAMES = 350; // Frame count
-    constexpr int FRAME_DELAY = 25; // Frame delay
+    constexpr int FRAME_DELAY = 30;
+    constexpr int NUM_FRAMES = 350; // Frame count - re-added
     constexpr int MENU_ICON_SIZE = 40; // Menu icon size
 
     constexpr auto MAX_FOOD_COUNT = 5660; // Maximum food count
@@ -17,8 +17,6 @@ namespace GameConfig {
     constexpr int WINDOW_HEIGHT = 760; // Window height
     constexpr int PLAY_AREA_MARGIN = 100; // Game area margin
     constexpr float SNAKE_SEGMENT_SPACING = 30.0f; // Snake segment spacing
-    
-    // Add missing constants
     constexpr float PLAYER_SLOW_SPEED = 180.0f; // Snake slow speed
     constexpr float PLAYER_NORMAL_SPEED = 250.0f; // Snake normal speed
     constexpr float PLAYER_FAST_SPEED = 320.0f; // Snake fast speed
@@ -48,8 +46,10 @@ namespace GameConfig {
     // Add collision-related configuration in GameConfig namespace
     constexpr float COLLISION_FLASH_DURATION = 0.5f;     // Collision flash duration
     constexpr bool ENABLE_COLLISION = true;              // Whether to enable collisions
-    constexpr float COLLISION_GRACE_PERIOD = 3.0f;       // Invincibility time after game start (seconds) - changed to 3 seconds
-    
+    constexpr float COLLISION_GRACE_PERIOD = 5.0f;       // Invincibility time after game start (seconds) - changed to 5 seconds
+	constexpr bool FULLSCREEN_ON = false; // Fullscreen mode toggle
+    constexpr int MAX_AI_SNAKES = 20; // Maximum number of AI snakes
+
     // Difficulty-related configuration
     namespace Difficulty {
         // Easy difficulty

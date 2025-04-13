@@ -549,3 +549,83 @@ void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSn
         }
     }
 }
+
+void CheckPlayerAISnakeCollision(PlayerSnake& player, AISnake& enemy)
+{
+    // If AI snake is dying or player is invincible, skip collision detection
+    if (enemy.isDying || player.isInvincible) {
+        return;
+    }
+
+    // Check collision between player head and AI body
+    for (size_t i = 0; i < enemy.segments.size(); i++) {
+        Vector2 distance = player.position - enemy.segments[i].position;
+        if (distance.GetLength() < player.radius + enemy.segments[i].radius) {
+            if (!player.isInvincible) {
+                // When hitting AI snake body, player loses a life
+                player.isInvincible = true;
+                player.invincibilityTimer = 0;
+                if (player.livesRemaining > 0) {
+                    player.livesRemaining--;
+                    if (GameConfig::SOUND_ON) {
+                        PlaySound(_T(".\\Resource\\SoundEffects\\hit.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                    }
+                }
+            }
+            return;
+        }
+    }
+    
+    // Check collision between player head and AI head
+    Vector2 headDistance = player.position - enemy.position;
+    if (headDistance.GetLength() < player.radius + enemy.radius) {
+        // If player head collides with AI snake head
+        if (!player.isInvincible) {
+            // Determine who eats whom based on snake size comparison
+            if (player.segments.size() >= enemy.segments.size()) {
+                // Player eats AI snake, calculate food value
+                int foodValue = static_cast<int>(enemy.segments.size()) * 10;
+                // Start AI snake death animation
+                enemy.StartDying(foodValue);
+                
+                // Player earns score after eating AI snake
+                player.score += foodValue;
+                
+                // Play eating sound effect
+                if (GameConfig::SOUND_ON) {
+                    PlaySound(_T(".\\Resource\\SoundEffects\\Snake-eat.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                }
+            } else {
+                // AI snake eats player, player loses a life
+                player.isInvincible = true;
+                player.invincibilityTimer = 0;
+                if (player.livesRemaining > 0) {
+                    player.livesRemaining--;
+                    if (GameConfig::SOUND_ON) {
+                        PlaySound(_T(".\\Resource\\SoundEffects\\hit.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                    }
+                }
+            }
+        }
+        return;
+    }
+    
+    // Check collision between player body and AI head
+    for (size_t i = 0; i < player.segments.size(); i++) {
+        Vector2 distance = enemy.position - player.segments[i].position;
+        if (distance.GetLength() < enemy.radius + player.segments[i].radius) {
+            // AI snake hits player body, AI snake dies
+            int foodValue = static_cast<int>(enemy.segments.size()) * 5;
+            enemy.StartDying(foodValue);
+            
+            // Player earns score
+            player.score += foodValue;
+            
+            // Play sound effect
+            if (GameConfig::SOUND_ON) {
+                PlaySound(_T(".\\Resource\\SoundEffects\\Snake-eat.wav"), NULL, SND_FILENAME | SND_ASYNC);
+            }
+            return;
+        }
+    }
+}
