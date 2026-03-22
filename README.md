@@ -82,7 +82,8 @@
 Greed-Snake-2025/
 ├── Core/                  # 核心系统
 │   ├── GameState.*       # 游戏状态管理
-│   ├── GameEngine.*      # 游戏引擎
+│   ├── ResourceManager.* # 资源与音频生命周期
+│   ├── ThreadManager.*   # 渲染/输入线程管理
 │   ├── Camera.*          # 相机系统
 │   ├── Collisions.*      # 碰撞检测
 │   └── Vector2.*         # 2D向量类
@@ -123,6 +124,7 @@ Greed-Snake-2025/
 - 遵循 RAII 原则管理资源
 - 采用单例模式管理游戏状态
 - 实现线程安全的状态管理
+- 当前运行入口是 `Main.cpp`，核心 manager 负责资源和线程基础设施
 
 ## 🐛 常见问题
 

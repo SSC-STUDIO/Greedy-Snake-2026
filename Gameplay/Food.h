@@ -8,7 +8,7 @@
 // Food structure
 struct FoodItem {
     Vector2 position; // Food position
-    int colorValue = HSLtoRGB(255, 255, 255);  // Default white
+    int colorValue = HSLtoRGB(255.0f, 255.0f, 255.0f);  // Default white
     float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE;    // Default collision radius
 };
 

@@ -109,6 +109,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(OutDir)Resource" mkdir "$(OutDir)Resource" &amp;&amp; xcopy /e /y "$(ProjectDir)Resource" "$(OutDir)Resource\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -125,13 +128,20 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist "$(OutDir)Resource" mkdir "$(OutDir)Resource" &amp;&amp; xcopy /e /y "$(ProjectDir)Resource" "$(OutDir)Resource\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Core\Camera.h" />
     <ClInclude Include="Core\Collisions.h" />
+    <ClInclude Include="Core\GameRuntime.h" />
+    <ClInclude Include="Core\ResourceManager.h" />
+    <ClInclude Include="Core\ThreadManager.h" />
     <ClInclude Include="Gameplay\Food.h" />
     <ClInclude Include="Gameplay\GameConfig.h" />
     <ClInclude Include="Gameplay\GameInitializer.h" />
+    <ClInclude Include="Gameplay\GameSystems.h" />
     <ClInclude Include="Core\GameState.h" />
     <ClInclude Include="UI\Button.h" />
     <ClInclude Include="Utils\InputHandler.h" />
@@ -143,9 +153,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Collisions.cpp" />
+    <ClCompile Include="Core\ResourceManager.cpp" />
+    <ClCompile Include="Core\ThreadManager.cpp" />
     <ClCompile Include="Core\GameState.cpp" />
     <ClCompile Include="Gameplay\Food.cpp" />
     <ClCompile Include="Gameplay\GameInitializer.cpp" />
+    <ClCompile Include="Gameplay\GameSystems.cpp" />
     <ClCompile Include="UI\Button.cpp" />
     <ClCompile Include="Utils\InputHandler.cpp" />
     <ClCompile Include="Main.cpp" />

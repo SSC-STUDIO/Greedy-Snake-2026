@@ -82,7 +82,8 @@ Control your snake to collect food, avoid walls and AI snakes, and become the lo
 Greed-Snake-2025/
 ├── Core/                  # Core Systems
 │   ├── GameState.*       # Game state management
-│   ├── GameEngine.*      # Game engine
+│   ├── ResourceManager.* # Resource and audio lifecycle
+│   ├── ThreadManager.*   # Render/input thread management
 │   ├── Camera.*          # Camera system
 │   ├── Collisions.*      # Collision detection
 │   └── Vector2.*         # 2D vector class
@@ -123,6 +124,7 @@ Greed-Snake-2025/
 - Follow RAII principles for resource management
 - Implement singleton pattern for game state
 - Thread-safe state management implementation
+- The active runtime entry is `Main.cpp`, with core managers handling resources and thread infrastructure
 
 ## 🐛 FAQ
 

@@ -16,17 +16,22 @@ void LoadButton()
     const int buttonHeight = 50; // Button height
     int buttonY = static_cast<int>(GameConfig::WINDOW_HEIGHT * 0.7f + 10.0f); // Button Y coordinate
     buttonList.resize(4); // Adjust button list size
-    buttonList[StartGame].Initial(_T("Start Game"), Vector2(getwidth() / 2 - buttonWidth / 2, buttonY), Vector2(getwidth() / 2 + buttonWidth / 2, buttonY + buttonHeight), RGB(50, 150, 50), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize start game button
-    buttonList[Setting].Initial(_T("./Resource/Setting.png"), Vector2(120, 10), Vector2(GameConfig::MENU_ICON_SIZE, GameConfig::MENU_ICON_SIZE), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize settings button
-    buttonList[About].Initial(_T("./Resource/About.png"), Vector2(170, 10), Vector2(GameConfig::MENU_ICON_SIZE, GameConfig::MENU_ICON_SIZE), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize about button
-    buttonList[Exit].Initial(_T("./Resource/Exit.png"), Vector2(220, 10), Vector2(GameConfig::MENU_ICON_SIZE, GameConfig::MENU_ICON_SIZE), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize exit button
+    buttonList[StartGame].Initial(
+        _T("Start Game"),
+        Vector2(static_cast<float>(getwidth() / 2 - buttonWidth / 2), static_cast<float>(buttonY)),
+        Vector2(static_cast<float>(getwidth() / 2 + buttonWidth / 2), static_cast<float>(buttonY + buttonHeight)),
+        RGB(50, 150, 50),
+        _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize start game button
+    buttonList[Setting].Initial(_T("./Resource/Setting.png"), Vector2(120.0f, 10.0f), Vector2(static_cast<float>(GameConfig::MENU_ICON_SIZE), static_cast<float>(GameConfig::MENU_ICON_SIZE)), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize settings button
+    buttonList[About].Initial(_T("./Resource/About.png"), Vector2(170.0f, 10.0f), Vector2(static_cast<float>(GameConfig::MENU_ICON_SIZE), static_cast<float>(GameConfig::MENU_ICON_SIZE)), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize about button
+    buttonList[Exit].Initial(_T("./Resource/Exit.png"), Vector2(220.0f, 10.0f), Vector2(static_cast<float>(GameConfig::MENU_ICON_SIZE), static_cast<float>(GameConfig::MENU_ICON_SIZE)), _T(".\\Resource\\SoundEffects\\Button-Click.wav")); // Initialize exit button
 }
 
 // Draw the main menu interface
 void DrawMenu() {
     ExMessage m; // Message
     peekmessage(&m, EX_MOUSE);
-    Vector2 mousePos = Vector2(m.x, m.y); // Mouse position
+    Vector2 mousePos = Vector2(static_cast<float>(m.x), static_cast<float>(m.y)); // Mouse position
 
     // Draw title text
     settextstyle(48, 0, _T("Arial"));
@@ -109,15 +114,19 @@ int ShowGameMenu() {
         
         if (m.message == WM_LBUTTONDOWN) {
             if (buttonList[StartGame].IsOnButton(mousePos)) {
+                buttonList[StartGame].PlayClickSound();
                 return StartGame;
             }
             else if (buttonList[Setting].IsOnButton(mousePos)) {
+                buttonList[Setting].PlayClickSound();
                 return Setting;
             }
             else if (buttonList[About].IsOnButton(mousePos)) {
+                buttonList[About].PlayClickSound();
                 return About;
             }
             else if (buttonList[Exit].IsOnButton(mousePos)) {
+                buttonList[Exit].PlayClickSound();
                 return Exit;
             }
         }

@@ -1,9 +1,19 @@
 #include "ResourceManager.h"
 
 #include "../UI/UI.h"
+#include <tchar.h>
 
 namespace {
 const LPCTSTR kDefaultBackgroundPath = _T(".\\Resource\\Greed-Snake-BG.png");
+
+void DrawMissingBackgroundFallback() {
+    setfillcolor(RGB(20, 20, 20));
+    solidrectangle(0, 0, getwidth(), getheight());
+
+    settextstyle(24, 0, _T("Arial"));
+    settextcolor(RGB(200, 200, 200));
+    outtextxy(20, 20, _T("背景资源缺失：Resource\\Greed-Snake-BG.png"));
+}
 }
 
 ResourceManager& ResourceManager::Instance() {
@@ -106,7 +116,10 @@ void ResourceManager::DrawBackground() {
 
     if (backgroundImage.getwidth() > 0 && backgroundImage.getheight() > 0) {
         putimage(0, 0, &backgroundImage);
+        return;
     }
+
+    DrawMissingBackgroundFallback();
 }
 
 void ResourceManager::InitializeAudio() {

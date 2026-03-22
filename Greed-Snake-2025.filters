@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="源文件">
@@ -27,26 +27,47 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Button.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Camera.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\Collisions.h">
-      <Filter>Gameplay</Filter>
+    <ClInclude Include="Core\Collisions.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\GameRuntime.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ResourceManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\ThreadManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\GameState.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Vector2.h">
+      <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Gameplay\Food.h">
       <Filter>Gameplay</Filter>
     </ClInclude>
-    <ClInclude Include="Core\GameConfig.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="Gameplay\GameConfig.h">
+      <Filter>Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="Gameplay\GameInitializer.h">
       <Filter>Gameplay</Filter>
     </ClInclude>
-    <ClInclude Include="Gameplay\GameState.h">
+    <ClInclude Include="Gameplay\GameSystems.h">
       <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Gameplay\Snake.h">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Button.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\UI.h">
+      <Filter>UI</Filter>
     </ClInclude>
     <ClInclude Include="Utils\InputHandler.h">
       <Filter>Utils</Filter>
@@ -54,58 +75,55 @@
     <ClInclude Include="Utils\Rendering.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="UI\Setting.h">
-      <Filter>UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Gameplay\Snake.h">
-      <Filter>Gameplay</Filter>
-    </ClInclude>
-    <ClInclude Include="UI\UI.h">
-      <Filter>UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Vector2.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="Utils\Setting.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="UI\Button.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="Core\Collisions.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\Collisions.cpp">
-      <Filter>Gameplay</Filter>
+    <ClCompile Include="Core\ResourceManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\ThreadManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\GameState.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Gameplay\Food.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
-    <ClCompile Include="Core\GameConfig.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Gameplay\GameInitializer.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
-    <ClCompile Include="Gameplay\GameState.cpp">
+    <ClCompile Include="Gameplay\GameSystems.cpp">
       <Filter>Gameplay</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\InputHandler.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="Utils\Rendering.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Setting.cpp">
-      <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="Gameplay\Snake.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Button.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
     <ClCompile Include="UI\UI.cpp">
       <Filter>UI</Filter>
     </ClCompile>
+    <ClCompile Include="Utils\InputHandler.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Rendering.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\Setting.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
     <ClCompile Include="Core\Vector2.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -115,7 +133,7 @@
     <Image Include="Resource\Exit.png">
       <Filter>资源文件</Filter>
     </Image>
-    <Image Include="Resource\Greed-Snake.ico">
+    <Image Include="Resource\Geed-Snake.ico">
       <Filter>资源文件</Filter>
     </Image>
     <Image Include="Resource\Greed-Snake-BG.png">

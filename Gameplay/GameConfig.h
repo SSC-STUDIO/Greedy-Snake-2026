@@ -15,19 +15,21 @@ namespace GameConfig {
     constexpr float SMOOTH_CAMERA_FACTOR = 0.1f; // Smooth camera movement factor
     constexpr int WINDOW_WIDTH = 760; // Window width
     constexpr int WINDOW_HEIGHT = 760; // Window height
-    constexpr int PLAY_AREA_MARGIN = 100; // Game area margin
-    constexpr float SNAKE_SEGMENT_SPACING = 30.0f; // Snake segment spacing
-    constexpr float PLAYER_SLOW_SPEED = 180.0f; // Snake slow speed
-    constexpr float PLAYER_NORMAL_SPEED = 250.0f; // Snake normal speed
-    constexpr float PLAYER_FAST_SPEED = 320.0f; // Snake fast speed
+    constexpr int PLAY_AREA_MARGIN = 0; // Game area margin
+    constexpr float SNAKE_SEGMENT_SPACING = 20.0f; // Snake segment spacing (grid cell size)
+    constexpr float PLAYER_SLOW_SPEED = 100.0f; // Snake slow speed
+    constexpr float PLAYER_NORMAL_SPEED = 150.0f; // Snake normal speed
+    constexpr float PLAYER_FAST_SPEED = 200.0f; // Snake fast speed
     extern bool SOUND_ON; // Sound toggle (using extern declaration to avoid multiple definitions)
     extern bool ANIMATIONS_ON; // Animations toggle
-    
-    // Modify game area boundaries to accommodate new window size
-    constexpr int PLAY_AREA_LEFT = -WINDOW_WIDTH * 10;        // Expand 10 window widths to the left
-    constexpr int PLAY_AREA_RIGHT = WINDOW_WIDTH * 10;        // Expand 10 window widths to the right
-    constexpr int PLAY_AREA_TOP = -WINDOW_HEIGHT * 10;        // Expand 10 window heights upward
-    constexpr int PLAY_AREA_BOTTOM = WINDOW_HEIGHT * 10;      // Expand 10 window heights downward
+
+    constexpr int GRID_CELL_SIZE = 20; // Grid cell size for classic snake
+
+    // Classic snake game area - fixed size matching window
+    constexpr int PLAY_AREA_LEFT = 0;
+    constexpr int PLAY_AREA_RIGHT = WINDOW_WIDTH;
+    constexpr int PLAY_AREA_TOP = 0;
+    constexpr int PLAY_AREA_BOTTOM = WINDOW_HEIGHT;
     constexpr float LAVA_WARNING_TIME = 5.0f;  // Time allowed before death in lava
     constexpr float INITIAL_SNAKE_SIZE = 22.0f;  // Initial snake radius
     constexpr float SNAKE_GROWTH_SMALL = 0.1f;  // Growth amount after eating food
@@ -99,7 +101,7 @@ public:
         int red = GenerateColorComponent(); // Generate red component
         int green = GenerateColorComponent(); // Generate green component
         int blue = GenerateColorComponent(); // Generate blue component
-        return HSLtoRGB(red, green, blue); // Return HSL color
+        return HSLtoRGB(static_cast<float>(red), static_cast<float>(green), static_cast<float>(blue)); // Return HSL color
     }
 
 private:

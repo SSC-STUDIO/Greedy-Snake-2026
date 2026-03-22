@@ -19,6 +19,16 @@ class Snake;
 class PlayerSnake;
 class AISnake;
 
+struct GameUISnapshot {
+    int score = 0;
+    bool isInvulnerable = false;
+    float remainingInvulnerabilityTime = 0.0f;
+    bool isInLava = false;
+    float remainingLavaWarningTime = 0.0f;
+    bool isPaused = false;
+    bool isMenuShowing = false;
+};
+
 /**
  * @brief 游戏状态管理类
  * 
@@ -43,7 +53,6 @@ public:
         instance.isGameRunning = true;
         instance.isPaused = false;
         instance.isMenuShowing = false; 
-        instance.playerPosition = Vector2();
         instance.targetDirection = Vector2(0, 1);
         instance.deltaTime = 1.0f / 30.0f;
         instance.originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED;
@@ -118,7 +127,6 @@ public:
     bool isPaused = false; // Whether the game is paused
     bool isMenuShowing = false; 
     Camera camera; // Camera
-    Vector2 playerPosition; // Player position
     Vector2 targetDirection{ 0, 1 }; // Target direction
     float deltaTime = 1.0f / 30.0f; // Time increment
     float originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Original speed
@@ -161,18 +169,22 @@ public:
     void AddFoodEaten();
 
     bool IsCollisionEnabled() const;
+    float GetRemainingLavaWarningTime() const;
+    float GetRemainingInvulnerabilityTime() const;
+    GameUISnapshot GetUISnapshot() const;
+    void TriggerGameOver();
+    bool IsDeathMessagePending() const;
+    bool IsSessionFinished() const;
+    void ClearDeathMessage();
 
     void UpdateGameTime(float dt);
-
-    // Update game state for a frame
-    void Update(float deltaTime);
 
     void ShowDeathMessage(); // Modified to non-const, so it can modify member variables
 
     void ShowPauseMenu();
 
     // Add mutex for thread synchronization
-    std::mutex stateMutex;
+    mutable std::mutex stateMutex;
 
     unsigned int worldSeed = 0; 
 

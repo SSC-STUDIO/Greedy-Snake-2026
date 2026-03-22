@@ -7,6 +7,7 @@
 #include "../UI/UI.h"
 #include "../Gameplay/GameConfig.h"
 #include "../UI/UI.h"
+#include <algorithm>
 
 // 静态成员初始化
 DWORD GameState::lastTime = GetTickCount();
@@ -33,10 +34,8 @@ void CheckGameState(Snake* snake) {
         }
 
         gameState.timeInLava += gameState.deltaTime;
-        if (gameState.timeInLava >= GameConfig::LAVA_WARNING_TIME) {
-            gameState.isGameRunning = false;
-            gameState.showDeathMessage = true;
-            gameState.finalScore = gameState.foodEatenCount;
+        if (gameState.timeInLava >= gameState.lavaWarningTime) {
+            gameState.TriggerGameOver();
         }
     }
     else {
@@ -96,6 +95,59 @@ bool GameState::IsCollisionEnabled() const
 {
     if (!GameConfig::ENABLE_COLLISION) return false;
     return !isInvulnerable;
+}
+
+float GameState::GetRemainingLavaWarningTime() const
+{
+    const float remainingTime = lavaWarningTime - timeInLava;
+    return remainingTime > 0.0f ? remainingTime : 0.0f;
+}
+
+float GameState::GetRemainingInvulnerabilityTime() const
+{
+    const float remainingTime = GameConfig::COLLISION_GRACE_PERIOD - gameStartTime;
+    return remainingTime > 0.0f ? remainingTime : 0.0f;
+}
+
+GameUISnapshot GameState::GetUISnapshot() const
+{
+    std::lock_guard<std::mutex> lock(stateMutex);
+
+    GameUISnapshot snapshot;
+    snapshot.score = foodEatenCount;
+    snapshot.isInvulnerable = isInvulnerable;
+    snapshot.remainingInvulnerabilityTime =
+        (std::max)(0.0f, GameConfig::COLLISION_GRACE_PERIOD - gameStartTime);
+    snapshot.isInLava = isInLava;
+    snapshot.remainingLavaWarningTime = (std::max)(0.0f, lavaWarningTime - timeInLava);
+    snapshot.isPaused = isPaused;
+    snapshot.isMenuShowing = isMenuShowing;
+    return snapshot;
+}
+
+void GameState::TriggerGameOver()
+{
+    isGameRunning = false;
+    showDeathMessage = true;
+    finalScore = foodEatenCount;
+}
+
+bool GameState::IsDeathMessagePending() const
+{
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return !isGameRunning && showDeathMessage;
+}
+
+bool GameState::IsSessionFinished() const
+{
+    std::lock_guard<std::mutex> lock(stateMutex);
+    return !isGameRunning && !showDeathMessage;
+}
+
+void GameState::ClearDeathMessage()
+{
+    std::lock_guard<std::mutex> lock(stateMutex);
+    showDeathMessage = false;
 }
 
 void GameState::UpdateGameTime(float dt)
@@ -234,27 +286,3 @@ void GameState::ShowPauseMenu() {
     flushmessage();
 }
 
-void GameState::Update(float deltaTime) {
-    // Update invulnerability status
-    if (isInvulnerable && gameStartTime >= GameConfig::COLLISION_GRACE_PERIOD) {
-        isInvulnerable = false;
-    }
-    
-    // Update collision flash
-    if (isCollisionFlashing) {
-        collisionFlashTimer -= deltaTime;
-        if (collisionFlashTimer <= 0.0f) {
-            isCollisionFlashing = false;
-        }
-    }
-    
-    // Update time in lava if player is outside play area
-    if (isInLava) {
-        timeInLava += deltaTime;
-        if (timeInLava >= lavaWarningTime) {
-            isGameRunning = false;
-            showDeathMessage = true;
-            finalScore = foodEatenCount;
-        }
-    }
-}

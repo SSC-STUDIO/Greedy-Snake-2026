@@ -2,6 +2,7 @@
 #include "GameState.h"
 #include <iostream>
 #include <windows.h>
+#include <tchar.h>
 
 ThreadManager::ThreadManager() 
     : threadsRunning(false) {
@@ -17,6 +18,7 @@ void ThreadManager::SafeThreadExecution(std::function<void()> threadFunction,
     try {
         threadFunction();
     } catch (...) {
+        std::lock_guard<std::mutex> lock(threadMutex);
         exceptionPtr = std::current_exception();
     }
 }
@@ -86,36 +88,50 @@ void ThreadManager::JoinAllThreads() {
     if (updateThread && updateThread->joinable()) {
         updateThread->join();
     }
+
+    std::lock_guard<std::mutex> lock(threadMutex);
+    threadsRunning = false;
 }
 
 bool ThreadManager::HasExceptions() const {
+    std::lock_guard<std::mutex> lock(threadMutex);
     return renderThreadException != nullptr ||
            inputThreadException != nullptr ||
            updateThreadException != nullptr;
 }
 
 void ThreadManager::CheckAndRethrowExceptions() {
-    if (renderThreadException) {
+    std::exception_ptr renderException;
+    std::exception_ptr inputException;
+    std::exception_ptr updateException;
+    {
+        std::lock_guard<std::mutex> lock(threadMutex);
+        renderException = renderThreadException;
+        inputException = inputThreadException;
+        updateException = updateThreadException;
+    }
+
+    if (renderException) {
         try {
-            std::rethrow_exception(renderThreadException);
+            std::rethrow_exception(renderException);
         } catch (const std::exception& e) {
             MessageBox(GetHWnd(), _T("Render thread error occurred"), _T("Error"), MB_OK | MB_ICONERROR);
             OutputDebugStringA(e.what());
         }
     }
     
-    if (inputThreadException) {
+    if (inputException) {
         try {
-            std::rethrow_exception(inputThreadException);
+            std::rethrow_exception(inputException);
         } catch (const std::exception& e) {
             MessageBox(GetHWnd(), _T("Input thread error occurred"), _T("Error"), MB_OK | MB_ICONERROR);
             OutputDebugStringA(e.what());
         }
     }
     
-    if (updateThreadException) {
+    if (updateException) {
         try {
-            std::rethrow_exception(updateThreadException);
+            std::rethrow_exception(updateException);
         } catch (const std::exception& e) {
             MessageBox(GetHWnd(), _T("Update thread error occurred"), _T("Error"), MB_OK | MB_ICONERROR);
             OutputDebugStringA(e.what());
@@ -124,5 +140,6 @@ void ThreadManager::CheckAndRethrowExceptions() {
 }
 
 bool ThreadManager::AreThreadsRunning() const {
+    std::lock_guard<std::mutex> lock(threadMutex);
     return threadsRunning;
 }

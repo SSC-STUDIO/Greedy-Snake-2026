@@ -27,7 +27,7 @@ struct SnakeSegment {
     Vector2 position;                    // 蛇段位置
     Vector2 direction;                   // 蛇段方向
     std::queue<Vector2> positionHistory; // 位置历史记录
-    int colorValue = HSLtoRGB(255, 255, 255); // 颜色值（默认白色）
+    int colorValue = HSLtoRGB(255.0f, 255.0f, 255.0f); // 颜色值（默认白色）
     float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE; // 碰撞半径
     float timeSinceLastRecord = 0;       // 距离上次记录的时间
 
@@ -40,25 +40,33 @@ struct SnakeSegment {
  * 
  * 定义了蛇的基本属性和行为，包括位置、方向、绘制和碰撞检测
  */
+enum Direction { UP, DOWN, LEFT, RIGHT };
+
 class Snake {
 public:
-    Vector2 position;              // 位置
-    Vector2 direction;             // 方向
-    std::queue<Vector2> posRecords; // 位置记录
-    int color = HSLtoRGB(255, 255, 255); // 颜色
-    float radius = GameConfig::INITIAL_SNAKE_SIZE; // 半径
-    float currentTime = 0;         // 当前时间
-    std::vector<Snake> segments;   // 身体段
+    Vector2 position;
+    Vector2 direction;
+    Direction currentDir;
+    Direction nextDir;
+    std::queue<Vector2> posRecords;
+    int color = HSLtoRGB(255.0f, 255.0f, 255.0f);
+    float radius = GameConfig::INITIAL_SNAKE_SIZE;
+    float currentTime = 0;
+    float moveTimer = 0.0f;
+    float moveInterval = 0.15f;
+    std::vector<Snake> segments;
+    bool gridSnake = true;
 
-    virtual void Update(float deltaTime);                                     // 更新蛇
-    Vector2 GetVelocity() const;                                             // 获取速度
-    bool IsBeginRecord() const;                                               // 检查是否开始记录
-    void RecordPos();                                                         // 记录位置
-    Vector2 GetRecordTime() const;                                            // 获取记录时间
-    void UpdateBody(const Snake& lastBody, Snake& currentBody);             // 更新身体
-    virtual void Draw(const Camera& camera) const;                            // 绘制蛇
-    virtual bool CheckCollisionWith(const Snake& other) const;               // 检测与另一条蛇的碰撞
-    virtual bool CheckCollisionWithPoint(const Vector2& point, float pointRadius) const; // 检测与点的碰撞
+    virtual void Update(float deltaTime);
+    Vector2 GetVelocity() const;
+    bool IsBeginRecord() const;
+    void RecordPos();
+    Vector2 GetRecordTime() const;
+    void UpdateBody(const Snake& lastBody, Snake& currentBody);
+    virtual void Draw(const Camera& camera) const;
+    virtual bool CheckCollisionWith(const Snake& other) const;
+    virtual bool CheckCollisionWithPoint(const Vector2& point, float pointRadius) const;
+    void MoveSnakeGrid(float deltaTime);
 };
 
 /**
@@ -69,14 +77,16 @@ public:
 class PlayerSnake : public Snake {
 public:
     std::vector<Snake> segments;
-    bool isInvincible = false;        // 是否无敌
-    float invincibilityTimer = 0.0f; // 无敌计时器
-    int livesRemaining = 3;           // 剩余生命
-    int score = 0;                    // 玩家分数
+    bool isInvincible = false;
+    float invincibilityTimer = 0.0f;
+    int livesRemaining = 3;
+    int score = 0;
+    bool isDead = false;
 
-    void Update(float deltaTime) override;                                 // 更新玩家蛇
-    void Draw(const Camera& camera) const override;                        // 绘制玩家蛇
-    bool CheckCollisionWith(const Snake& other) const override;            // 检测碰撞
+    void Update(float deltaTime) override;
+    void Draw(const Camera& camera) const override;
+    bool CheckCollisionWith(const Snake& other) const override;
+    void GrowSnake();
 };
 
 /**
@@ -86,26 +96,28 @@ public:
  */
 class AISnake : public Snake {
 public:
-    float directionChangeTimer = 0.0f;      // 方向变化计时器
-    float speedMultiplier = 1.0f;           // 速度倍数
-    float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION; // 攻击性因子
+    float directionChangeTimer = 0.0f;
+    float speedMultiplier = 1.0f;
+    float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION;
     std::vector<Snake> segments;
     std::deque<Vector2> recordedPositions;
-    bool isDying = false;                    // 是否正在死亡
-    float deathTimer = 0.0f;                // 死亡动画计时器
-    int dyingSegmentIndex = -1;             // 正在消失的段索引（-1表示头部）
-    float segmentFadeTime = 0.2f;           // 每段消失时间
-    int foodValueOnDeath = 0;               // 死亡时提供的食物价值
+    bool isDying = false;
+    float deathTimer = 0.0f;
+    int dyingSegmentIndex = -1;
+    float segmentFadeTime = 0.2f;
+    int foodValueOnDeath = 0;
+    bool isDead = false;
 
     AISnake() {
-        Initialize(); // 构造时初始化
+        Initialize();
     }
 
-    void Initialize();                                                       // 初始化AI蛇
+    void Initialize();
     void Update(const FoodItem* foodItems, int foodCount, const FoodSpatialGrid* grid,
-                float deltaTime, const Vector2& playerHeadPos); // 更新AI蛇
-    void Draw(const Camera& camera) const override;                          // 绘制AI蛇
-    void UpdateDeathAnimation(float deltaTime);                              // 更新死亡动画
-    void StartDying(int foodValue);                                          // 开始死亡过程
-    bool CheckCollisionWith(const Snake& other) const override;              // 检测碰撞
+                float deltaTime, const Vector2& playerHeadPos);
+    void Draw(const Camera& camera) const override;
+    void UpdateDeathAnimation(float deltaTime);
+    void StartDying(int foodValue);
+    bool CheckCollisionWith(const Snake& other) const override;
+    void CheckWallCollision();
 };
