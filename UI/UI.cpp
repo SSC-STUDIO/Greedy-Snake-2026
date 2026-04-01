@@ -192,6 +192,37 @@ int ShowGameMenu() {
 
 // ---------- Sound & Animation Functions ----------
 
+// SECURITY: Safe MCI command builder with path validation
+bool sendMciCommandSafe(const TCHAR* alias, const TCHAR* command, const std::string& filename) {
+    // Validate filename - only allow safe characters
+    std::string safeFilename(filename);
+    for (auto& c : safeFilename) {
+        if (!std::isalnum(c) && c != '-' && c != '_' && c != '.') {
+            return false;  // Invalid character detected
+        }
+    }
+    
+    // Build full path and validate
+    std::string fullPath = "./Resource/SoundEffects/" + safeFilename;
+    if (!validateResourcePath(fullPath)) {
+        return false;
+    }
+    
+    // Convert to wide string for MCI
+    std::wstring wFullPath(fullPath.begin(), fullPath.end());
+    
+    // Build safe command with quoted path
+    TCHAR cmd[512];
+    if (_tcscmp(command, _T("open")) == 0) {
+        _stprintf_s(cmd, _T("open \"%s\" alias %s"), wFullPath.c_str(), alias);
+    } else {
+        _stprintf_s(cmd, _T("%s %s"), command, alias);
+    }
+    
+    mciSendString(cmd, NULL, 0, NULL);
+    return true;
+}
+
 void PlayBackgroundMusic() {
     // Check if music is already playing
     TCHAR statusBuff[256] = {0};
@@ -200,25 +231,27 @@ void PlayBackgroundMusic() {
         mciSendString(_T("close Greed-Snake"), NULL, 0, NULL);
     }
     
-    // Open and play music
-    mciSendString(_T("open .\\Resource\\SoundEffects\\Greed-Snake.mp3 alias Greed-Snake"), NULL, NULL, NULL); // Open music file
-    mciSendString(_T("play Greed-Snake repeat"), NULL, NULL, NULL); // Play music
-    SetVolume(GameConfig::DEFAULT_VOLUME);  // Set initial volume
+    // SECURITY: Use safe command construction with validated hardcoded filename
+    TCHAR cmd[512];
+    _stprintf_s(cmd, _T("open \".\\Resource\\SoundEffects\\Greed-Snake.mp3\" alias Greed-Snake"));
+    mciSendString(cmd, NULL, 0, NULL);
+    mciSendString(_T("play Greed-Snake repeat"), NULL, 0, NULL);
+    SetVolume(GameConfig::DEFAULT_VOLUME);
 }
 
 void StopBackgroundMusic() {
     // Check if music is playing before trying to stop it
     TCHAR statusBuff[256] = {0};
     if (mciSendString(_T("status Greed-Snake mode"), statusBuff, 256, NULL) == 0) {
-        mciSendString(_T("stop Greed-Snake"), NULL, NULL, NULL); // Stop music
-        mciSendString(_T("close Greed-Snake"), NULL, NULL, NULL); // Close music
+        mciSendString(_T("stop Greed-Snake"), NULL, 0, NULL);
+        mciSendString(_T("close Greed-Snake"), NULL, 0, NULL);
     }
 }
 
 void PlayStartAnimation() {
     // Define frame file path and file extension
-    const TCHAR* path = _T(".\\Resource\\Greed-Snake-Start-Animation-Frames\\"); // Frame file path
-    const TCHAR* ext = _T(".bmp"); // File extension
+    const TCHAR* path = _T(".\\Resource\\Greed-Snake-Start-Animation-Frames\\");
+    const TCHAR* ext = _T(".bmp");
 
     // Check if animation audio is already playing and close it if needed
     TCHAR statusBuff[256] = {0};
@@ -226,27 +259,24 @@ void PlayStartAnimation() {
         mciSendString(_T("close Start-Animation"), NULL, 0, NULL);
     }
 
-    // Always play the sound even if animations are off
-    mciSendString(_T("open .\\Resource\\SoundEffects\\Greed-Snake-Start-Animation.MP3 alias Start-Animation"), NULL, NULL, NULL); // Open animation music
-    mciSendString(_T("play Start-Animation"), NULL, NULL, NULL); // Play animation music
+    // SECURITY: Use safe command construction with hardcoded validated filename
+    TCHAR cmd[512];
+    _stprintf_s(cmd, _T("open \".\\Resource\\SoundEffects\\Greed-Snake-Start-Animation.MP3\" alias Start-Animation"));
+    mciSendString(cmd, NULL, 0, NULL);
+    mciSendString(_T("play Start-Animation"), NULL, 0, NULL);
     
     if (!GameConfig::ANIMATIONS_ON) {
-        // If animations are disabled, just wait a moment and return
         Sleep(1000);
         return;
     }
     
-    Sleep(6000); // Wait 6 seconds
+    Sleep(6000);
 
-    // Declare IMAGE structure variable
-    IMAGE FImg;    
-
-    // Use loop to load and display each frame
+    IMAGE FImg;
     for (int i = 0; i <= GameConfig::NUM_FRAMES; i++) {
-        TCHAR frameFileName[MAX_PATH];  // Ensure buffer is large enough to store full path
-        _stprintf_s(frameFileName, MAX_PATH, _T("%sframe_%d%s"), path, i, ext); // Format frame filename
+        TCHAR frameFileName[MAX_PATH];
+        _stprintf_s(frameFileName, MAX_PATH, _T("%sframe_%d%s"), path, i, ext);
 
-        // Load image and draw it
         loadimage(&FImg, frameFileName);
         IMAGE scaledG;
         scaledG.Resize(GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
@@ -254,7 +284,6 @@ void PlayStartAnimation() {
             GetImageHDC(&FImg), 0, 0, FImg.getwidth(), FImg.getheight(), SRCCOPY);
         putimage(0, 0, &scaledG);
         
-        // Sleep without holding the mutex
         Sleep(GameConfig::FRAME_DELAY);
     }
 }
