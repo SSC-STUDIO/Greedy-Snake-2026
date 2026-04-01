@@ -4,6 +4,52 @@
 #include "../UI/UI.h"
 #include "../Gameplay/Snake.h"
 
+// SECURITY: Direction validation to prevent 180-degree turns (wall hack)
+bool isOppositeDirection(Direction current, Direction next) {
+    return (current == UP && next == DOWN) ||
+           (current == DOWN && next == UP) ||
+           (current == LEFT && next == RIGHT) ||
+           (current == RIGHT && next == LEFT);
+}
+
+// SECURITY: Validate key input range
+bool isValidKey(int key) {
+    return key >= 0 && key <= 255;
+}
+
+// SECURITY: Process input with validation
+void processInput(int key, PlayerSnake& player) {
+    // Validate key range
+    if (!isValidKey(key)) {
+        return;  // Invalid input
+    }
+    
+    Direction newDir = player.currentDir;
+    
+    // Map key to direction
+    switch (key) {
+        case VK_UP:
+            newDir = UP;
+            break;
+        case VK_DOWN:
+            newDir = DOWN;
+            break;
+        case VK_LEFT:
+            newDir = LEFT;
+            break;
+        case VK_RIGHT:
+            newDir = RIGHT;
+            break;
+        default:
+            return;  // Not a direction key
+    }
+    
+    // SECURITY: Prevent 180-degree turns (anti-wall-hack)
+    if (!isOppositeDirection(player.currentDir, newDir)) {
+        player.nextDir = newDir;
+    }
+}
+
 void EnterChanges() {
     auto& runtime = GameRuntime();
     while (GameState::Instance().GetIsGameRunning()) {
@@ -25,21 +71,9 @@ void EnterChanges() {
         if (peekmessage(&Message, EX_KEY)) {
             if (Message.message == WM_KEYDOWN) {
                 PlayerSnake& player = static_cast<PlayerSnake&>(runtime.snake[0]);
-
-                switch (Message.vkcode) {
-                case VK_UP:
-                    player.nextDir = UP;
-                    break;
-                case VK_DOWN:
-                    player.nextDir = DOWN;
-                    break;
-                case VK_LEFT:
-                    player.nextDir = LEFT;
-                    break;
-                case VK_RIGHT:
-                    player.nextDir = RIGHT;
-                    break;
-                }
+                
+                // SECURITY: Use validated input processing
+                processInput(Message.vkcode, player);
             }
         }
 
