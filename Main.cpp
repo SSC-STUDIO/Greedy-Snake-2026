@@ -7,6 +7,54 @@
 #include <algorithm>
 #include <windows.h>
 #include <mmsystem.h>
+
+// SECURITY: Anti-debug detection
+#ifdef _WIN32
+bool isDebuggerPresentAdvanced() {
+    // Check 1: Standard IsDebuggerPresent
+    if (IsDebuggerPresent()) {
+        return true;
+    }
+    
+    // Check 2: CheckRemoteDebuggerPresent
+    BOOL remoteDebugged = FALSE;
+    CheckRemoteDebuggerPresent(GetCurrentProcess(), &remoteDebugged);
+    if (remoteDebugged) {
+        return true;
+    }
+    
+    // Check 3: Debug registers (hardware breakpoints)
+    CONTEXT ctx = {};
+    ctx.ContextFlags = CONTEXT_DEBUG_REGISTERS;
+    if (GetThreadContext(GetCurrentThread(), &ctx)) {
+        if (ctx.Dr0 != 0 || ctx.Dr1 != 0 || ctx.Dr2 != 0 || ctx.Dr3 != 0) {
+            return true;
+        }
+    }
+    
+    // Check 4: Heap flags (debug heap)
+#ifdef _WIN64
+    DWORD64 heapFlags = *(DWORD64*)((BYTE*)GetProcessHeap() + 0x70);
+    DWORD64 heapForceFlags = *(DWORD64*)((BYTE*)GetProcessHeap() + 0x74);
+#else
+    DWORD heapFlags = *(DWORD*)((BYTE*)GetProcessHeap() + 0x0C);
+    DWORD heapForceFlags = *(DWORD*)((BYTE*)GetProcessHeap() + 0x10);
+#endif
+    if ((heapFlags & ~HEAP_NO_SERIALIZE) != 0 || heapForceFlags != 0) {
+        return true;
+    }
+    
+    return false;
+}
+
+void antiDebugCheck() {
+    if (isDebuggerPresentAdvanced()) {
+        // Debugger detected - silently exit or take defensive action
+        ExitProcess(1);
+    }
+}
+#endif
+
 #include "Gameplay/GameConfig.h"
 #include "Core/Vector2.h"
 #include "Core/GameRuntime.h"
@@ -308,6 +356,11 @@ void RunRenderLoop() {
 }
 
 int main() {
+    // SECURITY: Anti-debug check at startup
+#ifdef _WIN32
+    antiDebugCheck();
+#endif
+
     initgraph(GameConfig::WINDOW_WIDTH, GameConfig::WINDOW_HEIGHT);
 
     ResourceManager& resourceManager = ResourceManager::Instance();
