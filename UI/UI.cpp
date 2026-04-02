@@ -4,10 +4,14 @@
 #include <mmsystem.h>
 #include "../Utils/Setting.h"
 #include "../Utils/DrawHelpers.h"
+#include "../Utils/PathSecurity.h"
 #pragma comment(lib, "winmm.lib")
 
 // Global button list
 std::vector<Button> buttonList;
+
+// Maximum safe path length
+constexpr size_t MAX_RESOURCE_PATH_LENGTH = 512;
 
 // Load button resources for the menu
 void LoadButton()
@@ -165,9 +169,18 @@ void StopBackgroundMusic() {
 }
 
 void PlayStartAnimation() {
-    // Define frame file path and file extension
+    // Define frame file path and file extension with validation
     const TCHAR* path = _T(".\\Resource\\Greed-Snake-Start-Animation-Frames\\"); // Frame file path
     const TCHAR* ext = _T(".bmp"); // File extension
+
+    // SECURITY FIX: Validate hardcoded paths
+    std::wstring pathStr(path);
+    std::wstring extStr(ext);
+    if (!Security::PathValidator::ValidatePathTraversal(pathStr) ||
+        !Security::PathValidator::ValidatePathTraversal(extStr)) {
+        OutputDebugStringA("PathSecurity: Invalid animation path\n");
+        return;
+    }
 
     // Check if animation audio is already playing and close it if needed
     TCHAR statusBuff[256] = {0};
@@ -192,8 +205,29 @@ void PlayStartAnimation() {
 
     // Use loop to load and display each frame
     for (int i = 0; i <= GameConfig::NUM_FRAMES; i++) {
-        TCHAR frameFileName[MAX_PATH];  // Ensure buffer is large enough to store full path
-        _stprintf_s(frameFileName, MAX_PATH, _T("%sframe_%d%s"), path, i, ext); // Format frame filename
+        // SECURITY FIX: Use larger buffer and safer formatting
+        TCHAR frameFileName[MAX_RESOURCE_PATH_LENGTH];  
+        
+        // Calculate expected length first
+        int expectedLen = _sctprintf(_T("%sframe_%d%s"), path, i, ext);
+        if (expectedLen < 0 || expectedLen >= MAX_RESOURCE_PATH_LENGTH) {
+            OutputDebugStringA("PathSecurity: Frame filename too long\n");
+            break; // Skip this frame
+        }
+
+        // SECURITY FIX: Use safer formatting with explicit buffer size
+        HRESULT hr = StringCchPrintf(frameFileName, MAX_RESOURCE_PATH_LENGTH, _T("%sframe_%d%s"), path, i, ext);
+        if (FAILED(hr)) {
+            OutputDebugStringA("PathSecurity: Failed to format frame filename\n");
+            continue; // Skip this frame
+        }
+
+        // SECURITY FIX: Validate the constructed path
+        std::wstring framePath(frameFileName);
+        if (!Security::PathValidator::ValidatePathTraversal(framePath)) {
+            OutputDebugStringA("PathSecurity: Invalid frame path\n");
+            continue; // Skip this frame
+        }
 
         // Load image and draw it
         loadimage(&FImg, frameFileName);
