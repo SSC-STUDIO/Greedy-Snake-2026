@@ -19,13 +19,17 @@ enum class MenuOption {
 void LoadButton();
 
 // Draw the main menu interface
-void DrawMenu();
+void DrawMenu(const Vector2& mousePosition);
 
 // Display "About" information screen
 void ShowAbout();
 
 // Display game main menu, returns user's menu selection
 int ShowGameMenu();
+void ShowLandingScreen();
+void PlaySceneTransition(LPCTSTR title, LPCTSTR subtitle, COLORREF accentColor, bool entering);
+void PlaySceneTransition(LPCTSTR title, COLORREF accentColor, bool entering);
+void PlaySessionIntroSequence(LPCTSTR title, LPCTSTR subtitle, COLORREF accentColor);
 
 // Sound & Animation Functions
 // Play background music

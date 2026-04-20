@@ -1,9 +1,11 @@
 #pragma once
-#include "../Core/Vector2.h"    
-#include "../Gameplay/GameConfig.h" 
-#include "../Core/GameState.h" 
+#include "../ModernCore/Vector2.h"
+#include "../Gameplay/GameConfig.h"
+#include "../Core/GameState.h"
 #include <graphics.h>
 #include <vector>
+
+using Vector2 = GreedSnake::Vector2;
 
 // Food structure
 struct FoodItem {
@@ -21,6 +23,7 @@ struct FoodSpatialGrid {
     std::vector<std::vector<int>> cells;
 
     void Initialize(int cellSizeIn, float left, float top, float right, float bottom);
+    bool MatchesConfiguration(int cellSizeIn, float left, float top, float right, float bottom) const;
     void Clear();
     void Build(const FoodItem* foodList, int foodCount);
     void QueryRect(const Vector2& minPos, const Vector2& maxPos, std::vector<int>& outIndices) const;
@@ -35,4 +38,5 @@ void UpdateFoods(FoodItem* foodList, int foodCount);
 
 // Build and access the shared food spatial grid.
 void BuildFoodSpatialGrid(const FoodItem* foodList, int foodCount);
+void ResetFoodSpatialGrid();
 const FoodSpatialGrid* GetFoodSpatialGrid();

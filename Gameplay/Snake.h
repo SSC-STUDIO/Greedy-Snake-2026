@@ -1,12 +1,16 @@
 #pragma once
 #include "../Gameplay/GameConfig.h"
 #include "../Core/GameState.h"
-#include "../Core/Vector2.h"
+#include "../ModernCore/Vector2.h"
+#include "../ModernCore/Direction.h"
 #include "../Core/Camera.h"
 #include "../Utils/Rendering.h"
 #include "Food.h"
 #include <queue>
 #include <deque>
+
+using Vector2 = GreedSnake::Vector2;
+using Direction = GreedSnake::Direction;
 
 /**
  * @file Snake.h
@@ -16,32 +20,12 @@
 // FoodItem结构前向声明
 struct FoodItem;
 struct FoodSpatialGrid;
-struct FoodSpatialGrid;
-
-/**
- * @brief 蛇段结构体
- * 
- * 表示蛇的一个身体段，包含位置、方向和历史记录
- */
-struct SnakeSegment {
-    Vector2 position;                    // 蛇段位置
-    Vector2 direction;                   // 蛇段方向
-    std::queue<Vector2> positionHistory; // 位置历史记录
-    int colorValue = HSLtoRGB(255.0f, 255.0f, 255.0f); // 颜色值（默认白色）
-    float collisionRadius = GameConfig::INITIAL_SNAKE_SIZE; // 碰撞半径
-    float timeSinceLastRecord = 0;       // 距离上次记录的时间
-
-    Vector2 GetVelocity() const;        // 获取速度
-    bool CanRecordPosition() const;      // 检查是否可以记录位置
-};
 
 /**
  * @brief 蛇基类
- * 
+ *
  * 定义了蛇的基本属性和行为，包括位置、方向、绘制和碰撞检测
  */
-enum Direction { UP, DOWN, LEFT, RIGHT };
-
 class Snake {
 public:
     Vector2 position;
@@ -76,7 +60,7 @@ public:
  */
 class PlayerSnake : public Snake {
 public:
-    std::vector<Snake> segments;
+    Vector2 previousPosition;
     bool isInvincible = false;
     float invincibilityTimer = 0.0f;
     int livesRemaining = 3;
@@ -99,7 +83,6 @@ public:
     float directionChangeTimer = 0.0f;
     float speedMultiplier = 1.0f;
     float aggressionFactor = GameConfig::Difficulty::Normal::AI_AGGRESSION;
-    std::vector<Snake> segments;
     std::deque<Vector2> recordedPositions;
     bool isDying = false;
     float deathTimer = 0.0f;

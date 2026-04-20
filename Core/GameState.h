@@ -4,15 +4,17 @@
  */
 
 #pragma once
-#include "../Core/Vector2.h"
+#include "AppSettings.h"
+#include "Camera.h"
+#include "../ModernCore/Vector2.h"
 #include "../Gameplay/GameConfig.h"
-#include "../Core/Camera.h"
-#include "../Gameplay/Snake.h"
 #include <mutex>
 #include <easyx.h>
-#include <conio.h> 
-#include <windows.h> 
+#include <conio.h>
+#include <windows.h>
 #pragma warning(disable: 4996)
+
+using Vector2 = GreedSnake::Vector2;
 
 // 前向声明避免循环包含
 class Snake;
@@ -41,42 +43,8 @@ public:
         return instance;
     }
 
-    void Initial() {
-        // Use a lock to protect initialization
-        std::lock_guard<std::mutex> lock(stateMutex);
-        
-        // Reset each member instead of using assignment
-        auto& instance = Instance();
-        instance.currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED;
-        instance.recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL;
-        instance.isMouseControlEnabled = true;
-        instance.isGameRunning = true;
-        instance.isPaused = false;
-        instance.isMenuShowing = false; 
-        instance.targetDirection = Vector2(0, 1);
-        instance.deltaTime = 1.0f / 30.0f;
-        instance.originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED;
-        instance.timeInLava = 0.0f;
-        instance.isInLava = false;
-        instance.foodEatenCount = 0;
-        instance.aiAggression = GameConfig::Difficulty::Normal::AI_AGGRESSION;
-        instance.foodSpawnRate = GameConfig::Difficulty::Normal::FOOD_SPAWN_RATE;
-        instance.aiSnakeCount = GameConfig::Difficulty::Normal::AI_SNAKE_COUNT;
-        instance.lavaWarningTime = GameConfig::Difficulty::Normal::LAVA_WARNING_TIME;
-        instance.collisionFlashTimer = 0.0f;
-        instance.isCollisionFlashing = false;
-        instance.gameStartTime = 0.0f;
-        instance.isInvulnerable = true;
-        instance.showDeathMessage = false;
-        instance.finalScore = 0;
-        instance.returnToMenu = false;
-        instance.currentDifficulty = GameDifficulty::Normal;
-        instance.difficulty = 1; // Default to normal difficulty
-        
-        // Reset static members
-        exitGame = false;
-        lastTime = GetTickCount();
-    }
+    void ResetForNewSession(const GameSettings& settings);
+    void ApplySessionSettings(const GameSettings& settings);
     
     // Thread-safe getters and setters for commonly accessed state
     bool GetIsPaused() {
@@ -119,10 +87,54 @@ public:
         targetDirection = direction;
     }
 
+    float GetDeltaTime() const {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return deltaTime;
+    }
+
+    void SetDeltaTime(float dt) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        deltaTime = dt;
+    }
+
+    bool IsMouseControlEnabled() const {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return isMouseControlEnabled;
+    }
+
+    void SetMouseControlEnabled(bool enabled) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        isMouseControlEnabled = enabled;
+    }
+
+    Vector2 GetGameplayMouseScreenPosition() const {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        return gameplayMouseScreenPosition;
+    }
+
+    void SetGameplayMouseScreenPosition(const Vector2& position) {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        gameplayMouseScreenPosition = position;
+    }
+
+    bool ConsumeMouseMovementForActivation(const Vector2& position);
+    void ResetMouseTracking(const Vector2& position);
+    void PrimeMouseTracking(const Vector2& position);
+
+    void ResumeGameplay();
+    void StartSpeedBoost();
+    void StopSpeedBoost();
+    void SetCameraPosition(const Vector2& position);
+    void RequestReturnToMenu();
+    void RequestExit();
+    bool ShouldReturnToMenu() const;
+    bool ShouldExitProgram() const;
+    void ClearSessionOutcome();
+
     // Variables that need to be accessed frequently should use the getter/setter methods
     float currentPlayerSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Current player speed
     float recordInterval = GameConfig::DEFAULT_RECORD_INTERVAL; // Record interval
-    bool isMouseControlEnabled = true; // Whether mouse control is enabled
+    bool isMouseControlEnabled = false; // Whether mouse control is enabled
     bool isGameRunning = true; // Whether the game is running
     bool isPaused = false; // Whether the game is paused
     bool isMenuShowing = false; 
@@ -130,6 +142,11 @@ public:
     Vector2 targetDirection{ 0, 1 }; // Target direction
     float deltaTime = 1.0f / 30.0f; // Time increment
     float originalSpeed = GameConfig::DEFAULT_PLAYER_SPEED; // Original speed
+    bool isSpeedBoostActive = false; // Whether left mouse acceleration is active
+    Vector2 gameplayMouseScreenPosition{
+        static_cast<float>(GameConfig::WINDOW_WIDTH) / 2.0f,
+        static_cast<float>(GameConfig::WINDOW_HEIGHT) / 2.0f
+    };
     float timeInLava = 0.0f;  // Time spent in lava
     bool isInLava = false;    // Whether snake is in lava
     int foodEatenCount = 0;  // Number of food items eaten
@@ -158,8 +175,7 @@ public:
 
     GameDifficulty currentDifficulty = GameDifficulty::Normal; // Current difficulty
 
-    // Static members for game timing and control
-    static DWORD lastTime; // Last time measured for game timing
+    // Static members for game control
     static bool exitGame; // Whether to exit the game completely
 
     void SetDifficulty(GameDifficulty difficulty);
@@ -189,9 +205,19 @@ public:
     unsigned int worldSeed = 0; 
 
 private:
+    void ResetSpeedBoostStateLocked();
+    void RestoreSpeedBoostStateLocked();
+
+    Vector2 lastMouseActivationSample{
+        static_cast<float>(GameConfig::WINDOW_WIDTH) / 2.0f,
+        static_cast<float>(GameConfig::WINDOW_HEIGHT) / 2.0f
+    };
+    bool hasMouseActivationSample = false;
+    bool pausedWithSpeedBoost = false;
+
     GameState() = default; // Private constructor
     GameState(const GameState&) = delete;
     GameState& operator=(const GameState&) = delete;
 };
 
-void CheckGameState(Snake* snake);
+void CheckGameState(PlayerSnake& player);

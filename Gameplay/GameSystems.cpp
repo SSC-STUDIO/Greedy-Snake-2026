@@ -2,13 +2,16 @@
 #include "../Gameplay/GameConfig.h"
 #include "../Core/Collisions.h"
 #include "../Core/GameRuntime.h"
+#include "../Core/SessionConfig.h"
 #include "../Core/GameState.h"
 
 void UpdatePlayerSnake(float deltaTime) {
     auto& runtime = GameRuntime();
-    PlayerSnake& player = static_cast<PlayerSnake&>(runtime.snake[0]);
+    PlayerSnake& player = runtime.playerSnake;
+    auto& gameState = GameState::Instance();
 
     if (player.gridSnake) {
+        player.previousPosition = player.position;
         player.MoveSnakeGrid(deltaTime);
 
         for (size_t i = 0; i < player.segments.size(); i++) {
@@ -17,17 +20,30 @@ void UpdatePlayerSnake(float deltaTime) {
         return;
     }
 
-    runtime.snake[0].direction = GameState::Instance().targetDirection;
-    runtime.snake[0].position = runtime.snake[0].position + runtime.snake[0].GetVelocity() * deltaTime;
-    runtime.snake[0].Update(deltaTime);
+    // 获取目标方向并平滑转向
+    Vector2 targetDir = gameState.GetTargetDirection();
+    if (targetDir.Length() > 0.0f) {
+        // 平滑转向（原版风格）- 提高响应速度
+        float turnSpeed = 0.3f;
+        player.direction = ResolveSmoothSteeringDirection(player.direction, targetDir, turnSpeed);
+    }
 
-    for (size_t i = 0; i < runtime.snake[0].segments.size(); i++) {
+    // 根据速度更新位置（连续移动模式）
+    player.previousPosition = player.position;
+    Vector2 velocity = player.direction * gameState.currentPlayerSpeed;
+    player.position = player.position + velocity * deltaTime;
+
+    // 记录位置供蛇身跟随
+    player.Snake::Update(deltaTime);
+
+    // 更新蛇身段
+    for (size_t i = 0; i < runtime.playerSnake.segments.size(); i++) {
         if (i == 0) {
-            runtime.snake[0].UpdateBody(runtime.snake[0], runtime.snake[0].segments[i]);
+            runtime.playerSnake.UpdateBody(runtime.playerSnake, runtime.playerSnake.segments[i]);
         } else {
-            runtime.snake[0].UpdateBody(runtime.snake[0].segments[i - 1], runtime.snake[0].segments[i]);
+            runtime.playerSnake.UpdateBody(runtime.playerSnake.segments[i - 1], runtime.playerSnake.segments[i]);
         }
-        runtime.snake[0].segments[i].Update(deltaTime);
+        runtime.playerSnake.segments[i].Update(deltaTime);
     }
 }
 
@@ -41,30 +57,14 @@ void UpdateAISnakes(float deltaTime) {
             GameConfig::MAX_FOOD_COUNT,
             foodGrid,
             deltaTime,
-            runtime.snake[0].position);
-
-        aiSnake.RecordPos();
-
-        for (size_t i = 0; i < aiSnake.segments.size(); i++) {
-            if (i == 0) {
-                aiSnake.UpdateBody(aiSnake, aiSnake.segments[i]);
-            } else {
-                aiSnake.UpdateBody(aiSnake.segments[i - 1], aiSnake.segments[i]);
-            }
-            aiSnake.segments[i].Update(deltaTime);
-        }
-
-        for (auto& segment : aiSnake.segments) {
-            segment.color = aiSnake.color;
-            segment.radius = aiSnake.radius;
-        }
+            runtime.playerSnake.position);
     }
 }
 
 void UpdateCamera() {
     auto& runtime = GameRuntime();
     auto& gameState = GameState::Instance();
-    Vector2 targetPos = runtime.snake[0].position - Vector2(
+    Vector2 targetPos = runtime.playerSnake.position - Vector2(
         static_cast<float>(GameConfig::WINDOW_WIDTH) / 2.0f,
         static_cast<float>(GameConfig::WINDOW_HEIGHT) / 2.0f);
 
@@ -74,18 +74,14 @@ void UpdateCamera() {
 
 void RunCollisionChecks() {
     auto& runtime = GameRuntime();
-    auto& gameState = GameState::Instance();
 
-    if (!gameState.IsCollisionEnabled()) {
-        return;
-    }
-
+    // Always run collision checks, invulnerability handled internally
     CollisionManager::CheckCollisions(
-        runtime.snake,
+        runtime.playerSnake,
         runtime.aiSnakeList.data(),
         static_cast<int>(runtime.aiSnakeList.size()),
         runtime.foodList,
         GameConfig::MAX_FOOD_COUNT);
 
-    CheckGameState(runtime.snake);
+    CheckGameState(runtime.playerSnake);
 }

@@ -1,27 +1,24 @@
 #pragma once
-#include "../Gameplay/GameConfig.h"
-#include "../Core/GameState.h"
+#include "../Core/AppSettings.h"
+#include <windows.h>
 #include <mmsystem.h>
 #include <tchar.h>
-#include "../Core/Vector2.h"
-#include <windows.h>
-#pragma comment(lib, "winmm.lib") 
-#pragma warning(disable: 4996)	 // Disable security warnings for _tcscpy and _stprintf functions
+#include "../ModernCore/Vector2.h"
+#pragma comment(lib, "winmm.lib")
+#pragma warning(disable: 4996)
 
-// Game settings structure
-struct GameSettings {
-    float volume;         // Volume (0.0-1.0)
-    int difficulty;       // Difficulty (0-Easy, 1-Normal, 2-Hard)
-    bool soundOn;         // Sound toggle
-    int snakeSpeed;       // Snake speed (0-Slow, 1-Normal, 2-Fast)
-    bool animationsOn;    // Animation toggle
-};
+using Vector2 = GreedSnake::Vector2;	 // Disable security warnings for _tcscpy and _stprintf functions
 
 // Set volume (0.0-1.0)
 void SetVolume(float volume);
 
 // Apply settings
 void ApplySettings(const GameSettings& settings);
+void InitializeDisplayConfig(const GameSettings& settings);
+void ApplyDisplayModeToCurrentWindow();
+
+// Read the persistent application settings used for the next session.
+GameSettings GetCurrentSettings();
 
 // Display settings interface
 void ShowSettings(int windowWidth, int windowHeight);

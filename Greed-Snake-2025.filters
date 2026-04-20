@@ -45,10 +45,7 @@
     <ClInclude Include="Core\GameState.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Vector2.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Gameplay\Food.h">
+        <ClInclude Include="Gameplay\Food.h">
       <Filter>Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="Gameplay\GameConfig.h">
@@ -119,10 +116,7 @@
     <ClCompile Include="Utils\Setting.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Vector2.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Main.cpp">
+        <ClCompile Include="Main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

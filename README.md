@@ -98,7 +98,7 @@ Greed-Snake-2025/
 ├── UI/                    # 用户界面
 │   ├── UI.*              # 主界面
 │   └── Button.*          # 按钮组件
-└── Resources/             # 资源文件
+└── Resource/              # 资源文件
     ├── *.png             # 图片资源
     └── *.wav             # 音频文件
 ```

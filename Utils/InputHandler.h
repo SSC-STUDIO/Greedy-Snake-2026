@@ -1,11 +1,12 @@
 #pragma once
-#include "../Core/Vector2.h"
-#include "../Core/GameState.h"
+#include "../ModernCore/Vector2.h"
 #include "../Gameplay/Snake.h"
+
+using Vector2 = GreedSnake::Vector2;
 #include <graphics.h>
 
 // Handle keyboard and mouse input during gameplay
-void EnterChanges();
+void PollGameplayInput();
 
 // Handle mouse input in menu
 void HandleMouseInput();

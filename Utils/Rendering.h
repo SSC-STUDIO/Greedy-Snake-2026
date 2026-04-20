@@ -4,13 +4,15 @@
  */
 
 #pragma once
-#include "../Core/Vector2.h"
+#include "../ModernCore/Vector2.h"
 #include "../Gameplay/GameConfig.h"
 #include "../Core/GameState.h"
 #include "../Core/Camera.h"
 #include "../Gameplay/Food.h"
 #include "../Gameplay/Snake.h"
 #include <cstddef>
+
+using Vector2 = GreedSnake::Vector2;
 
 // 前向声明
 class Snake;
@@ -29,6 +31,6 @@ void DebugDrawText(const std::wstring& text, int x, int y, int color); // 绘制
 void DrawSnakeEyes(const Vector2& position, const Vector2& direction, float radius); // 绘制蛇眼
 bool IsCircleInScreen(const Vector2& center, float r); // 检查圆是否在屏幕范围内
 void DrawUI(); // 绘制用户界面元素
-void DrawEnhancedFood(const Vector2& screenPos, float radius, int color, int index); // 绘制增强视觉效果的食物
+void DrawEnhancedFood(const Vector2& screenPos, float radius, int color, int index, int detailLevel); // 绘制增强视觉效果的食物
 void DrawSnakeSegment(const Vector2& screenPos, float radius, int color, size_t segmentIndex); // 绘制蛇段
 void DrawPauseMenu(); // 绘制暂停菜单

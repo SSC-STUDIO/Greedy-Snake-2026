@@ -1,11 +1,18 @@
 #include "Food.h"
+#include "../ModernCore/Random.h"
 #include <atomic>
+
+using GreedSnake::Random;
 
 namespace {
 int ClampInt(int value, int minValue, int maxValue) {
     if (value < minValue) return minValue;
     if (value > maxValue) return maxValue;
     return value;
+}
+
+int ComputeGridDimension(float minBound, float maxBound, int cellSize) {
+    return static_cast<int>((maxBound - minBound) / cellSize) + 1;
 }
 
 FoodSpatialGrid g_foodGrids[2];
@@ -24,6 +31,19 @@ void FoodSpatialGrid::Initialize(int cellSizeIn, float left, float top, float ri
 
     cells.clear();
     cells.resize(columns * rows);
+}
+
+bool FoodSpatialGrid::MatchesConfiguration(int cellSizeIn, float left, float top, float right, float bottom) const {
+    if (cellSize != cellSizeIn) {
+        return false;
+    }
+
+    if (origin.x != left || origin.y != top) {
+        return false;
+    }
+
+    return columns == ComputeGridDimension(left, right, cellSizeIn) &&
+        rows == ComputeGridDimension(top, bottom, cellSizeIn);
 }
 
 void FoodSpatialGrid::Clear() {
@@ -81,18 +101,29 @@ void FoodSpatialGrid::QueryRect(const Vector2& minPos, const Vector2& maxPos, st
 void BuildFoodSpatialGrid(const FoodItem* foodList, int foodCount) {
     const int nextIndex = 1 - g_foodGridIndex.load(std::memory_order_relaxed);
     FoodSpatialGrid& grid = g_foodGrids[nextIndex];
+    const float left = static_cast<float>(GameConfig::PLAY_AREA_LEFT);
+    const float top = static_cast<float>(GameConfig::PLAY_AREA_TOP);
+    const float right = static_cast<float>(GameConfig::PLAY_AREA_RIGHT);
+    const float bottom = static_cast<float>(GameConfig::PLAY_AREA_BOTTOM);
 
-    if (grid.columns == 0 || grid.rows == 0) {
+    if (!grid.MatchesConfiguration(GameConfig::FOOD_GRID_CELL_SIZE, left, top, right, bottom)) {
         grid.Initialize(
             GameConfig::FOOD_GRID_CELL_SIZE,
-            static_cast<float>(GameConfig::PLAY_AREA_LEFT),
-            static_cast<float>(GameConfig::PLAY_AREA_TOP),
-            static_cast<float>(GameConfig::PLAY_AREA_RIGHT),
-            static_cast<float>(GameConfig::PLAY_AREA_BOTTOM));
+            left,
+            top,
+            right,
+            bottom);
     }
 
     grid.Build(foodList, foodCount);
     g_foodGridIndex.store(nextIndex, std::memory_order_release);
+}
+
+void ResetFoodSpatialGrid() {
+    for (FoodSpatialGrid& grid : g_foodGrids) {
+        grid = FoodSpatialGrid{};
+    }
+    g_foodGridIndex.store(0, std::memory_order_release);
 }
 
 const FoodSpatialGrid* GetFoodSpatialGrid() {
@@ -104,10 +135,8 @@ const FoodSpatialGrid* GetFoodSpatialGrid() {
 }
 
 Vector2 GenerateRandomPosition() {
-    float x = static_cast<float>(GameConfig::PLAY_AREA_LEFT) +
-        static_cast<float>(rand() % (GameConfig::PLAY_AREA_RIGHT - GameConfig::PLAY_AREA_LEFT));
-    float y = static_cast<float>(GameConfig::PLAY_AREA_TOP) +
-        static_cast<float>(rand() % (GameConfig::PLAY_AREA_BOTTOM - GameConfig::PLAY_AREA_TOP));
+    float x = static_cast<float>(Random::Int(GameConfig::PLAY_AREA_LEFT, GameConfig::PLAY_AREA_RIGHT));
+    float y = static_cast<float>(Random::Int(GameConfig::PLAY_AREA_TOP, GameConfig::PLAY_AREA_BOTTOM));
     return Vector2(x, y);
 }
 
@@ -116,17 +145,17 @@ void InitFood(FoodItem* foodList, int i, float speed) {
     if (!foodList || i < 0 || i >= GameConfig::MAX_FOOD_COUNT) {
         return; // Invalid parameters, return early
     }
-    
+
     foodList[i].position = GenerateRandomPosition();
     foodList[i].colorValue = ColorGenerator::GenerateRandomColor();
-    foodList[i].collisionRadius = (rand() % 5000) / 1000.0f + 2;
+    foodList[i].collisionRadius = Random::Float(2.0f, 7.0f);
 }
 
 void UpdateFoods(FoodItem* foodList, int foodCount) {
     for (int i = 0; i < foodCount; i++) {
         // Only respawn food when collision radius is 0, indicating the food was eaten
         if (foodList[i].collisionRadius <= 0) {
-            if (rand() % 100 < (GameState::Instance().foodSpawnRate * 100)) {
+            if (Random::Float(0.0f, 1.0f) < GameState::Instance().foodSpawnRate) {
                 InitFood(foodList, i, GameState::Instance().currentPlayerSpeed);
             }
         }

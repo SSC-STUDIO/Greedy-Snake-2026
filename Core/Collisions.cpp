@@ -1,11 +1,15 @@
 #include "Collisions.h"
+#include "CollisionSubsystems.h"
 #include "..\Gameplay\Snake.h"
 #include "..\Gameplay\Food.h"
 #include "..\Gameplay\GameConfig.h"
 #include "../Utils/DrawHelpers.h"
+#include "../ModernCore/Vector2.h"
 #include <cmath>
 #include <vector>
 #pragma warning(disable: 4996)
+
+using Vector2 = GreedSnake::Vector2;
 
 struct GrowthAnimation {
     bool active = false;
@@ -18,10 +22,15 @@ struct GrowthAnimation {
 
 static GrowthAnimation playerGrowthAnim;
 
-namespace {
-bool CheckCircleCollision(const Vector2& pos1, float radius1, const Vector2& pos2, float radius2) {
-    return CollisionManager::CheckCircleCollision(pos1, radius1, pos2, radius2);
+bool CollisionManager::CheckCircleCollision(const Vector2& pos1, float radius1, const Vector2& pos2, float radius2) {
+    const Vector2 delta = pos1 - pos2;
+    const float distanceSq = delta.LengthSquared();
+    const float radiusSum = radius1 + radius2;
+    return distanceSq < (radiusSum * radiusSum);
 }
+
+bool CollisionManager::CheckSnakeCollision(const Snake& snake1, const Snake& snake2) {
+    return snake1.CheckCollisionWith(snake2) || snake2.CheckCollisionWith(snake1);
 }
 
 void DrawSnakeGrowthEffect(float animProgress, const Vector2& position, int color, float radius) {
@@ -54,6 +63,14 @@ void DrawSnakeGrowthEffect(float animProgress, const Vector2& position, int colo
     }
 }
 
+void TriggerGrowthAnimation(const Vector2& position, int color, float radius) {
+    playerGrowthAnim.active = true;
+    playerGrowthAnim.timer = 0.0f;
+    playerGrowthAnim.position = position;
+    playerGrowthAnim.color = color;
+    playerGrowthAnim.baseRadius = radius;
+}
+
 void UpdateGrowthAnimation(float deltaTime) {
     if (playerGrowthAnim.active) {
         playerGrowthAnim.timer += deltaTime;
@@ -72,222 +89,39 @@ void UpdateGrowthAnimation(float deltaTime) {
     }
 }
 
-bool CollisionManager::CheckCircleCollision(const Vector2& pos1, float radius1, const Vector2& pos2, float radius2) {
-    const Vector2 delta = pos1 - pos2;
-    const float distanceSq = delta.GetSquaredLength();
-    const float radiusSum = radius1 + radius2;
-    return distanceSq < (radiusSum * radiusSum);
-}
-
-bool CollisionManager::CheckSnakeCollision(const Snake& snake1, const Snake& snake2) {
-    return snake1.CheckCollisionWith(snake2) || snake2.CheckCollisionWith(snake1);
-}
-
-bool CheckWallCollision(const Vector2& pos, float radius) {
-    float gridSize = GameConfig::GRID_CELL_SIZE;
-    float halfGrid = gridSize / 2.0f;
-
-    if (pos.x - radius < halfGrid || pos.x + radius > GameConfig::WINDOW_WIDTH - halfGrid ||
-        pos.y - radius < halfGrid || pos.y + radius > GameConfig::WINDOW_HEIGHT - halfGrid) {
-        return true;
-    }
-    return false;
-}
-
-void CollisionManager::CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSnakeCount,
+void CollisionManager::CheckCollisions(PlayerSnake& player, AISnake* aiSnakes, int aiSnakeCount,
                                        FoodItem* foodList, int foodCount) {
     auto& gameState = GameState::Instance();
-    PlayerSnake& player = static_cast<PlayerSnake&>(snake[0]);
 
     if (player.isDead) return;
 
-    if (!gameState.IsCollisionEnabled()) {
-        return;
+    // 1. 玩家伤害性碰撞检测 - 检查无敌状态
+    if (gameState.IsCollisionEnabled()) {
+        // Wall contact is non-lethal here; CheckGameState applies the lava warning timer.
+        CollisionSubsystems::CheckPlayerWallCollision(player);
+        if (CollisionSubsystems::CheckPlayerSelfCollision(player)) return;
+        if (CollisionSubsystems::CheckPlayerAICollision(player, aiSnakes, aiSnakeCount)) return;
     }
 
-    bool playerAteFood = false;
-
-    if (CheckWallCollision(player.position, player.radius)) {
-        player.isDead = true;
-        gameState.TriggerGameOver();
-        return;
-    }
-
-    for (size_t i = 1; i < player.segments.size(); i++) {
-        const auto& seg = player.segments[i];
-        if (CheckCircleCollision(player.position, player.radius * 0.8f, seg.position, seg.radius * 0.5f)) {
-            player.isDead = true;
-            gameState.TriggerGameOver();
-            return;
-        }
-    }
-
+    // 2. AI 蛇碰撞检测 - 不受玩家无敌影响
     for (int i = 0; i < aiSnakeCount; ++i) {
         AISnake& aiSnake = aiSnakes[i];
 
-        if (aiSnake.radius <= 0 || aiSnake.isDead) continue;
+        // AI 蛇与玩家身体段碰撞
+        CollisionSubsystems::CheckAISnakeCollisions(aiSnake, player, foodList, foodCount);
 
-        if (CheckCircleCollision(player.position, player.radius, aiSnake.position, aiSnake.radius)) {
-            player.isDead = true;
-            gameState.TriggerGameOver();
-            return;
-        }
+        // AI 蛇与墙壁碰撞
+        CollisionSubsystems::CheckAIWallCollision(aiSnake, foodList, foodCount);
 
-        for (const auto& seg : aiSnake.segments) {
-            if (seg.radius <= 0) continue;
-            if (CheckCircleCollision(player.position, player.radius, seg.position, seg.radius)) {
-                player.isDead = true;
-                gameState.TriggerGameOver();
-                return;
-            }
-        }
-
-        for (const auto& playerSeg : player.segments) {
-            if (CheckCircleCollision(aiSnake.position, aiSnake.radius, playerSeg.position, playerSeg.radius)) {
-                aiSnake.StartDying(1);
-
-                for (int k = 0; k < foodCount; ++k) {
-                    if (foodList[k].collisionRadius <= 0) {
-                        foodList[k].position = aiSnake.position;
-                        foodList[k].colorValue = aiSnake.color;
-                        foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                        break;
-                    }
-                }
-
-                for (size_t segIdx = 0; segIdx < aiSnake.segments.size(); ++segIdx) {
-                    for (int k = 0; k < foodCount; ++k) {
-                        if (foodList[k].collisionRadius <= 0) {
-                            foodList[k].position = aiSnake.segments[segIdx].position;
-                            foodList[k].colorValue = aiSnake.color;
-                            foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-        }
-
-        for (const auto& aiSeg : aiSnake.segments) {
-            if (aiSeg.radius <= 0) continue;
-            for (const auto& playerSeg : player.segments) {
-                if (CheckCircleCollision(aiSeg.position, aiSeg.radius, playerSeg.position, playerSeg.radius)) {
-                    aiSnake.StartDying(1);
-
-                    for (int k = 0; k < foodCount; ++k) {
-                        if (foodList[k].collisionRadius <= 0) {
-                            foodList[k].position = aiSnake.position;
-                            foodList[k].colorValue = aiSnake.color;
-                            foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                            break;
-                        }
-                    }
-
-                    for (size_t segIdx = 0; segIdx < aiSnake.segments.size(); ++segIdx) {
-                        for (int k = 0; k < foodCount; ++k) {
-                            if (foodList[k].collisionRadius <= 0) {
-                                foodList[k].position = aiSnake.segments[segIdx].position;
-                                foodList[k].colorValue = aiSnake.color;
-                                foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-            if (aiSnake.isDying) break;
-        }
+        // AI 蛇自身碰撞
+        CollisionSubsystems::CheckAISelfCollision(aiSnake, foodList, foodCount);
     }
+
+    // 3. 食物碰撞检测 - 无敌期间也能吃食物
+    CollisionSubsystems::CheckPlayerFoodCollision(player, foodList, foodCount);
 
     for (int i = 0; i < aiSnakeCount; ++i) {
         AISnake& aiSnake = aiSnakes[i];
-        if (aiSnake.radius <= 0 || aiSnake.isDead || aiSnake.isDying) continue;
-
-        if (CheckWallCollision(aiSnake.position, aiSnake.radius)) {
-            aiSnake.StartDying(1);
-
-            for (int k = 0; k < foodCount; ++k) {
-                if (foodList[k].collisionRadius <= 0) {
-                    foodList[k].position = aiSnake.position;
-                    foodList[k].colorValue = aiSnake.color;
-                    foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                    break;
-                }
-            }
-
-            for (size_t segIdx = 0; segIdx < aiSnake.segments.size(); ++segIdx) {
-                for (int k = 0; k < foodCount; ++k) {
-                    if (foodList[k].collisionRadius <= 0) {
-                        foodList[k].position = aiSnake.segments[segIdx].position;
-                        foodList[k].colorValue = aiSnake.color;
-                        foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                        break;
-                    }
-                }
-            }
-        }
-
-        for (size_t j = 1; j < aiSnake.segments.size(); j++) {
-            const auto& seg = aiSnake.segments[j];
-            if (seg.radius <= 0) continue;
-            if (CheckCircleCollision(aiSnake.position, aiSnake.radius * 0.8f, seg.position, seg.radius * 0.5f)) {
-                aiSnake.StartDying(1);
-
-                for (int k = 0; k < foodCount; ++k) {
-                    if (foodList[k].collisionRadius <= 0) {
-                        foodList[k].position = aiSnake.position;
-                        foodList[k].colorValue = aiSnake.color;
-                        foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                        break;
-                    }
-                }
-
-                for (size_t segIdx = 0; segIdx < aiSnake.segments.size(); ++segIdx) {
-                    for (int k = 0; k < foodCount; ++k) {
-                        if (foodList[k].collisionRadius <= 0) {
-                            foodList[k].position = aiSnake.segments[segIdx].position;
-                            foodList[k].colorValue = aiSnake.color;
-                            foodList[k].collisionRadius = GameConfig::GRID_CELL_SIZE / 2.0f;
-                            break;
-                        }
-                    }
-                }
-                break;
-            }
-        }
-    }
-
-    const float searchRadius = player.radius + 10.0f;
-    for (int i = 0; i < foodCount; i++) {
-        if (foodList[i].collisionRadius <= 0) continue;
-
-        if (CheckCircleCollision(player.position, player.radius, foodList[i].position, foodList[i].collisionRadius)) {
-            foodList[i].collisionRadius = 0;
-
-            gameState.AddFoodEaten();
-
-            player.GrowSnake();
-
-            playerAteFood = true;
-
-            if (GameConfig::SOUND_ON) {
-                PlaySound(_T(".\\Resource\\SoundEffects\\Button-Click.wav"), NULL, SND_FILENAME | SND_ASYNC);
-            }
-        }
-    }
-
-    for (int i = 0; i < aiSnakeCount; ++i) {
-        AISnake& aiSnake = aiSnakes[i];
-        if (aiSnake.radius <= 0 || aiSnake.isDead || aiSnake.isDying) continue;
-
-        for (int j = 0; j < foodCount; j++) {
-            if (foodList[j].collisionRadius <= 0) continue;
-
-            if (CheckCircleCollision(aiSnake.position, aiSnake.radius, foodList[j].position, foodList[j].collisionRadius)) {
-                foodList[j].collisionRadius = 0;
-            }
-        }
+        CollisionSubsystems::CheckAIFoodCollision(aiSnake, foodList, foodCount);
     }
 }

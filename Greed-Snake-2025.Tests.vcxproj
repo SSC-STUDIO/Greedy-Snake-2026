@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a0c6b846-3550-42be-9d43-ce83baf894bc}</ProjectGuid>
-    <RootNamespace>GreedSnakeRemake</RootNamespace>
+    <ProjectGuid>{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}</ProjectGuid>
+    <RootNamespace>GreedSnakeTests</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -53,10 +53,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -112,9 +110,6 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent>
-      <Command>if not exist "$(OutDir)Resource" mkdir "$(OutDir)Resource" &amp;&amp; xcopy /e /y "$(ProjectDir)Resource" "$(OutDir)Resource\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -132,80 +127,18 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <PostBuildEvent>
-      <Command>if not exist "$(OutDir)Resource" mkdir "$(OutDir)Resource" &amp;&amp; xcopy /e /y "$(ProjectDir)Resource" "$(OutDir)Resource\"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Core\AppSettings.h" />
-    <ClInclude Include="Core\Camera.h" />
-    <ClInclude Include="Core\Collisions.h" />
-    <ClInclude Include="Core\CollisionSubsystems.h" />
-    <ClInclude Include="Core\GameSession.h" />
-    <ClInclude Include="Core\GameRuntime.h" />
-    <ClInclude Include="Core\ResourceManager.h" />
     <ClInclude Include="Core\SessionConfig.h" />
-    <ClInclude Include="Core\ThreadManager.h" />
-    <ClInclude Include="Gameplay\Food.h" />
     <ClInclude Include="Gameplay\GameConfig.h" />
-    <ClInclude Include="Gameplay\GameInitializer.h" />
-    <ClInclude Include="Gameplay\GameSystems.h" />
-    <ClInclude Include="Core\GameState.h" />
-    <ClInclude Include="UI\Button.h" />
-    <ClInclude Include="Utils\InputHandler.h" />
-    <ClInclude Include="Utils\Rendering.h" />
-    <ClInclude Include="Gameplay\Snake.h" />
-    <ClInclude Include="UI\UI.h" />
-    <ClInclude Include="Utils\Setting.h" />
-    <ClInclude Include="ModernCore\Vector2.h" />
-    <ClInclude Include="ModernCore\Direction.h" />
-    <ClInclude Include="ModernCore\TimeUtils.h" />
-    <ClInclude Include="ModernCore\ThreadPool.h" />
-    <ClInclude Include="ModernCore\MemoryPool.h" />
-    <ClInclude Include="ModernCore\ErrorHandling.h" />
     <ClInclude Include="ModernCore\Random.h" />
-    <ClInclude Include="Utils\DrawHelpers.h" />
+    <ClInclude Include="ModernCore\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Collisions.cpp" />
-    <ClCompile Include="Core\CollisionSubsystems.cpp" />
-    <ClCompile Include="Core\GameSession.cpp" />
-    <ClCompile Include="Core\ResourceManager.cpp" />
-    <ClCompile Include="Core\ThreadManager.cpp" />
-    <ClCompile Include="Core\GameRuntime.cpp" />
-    <ClCompile Include="Core\GameState.cpp" />
     <ClCompile Include="Core\SessionConfig.cpp" />
-    <ClCompile Include="Gameplay\Food.cpp" />
-    <ClCompile Include="Gameplay\GameInitializer.cpp" />
-    <ClCompile Include="Gameplay\GameSystems.cpp" />
-    <ClCompile Include="UI\Button.cpp" />
-    <ClCompile Include="Utils\InputHandler.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Utils\Rendering.cpp" />
-    <ClCompile Include="Gameplay\Snake.cpp" />
-    <ClCompile Include="UI\UI.cpp" />
-    <ClCompile Include="Utils\Setting.cpp" />
-    <ClCompile Include="ModernCore\ThreadPool.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Resource\About.png" />
-    <Image Include="Resource\Exit.png" />
-    <Image Include="Resource\Geed-Snake.ico" />
-    <Image Include="Resource\Greed-Snake-BG.png" />
-    <Image Include="Resource\Setting.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Media Include="Resource\SoundEffects\Greed-Snake.mp3" />
-    <Media Include="Resource\SoundEffects\Greed-Snake-Start-Animation.MP3" />
-    <Media Include="Resource\SoundEffects\Button-Click.wav" />
-    <Media Include="Resource\SoundEffects\Game-Over.wav" />
-    <Media Include="Resource\SoundEffects\Impact.wav" />
-    <Media Include="Resource\SoundEffects\Explosion.wav" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Geed-Snake.rc" />
+    <ClCompile Include="tests\LogicTests.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

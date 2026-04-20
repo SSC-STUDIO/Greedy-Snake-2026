@@ -5,6 +5,8 @@ VisualStudioVersion = 17.13.35919.96 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Greed-Snake-2025", "Greed-Snake-2025.vcxproj", "{A0C6B846-3550-42BE-9D43-CE83BAF894BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Greed-Snake-2025.Tests", "Greed-Snake-2025.Tests.vcxproj", "{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{A0C6B846-3550-42BE-9D43-CE83BAF894BC}.Release|x64.Build.0 = Release|x64
 		{A0C6B846-3550-42BE-9D43-CE83BAF894BC}.Release|x86.ActiveCfg = Release|Win32
 		{A0C6B846-3550-42BE-9D43-CE83BAF894BC}.Release|x86.Build.0 = Release|Win32
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Debug|x64.ActiveCfg = Debug|x64
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Debug|x64.Build.0 = Debug|x64
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Debug|x86.ActiveCfg = Debug|Win32
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Debug|x86.Build.0 = Debug|Win32
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Release|x64.ActiveCfg = Release|x64
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Release|x64.Build.0 = Release|x64
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Release|x86.ActiveCfg = Release|Win32
+		{C2D94434-7B59-4E5A-8A91-FA8843A28A0A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

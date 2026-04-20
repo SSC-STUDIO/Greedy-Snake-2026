@@ -122,8 +122,8 @@ private:
     
     std::exception_ptr renderException_;
     std::exception_ptr inputException_;
-    
-    std::mutex exceptionMutex_;
+
+    mutable std::mutex exceptionMutex_;
 };
 
 } // namespace GreedSnake

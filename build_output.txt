@@ -1,0 +1,24 @@
+适用于 .NET Framework MSBuild 版本 17.14.40+3e7442088
+
+  Collisions.cpp
+  CollisionSubsystems.cpp
+  ResourceManager.cpp
+  ThreadManager.cpp
+  GameRuntime.cpp
+  GameState.cpp
+  Food.cpp
+  GameInitializer.cpp
+  GameSystems.cpp
+  Button.cpp
+  InputHandler.cpp
+  Main.cpp
+  Rendering.cpp
+  Snake.cpp
+  UI.cpp
+  Setting.cpp
+  ThreadPool.cpp
+  正在生成代码
+  Previous IPDB not found, fall back to full compilation.
+  All 1084 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  已完成代码的生成
+  Greed-Snake-2025.vcxproj -> C:\Users\96152\My-Project\Active\Games\Greed-Snake-2025\x64\Release\Greed-Snake-2025.exe

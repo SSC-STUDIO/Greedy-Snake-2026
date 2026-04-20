@@ -1,35 +1,40 @@
 #pragma once
-#include "../Core/Vector2.h"
+#include "../ModernCore/Vector2.h"
+#include "../ModernCore/Random.h"
 #include <graphics.h>
+
+using Vector2 = GreedSnake::Vector2;
 
 // Game configuration parameters
 namespace GameConfig {
     constexpr int FRAME_DELAY = 30;
     constexpr int NUM_FRAMES = 350; // Frame count - re-added
     constexpr int MENU_ICON_SIZE = 40; // Menu icon size
+    constexpr int BASE_WINDOW_WIDTH = 760;
+    constexpr int BASE_WINDOW_HEIGHT = 760;
 
     constexpr auto MAX_FOOD_COUNT = 5660; // Maximum food count
     constexpr float DEFAULT_PLAYER_SPEED = 250.0f; // Default player speed
     constexpr float DEFAULT_RECORD_INTERVAL = 0.05f; // Default record interval
     constexpr float SNAKE_GROWTH_RATE = 0.1f;  // Snake growth rate after eating food
     constexpr float SMOOTH_CAMERA_FACTOR = 0.1f; // Smooth camera movement factor
-    constexpr int WINDOW_WIDTH = 760; // Window width
-    constexpr int WINDOW_HEIGHT = 760; // Window height
-    constexpr int PLAY_AREA_MARGIN = 0; // Game area margin
-    constexpr float SNAKE_SEGMENT_SPACING = 20.0f; // Snake segment spacing (grid cell size)
-    constexpr float PLAYER_SLOW_SPEED = 100.0f; // Snake slow speed
-    constexpr float PLAYER_NORMAL_SPEED = 150.0f; // Snake normal speed
-    constexpr float PLAYER_FAST_SPEED = 200.0f; // Snake fast speed
+    extern int WINDOW_WIDTH; // Window width
+    extern int WINDOW_HEIGHT; // Window height
+    constexpr int GRID_CELL_SIZE = 38; // Grid cell size for AI movement (760/38=20 cells)
+    constexpr int PLAY_AREA_MARGIN = 100; // Game area margin
+    constexpr float SNAKE_SEGMENT_SPACING = 24.0f; // Tighter snake segment spacing
+    constexpr float PLAYER_SLOW_SPEED = 180.0f; // Snake slow speed
+    constexpr float PLAYER_NORMAL_SPEED = 250.0f; // Snake normal speed
+    constexpr float PLAYER_FAST_SPEED = 320.0f; // Snake fast speed
     extern bool SOUND_ON; // Sound toggle (using extern declaration to avoid multiple definitions)
     extern bool ANIMATIONS_ON; // Animations toggle
+    extern bool ANTIALIASING_ON; // Anti-aliasing toggle for scaled assets
 
-    constexpr int GRID_CELL_SIZE = 20; // Grid cell size for classic snake
-
-    // Classic snake game area - fixed size matching window
-    constexpr int PLAY_AREA_LEFT = 0;
-    constexpr int PLAY_AREA_RIGHT = WINDOW_WIDTH;
-    constexpr int PLAY_AREA_TOP = 0;
-    constexpr int PLAY_AREA_BOTTOM = WINDOW_HEIGHT;
+    // Modify game area boundaries to accommodate new window size
+    extern int PLAY_AREA_LEFT;        // Expand 10 window widths to the left
+    extern int PLAY_AREA_RIGHT;       // Expand 10 window widths to the right
+    extern int PLAY_AREA_TOP;         // Expand 10 window heights upward
+    extern int PLAY_AREA_BOTTOM;      // Expand 10 window heights downward
     constexpr float LAVA_WARNING_TIME = 5.0f;  // Time allowed before death in lava
     constexpr float INITIAL_SNAKE_SIZE = 22.0f;  // Initial snake radius
     constexpr float SNAKE_GROWTH_SMALL = 0.1f;  // Growth amount after eating food
@@ -44,15 +49,12 @@ namespace GameConfig {
     constexpr float DEFAULT_VOLUME = 1.0f;  // Default volume level
     constexpr float VOLUME_STEP = 0.1f;     // Volume adjustment step
     constexpr float MAX_SNAKE_SIZE = 20.0f; // Set maximum snake size
-    const Vector2 PLAYER_DEFAULT_POS(
-        static_cast<float>(WINDOW_WIDTH) / 2.0f,
-        static_cast<float>(WINDOW_HEIGHT) / 2.0f); // Player default position
     
     // Add collision-related configuration in GameConfig namespace
     constexpr float COLLISION_FLASH_DURATION = 0.5f;     // Collision flash duration
     constexpr bool ENABLE_COLLISION = true;              // Whether to enable collisions
     constexpr float COLLISION_GRACE_PERIOD = 5.0f;       // Invincibility time after game start (seconds) - changed to 5 seconds
-	constexpr bool FULLSCREEN_ON = false; // Fullscreen mode toggle
+	extern bool FULLSCREEN_ON; // Fullscreen mode toggle
     constexpr int MAX_AI_SNAKES = 20; // Maximum number of AI snakes
 
     // Difficulty-related configuration
@@ -106,6 +108,7 @@ public:
 
 private:
     static int GenerateColorComponent() {
-        return static_cast<int>((rand() % 5000 / 1000.0 + 1) * 255 / 6.0 + 0.5); // Generate color component
+        const int random_bucket = GreedSnake::Random::Int(0, 4999);
+        return static_cast<int>((random_bucket / 1000.0 + 1) * 255 / 6.0 + 0.5); // Generate color component
     }
 };

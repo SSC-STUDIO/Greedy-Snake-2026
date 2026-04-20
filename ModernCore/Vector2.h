@@ -1,6 +1,6 @@
 #pragma once
 
-#include <math>
+#include <cmath>
 #include <concepts>
 
 namespace GreedSnake {
@@ -118,7 +118,7 @@ struct Vector2 {
     }
     
     // 判断是否为有效向量（非NaN）
-    [[nodiscard]] constexpr bool IsValid() const noexcept {
+    [[nodiscard]] bool IsValid() const noexcept {
         return !std::isnan(x) && !std::isnan(y);
     }
 };

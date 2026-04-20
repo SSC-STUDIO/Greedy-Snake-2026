@@ -1,6 +1,8 @@
 #pragma once
-#include "../Core/Vector2.h"
-#include "../Gameplay/Snake.h" 
+#include "../ModernCore/Vector2.h"
+#include "../Gameplay/Snake.h"
+
+using Vector2 = GreedSnake::Vector2; 
 
 // Forward declarations
 class Snake;
@@ -16,9 +18,10 @@ public:
     static bool CheckSnakeCollision(const Snake& snake1, const Snake& snake2);
     
     // Modified signature, added foodList parameter
-    static void CheckCollisions(Snake* snake, AISnake* aiSnakes, int aiSnakeCount, 
+    static void CheckCollisions(PlayerSnake& player, AISnake* aiSnakes, int aiSnakeCount, 
                                FoodItem* foodList, int foodCount);
 };
 void DrawEatAISnakeEffect(const Vector2& position, int color, float radius);
 void DrawAISnakeHitPlayerEffect(const Vector2& position, int color, float radius);
+void TriggerGrowthAnimation(const Vector2& position, int color, float radius);
 void UpdateGrowthAnimation(float deltaTime);

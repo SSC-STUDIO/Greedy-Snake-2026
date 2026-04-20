@@ -1,8 +1,19 @@
 #include "Button.h"
-#include "..\Core\Vector2.h"
-#include "..\Utils\DrawHelpers.h"
+#include "../ModernCore/Vector2.h"
+#include "../Utils/DrawHelpers.h"
+#include "../Gameplay/GameConfig.h"
 #include <mmsystem.h>
+#include <algorithm>
 #pragma comment(lib, "winmm.lib")
+
+namespace {
+void ConfigureStretchQuality(HDC targetDC) {
+    SetStretchBltMode(targetDC, GameConfig::ANTIALIASING_ON ? HALFTONE : COLORONCOLOR);
+    if (GameConfig::ANTIALIASING_ON) {
+        SetBrushOrgEx(targetDC, 0, 0, nullptr);
+    }
+}
+}
 
 Button::Button() {}
 
@@ -10,8 +21,11 @@ void Button::Initial(LPCTSTR imageFilePath, const Vector2& position, const Vecto
 {
     IMAGE TempIcon;
     loadimage(&TempIcon, imageFilePath);
-    icon.Resize(static_cast<int>(size.x), static_cast<int>(size.y));
-    StretchBlt(GetImageHDC(&icon), 0, 0, static_cast<int>(size.x), static_cast<int>(size.y),
+    const int iconWidth = (std::max)(1, static_cast<int>(size.x) - 12);
+    const int iconHeight = (std::max)(1, static_cast<int>(size.y) - 12);
+    icon.Resize(iconWidth, iconHeight);
+    ConfigureStretchQuality(GetImageHDC(&icon));
+    StretchBlt(GetImageHDC(&icon), 0, 0, iconWidth, iconHeight,
         GetImageHDC(&TempIcon), 0, 0, TempIcon.getwidth(), TempIcon.getheight(), SRCCOPY);
     minPosition = position;
     maxPosition = position + size;
@@ -50,23 +64,41 @@ void Button::DrawButton(const Vector2& mousePosition) const
 
     if (drawMod == DrawMod::Image)
     {
-        putimage(static_cast<int>(minPosition.x), static_cast<int>(minPosition.y), &icon);
+        const int left = static_cast<int>(minPosition.x);
+        const int top = static_cast<int>(minPosition.y);
+        const int right = static_cast<int>(maxPosition.x);
+        const int bottom = static_cast<int>(maxPosition.y);
+        const int iconX = static_cast<int>(minPosition.x) + (static_cast<int>(maxPosition.x - minPosition.x) - icon.getwidth()) / 2;
+        const int iconY = static_cast<int>(minPosition.y) + (static_cast<int>(maxPosition.y - minPosition.y) - icon.getheight()) / 2;
+
+        setfillcolor(isHovered ? RGB(27, 118, 176) : RGB(7, 15, 25));
+        solidroundrect(left + 2, top + 4, right + 2, bottom + 4, 16, 16);
+        setfillcolor(isHovered ? RGB(242, 248, 255) : RGB(225, 234, 246));
+        solidroundrect(left, top, right, bottom, 16, 16);
+        setlinecolor(isHovered ? RGB(120, 206, 255) : RGB(130, 150, 179));
+        roundrect(left, top, right, bottom, 16, 16);
+        putimage(iconX, iconY, &icon);
     }
     else
     {
-        // Draw button shadow
-        setfillcolor(RGB(0, 0, 0)); // Shadow color
-        solidroundrect(minPosition.x + 5.0f, minPosition.y + 5.0f, maxPosition.x + 5.0f, maxPosition.y + 5.0f, 10.0f, 10.0f);
+        const int left = static_cast<int>(minPosition.x);
+        const int top = static_cast<int>(minPosition.y);
+        const int right = static_cast<int>(maxPosition.x);
+        const int bottom = static_cast<int>(maxPosition.y);
+        const COLORREF shadowColor = isHovered ? RGB(22, 76, 118) : RGB(6, 15, 27);
+        const COLORREF buttonColor = isHovered ? RGB(66, 173, 234) : color;
 
-        // Adjust color if hovered
-        COLORREF buttonColor = isHovered ? RGB(GetRValue(color) * 0.8, GetGValue(color) * 0.8, GetBValue(color) * 0.8) : color;
-
-        // Draw button text
+        setfillcolor(shadowColor);
+        solidroundrect(left + 3, top + 5, right + 3, bottom + 5, 16, 16);
         setfillcolor(buttonColor);
-        solidroundrect(minPosition.x, minPosition.y, maxPosition.x, maxPosition.y, 10.0f, 10.0f);
+        solidroundrect(left, top, right, bottom, 16, 16);
+        setlinecolor(isHovered ? RGB(194, 239, 255) : RGB(117, 194, 238));
+        roundrect(left, top, right, bottom, 16, 16);
+        setfillcolor(RGB(255, 255, 255));
+        solidroundrect(left + 18, top + 10, left + 82, top + 18, 4, 4);
 
-        settextstyle(24, 0, _T("Arial"));
-        settextcolor(WHITE);
+        settextstyle(24, 0, _T("Bahnschrift"));
+        settextcolor(RGB(246, 250, 255));
         const int buttonWidth = static_cast<int>(maxPosition.x - minPosition.x);
         const int buttonHeight = static_cast<int>(maxPosition.y - minPosition.y);
         const int textX = static_cast<int>(minPosition.x) + (buttonWidth - textwidth(text)) / 2;

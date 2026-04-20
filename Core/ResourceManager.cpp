@@ -1,10 +1,18 @@
 #include "ResourceManager.h"
 
 #include "../UI/UI.h"
+#include "../Gameplay/GameConfig.h"
 #include <tchar.h>
 
 namespace {
 const LPCTSTR kDefaultBackgroundPath = _T(".\\Resource\\Greed-Snake-BG.png");
+
+void ConfigureStretchQuality(HDC targetDC) {
+    SetStretchBltMode(targetDC, GameConfig::ANTIALIASING_ON ? HALFTONE : COLORONCOLOR);
+    if (GameConfig::ANTIALIASING_ON) {
+        SetBrushOrgEx(targetDC, 0, 0, nullptr);
+    }
+}
 
 void DrawMissingBackgroundFallback() {
     setfillcolor(RGB(20, 20, 20));
@@ -84,11 +92,13 @@ void ResourceManager::ScaleBackgroundImage(int width, int height) {
     if (scaledBackgroundImage.getwidth() > 0 &&
         scaledBackgroundImage.getheight() > 0 &&
         scaledWidth == width &&
-        scaledHeight == height) {
+        scaledHeight == height &&
+        scaledWithAntiAliasing == GameConfig::ANTIALIASING_ON) {
         return;
     }
 
     scaledBackgroundImage.Resize(width, height);
+    ConfigureStretchQuality(GetImageHDC(&scaledBackgroundImage));
     StretchBlt(
         GetImageHDC(&scaledBackgroundImage),
         0,
@@ -104,6 +114,7 @@ void ResourceManager::ScaleBackgroundImage(int width, int height) {
     );
     scaledWidth = width;
     scaledHeight = height;
+    scaledWithAntiAliasing = GameConfig::ANTIALIASING_ON;
 }
 
 void ResourceManager::DrawBackground() {
@@ -167,6 +178,7 @@ void ResourceManager::CleanupGraphicsResources() {
     scaledBackgroundImage = IMAGE();
     scaledWidth = 0;
     scaledHeight = 0;
+    scaledWithAntiAliasing = false;
 }
 
 void ResourceManager::CleanupAudioResources() {

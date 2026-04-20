@@ -10,6 +10,7 @@ private:
     bool resourcesLoaded = false;
     int scaledWidth = 0;
     int scaledHeight = 0;
+    bool scaledWithAntiAliasing = false;
     mutable std::mutex resourceMutex;
     
 public:
