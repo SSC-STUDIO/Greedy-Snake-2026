@@ -641,7 +641,8 @@ func _check_snake_collisions() -> void:
 		if has_player_body and _player_body_bounds.grow(ai.radius + player_body_radius).has_point(ai.position):
 			for player_segment in _player.segments:
 				if _circles_overlap(ai.position, ai.radius, player_segment, player_body_radius):
-					_damage_enemy(ai, 1, 10)
+					if not _resolve_player_enemy_contact(ai):
+						return
 					break
 
 func _update_lava(delta: float) -> void:
