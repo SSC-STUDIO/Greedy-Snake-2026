@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          chmod +x Godot_v${GODOT_VERSION}-stable_linux.x86_64
+
+      - name: Create Export Presets
+        run: |
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+
+          name="Linux/X11"
+          platform="Linux/X11"
+          runnable=true
+          export_path="build/linux/greedy-snake-2026.x86_64"
+          script_export_mode=2
+
+          [preset.0.options]
+
+          binary_format/architecture="x86_64"
+          texture_format/bptc=true
+          texture_format/s3tc=true
+
+          [preset.1]
+
+          name="Windows Desktop"
+          platform="Windows Desktop"
+          runnable=true
+          export_path="build/windows/greedy-snake-2026.exe"
+          script_export_mode=2
+
+          [preset.1.options]
+
+          binary_format/architecture="x86_64"
+          texture_format/bptc=true
+          texture_format/s3tc=true
+
+          [preset.2]
+
+          name="Web"
+          platform="Web"
+          runnable=true
+          export_path="build/web/index.html"
+          script_export_mode=2
+
+          [preset.2.options]
+
+          variant/thread_support=false
+          EOF
+
+      - name: Build Linux
+        run: |
+          mkdir -p build/linux
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Linux/X11" build/linux/greedy-snake-2026.x86_64 2>&1 || true
+
+      - name: Build Windows
+        run: |
+          mkdir -p build/windows
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Windows Desktop" build/windows/greedy-snake-2026.exe 2>&1 || true
+
+      - name: Build Web
+        run: |
+          mkdir -p build/web
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Web" build/web/index.html 2>&1 || true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/linux/*
+            build/windows/*
+            build/web/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

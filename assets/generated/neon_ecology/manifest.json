@@ -1,0 +1,37 @@
+{
+  "style": "neon ecological minimalism",
+  "reference_image": "/home/chenrunsen/workspace/My-Project/gen-gpt-image/generated/20260429_215036_1.png",
+  "generated_at": "2026-04-29",
+  "notes": [
+    "Unified dark teal cyber-ecology palette with cyan green player elements, blue/purple AI accents, and magenta elite warnings.",
+    "Generated as atlas/sheet source art. Keep real UI text rendered by Godot, not baked into images.",
+    "Use slicing or region resources before wiring into scenes."
+  ],
+  "assets": [
+    {
+      "name": "ui_kit_atlas",
+      "path": "res://assets/generated/neon_ecology/ui_kit_atlas.png",
+      "purpose": "HUD panels, meters, buttons, modal frames, settings controls, upgrade cards, minimap frame"
+    },
+    {
+      "name": "gameplay_sprites_atlas",
+      "path": "res://assets/generated/neon_ecology/gameplay_sprites_atlas.png",
+      "purpose": "Player snake, AI snakes, elite snake, food seeds, shield rings, boost puffs, particles"
+    },
+    {
+      "name": "environment_tiles_atlas",
+      "path": "res://assets/generated/neon_ecology/environment_tiles_atlas.png",
+      "purpose": "Grid floors, boundary strips, eco rocks, plants, lava edge, warning decals, elite spawn ring"
+    },
+    {
+      "name": "upgrade_icons_atlas",
+      "path": "res://assets/generated/neon_ecology/upgrade_icons_atlas.png",
+      "purpose": "Icon-only upgrade symbols for run draft cards and status chips"
+    },
+    {
+      "name": "menu_backgrounds_sheet",
+      "path": "res://assets/generated/neon_ecology/menu_backgrounds_sheet.png",
+      "purpose": "Main menu, pause, game over, and settings background compositions"
+    }
+  ]
+}

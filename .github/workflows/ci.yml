@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  GODOT_VERSION: 4.6.2
+
+jobs:
+  import-check:
+    runs-on: ubuntu-latest
+    name: Import Check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          chmod +x Godot_v${GODOT_VERSION}-stable_linux.x86_64
+
+      - name: Import Project
+        run: |
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --editor --path . --quit 2>&1 | tee import.log
+          if grep -q "ERROR\|FAILED" import.log; then
+            echo "Import errors detected"
+            exit 1
+          fi
+
+  smoke-test:
+    runs-on: ubuntu-latest
+    name: Smoke Test
+    needs: import-check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          chmod +x Godot_v${GODOT_VERSION}-stable_linux.x86_64
+
+      - name: Run Smoke Test
+        run: |
+          timeout 60 ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --scene res://scenes/tests/SmokeRunner.tscn 2>&1 | tee smoke.log
+          if grep -q "SMOKE_TEST_OK" smoke.log; then
+            echo "Smoke test passed"
+          else
+            echo "Smoke test failed or timed out"
+            exit 1
+          fi
+
+  build-linux:
+    runs-on: ubuntu-latest
+    name: Build Linux
+    needs: smoke-test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          unzip Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip
+          chmod +x Godot_v${GODOT_VERSION}-stable_linux.x86_64
+
+      - name: Create Export Presets
+        run: |
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+
+          name="Linux/X11"
+          platform="Linux/X11"
+          runnable=true
+          advanced_options=false
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/linux/greedy-snake-2026.x86_64"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          script_export_mode=2
+
+          [preset.0.options]
+
+          custom_template/debug=""
+          custom_template/release=""
+          debug/export_console_wrapper=1
+          binary_format/embed_pck=false
+          texture_format/bptc=true
+          texture_format/s3tc=true
+          texture_format/etc=false
+          texture_format/etc2=false
+          binary_format/architecture="x86_64"
+          ssh_remote_deploy/enabled=false
+          EOF
+
+      - name: Build
+        run: |
+          mkdir -p build/linux
+          ./Godot_v${GODOT_VERSION}-stable_linux.x86_64 --headless --path . --export-release "Linux/X11" build/linux/greedy-snake-2026.x86_64 2>&1 || true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: greedy-snake-2026-linux
+          path: build/linux/
+          if-no-files-found: ignore
