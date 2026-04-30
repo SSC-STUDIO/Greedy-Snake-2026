@@ -845,7 +845,7 @@ func _consume_food(index: int, player_pickup := true) -> void:
 		_invulnerability_timer = maxf(_invulnerability_timer, food.shield_time + float(_modifiers.get("shield_bonus", 0.0)))
 		_set_event("Shield +%.0fs" % food.shield_time, 1.8)
 	if food.magnet_time > 0.0:
-		_magnet_timer = maxf(_magnet_timer, food.magnet_time + float(_modifiers.get("magnet_radius", 0.0)) * 0.01)
+		_magnet_timer = maxf(_magnet_timer, food.magnet_time + float(_modifiers.get("magnet_duration_bonus", 0.0)))
 		_set_event("Magnet field", 1.8)
 	var explosion := food.explosion_radius + float(_modifiers.get("explosion_radius", 0.0))
 	if explosion > 0.0:

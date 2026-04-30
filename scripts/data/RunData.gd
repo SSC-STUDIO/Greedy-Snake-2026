@@ -17,6 +17,7 @@ static func new_modifier_state() -> Dictionary:
 		"combo_window": 0.0,
 		"combo_score_bonus": 0.0,
 		"magnet_radius": 0.0,
+		"magnet_duration_bonus": 0.0,
 		"pickup_radius": 0.0,
 		"companion_count": 0,
 		"special_food_chance": 0.0,
