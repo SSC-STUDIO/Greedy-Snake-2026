@@ -361,6 +361,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		_mouse_control_enabled = true
 
+## 主游戏循环，每物理帧调用一次。
+##
+## 负责更新所有游戏状态：玩家移动、AI行为、碰撞检测、
+## 食物拾取、波次推进、视觉特效和摄像机跟踪。
+## 当游戏暂停、结束或显示升级选择器时，仅更新HUD和渲染。
+## 参数 delta: 自上一帧经过的时间（秒）。
 func _physics_process(delta: float) -> void:
 	if _paused or _game_over or _upgrade_choice_active:
 		if _game_over:
@@ -504,6 +510,13 @@ func _make_ai_snake(position := Vector2.INF, affixes: Array = [], boss := false)
 				ai.segments.append(ai.position - ai.direction * GameConfigData.SNAKE_SEGMENT_SPACING * float(ai.segments.size() + 1))
 	return ai
 
+## 更新玩家蛇的位置与方向。
+##
+## 根据鼠标或键盘输入计算目标方向，平滑插值到该方向，
+## 应用速度修正（地形、加速、升级加成），移动蛇头，
+## 并驱动蛇身段跟随。同时递减无敌时间。
+## 加速状态下生成尾迹粒子，并可能触发冲刺冲击波。
+## 参数 delta: 自上一帧经过的时间（秒）。
 func _update_player(delta: float) -> void:
 	_player.previous_position = _player.position
 	if _mouse_control_enabled:
@@ -536,6 +549,15 @@ func _update_player(delta: float) -> void:
 	if _invulnerability_timer > 0.0:
 		_invulnerability_timer = maxf(0.0, _invulnerability_timer - delta)
 
+## 更新所有AI蛇的行为与移动。
+##
+## 遍历AI列表，移除已死亡个体，处理正在死亡中的个体。
+## 存活的AI根据与玩家的距离调整转向频率：远离玩家时降低
+## 决策频率以节省性能。根据侵略度概率朝玩家方向转向，
+## 同时执行墙壁回避。Boss型AI有周期性冲锋阶段。
+## 远离视野的AI降低蛇身跟随频率。
+## 超出竞技场边界的AI立即死亡。
+## 参数 delta: 自上一帧经过的时间（秒）。
 func _update_ai(delta: float) -> void:
 	var active_view := _visible_world_rect().grow(420.0)
 	var i := 0
@@ -608,6 +630,12 @@ func _update_ai_death(ai: SnakeAgent, delta: float) -> void:
 	if ai.death_timer >= AI_DEATH_DISSOLVE_TIME:
 		ai.dead = true
 
+## 检测玩家与食物的碰撞并处理拾取。
+##
+## 使用空间网格加速查询，在玩家拾取半径内搜索可接触的食物。
+## 匹配到的食物调用 _consume_food 处理计分与效果，
+## 然后在该位置重新生成一个新食物并更新空间网格。
+## 如果吃到了食物则播放音效并刷新可见食物缓存。
 func _check_food_collisions() -> void:
 	var search_radius := _player.radius + 12.0 + float(_modifiers.get("pickup_radius", 0.0))
 	var query := Rect2(_player.position - Vector2(search_radius, search_radius), Vector2(search_radius * 2.0, search_radius * 2.0))
@@ -626,6 +654,13 @@ func _check_food_collisions() -> void:
 		AudioBus.play_eat()
 		_visible_food_cache_valid = false
 
+## 检测玩家与AI蛇的碰撞。
+##
+## 分三层检测：(1)玩家头与AI头、(2)玩家头与AI蛇身、
+## (3)AI头与玩家蛇身。先通过AABB包围盒粗筛减少计算量。
+## 碰撞后调用 _resolve_player_enemy_contact 处理结果，
+## 无敌或加速状态下伤害敌人，否则触发游戏结束。
+## 任一碰撞导致游戏结束后立即返回，跳过后续检测。
 func _check_snake_collisions() -> void:
 	_refresh_player_body_bounds()
 	var player_body_radius: float = _player.radius * 0.82
@@ -753,18 +788,33 @@ func _start_ai_death(ai: SnakeAgent, food_value: int, award_score := true) -> vo
 func _drop_food_for_snake(ai: SnakeAgent, amount: int) -> void:
 	if amount <= 0:
 		return
-	_foods.append(_make_food(ai.position + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0))))
+	# Collect drop positions first
+	var positions := [ai.position + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0))]
 	var remaining := amount - 1
 	var segment_index := 0
 	while remaining > 0 and segment_index < ai.segments.size():
-		_foods.append(_make_food(ai.segments[segment_index] + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0))))
+		positions.append(ai.segments[segment_index] + Vector2(randf_range(-18.0, 18.0), randf_range(-18.0, 18.0)))
 		remaining -= 1
 		segment_index += 1
-	while _foods.size() > GameConfigData.MAX_FOOD_COUNT:
-		_foods.pop_front()
+	# When at capacity, overwrite oldest slots from the front (O(1) each)
+	# instead of append + pop_front (O(n) per pop due to array shift).
+	# The spatial grid is rebuilt below, so index reordering is safe.
+	var write_index := 0
+	for i in range(positions.size()):
+		if _foods.size() < GameConfigData.MAX_FOOD_COUNT:
+			_foods.append(_make_food(positions[i]))
+		else:
+			_foods[write_index] = _make_food(positions[i])
+			write_index += 1
 	_food_grid.build(_foods)
 	_visible_food_cache_valid = false
 
+## 触发游戏结束流程。
+##
+## 标记游戏为结束状态，记录死亡原因，生成死亡粒子特效
+## 和强屏幕震动，播放死亡音效。构建运行摘要并提交至排行榜，
+## 然后在游戏结束对话框中展示结果。防止重复触发。
+## 参数 reason: 死亡原因描述，如 "Collision"、"Lava"。
 func _trigger_game_over(reason := "Collision") -> void:
 	if _game_over:
 		return
@@ -787,6 +837,15 @@ func _update_run_timers(delta: float) -> void:
 		_magnet_timer = maxf(0.0, _magnet_timer - delta)
 	_update_story_events(delta)
 
+## 更新波次状态，推进游戏难度曲线。
+##
+## 累计elapsed时间，当达到下一波次阈值时：
+## - 增加波次计数，提升压力系数（AI速度加成）
+## - 生成增援AI，数量随波次递增
+## - 显示波次事件并播放剧情文本
+## 周期性生成精英敌人，间隔随波次缩短。
+## 达到Boss波次前发出警告，达到Boss波次时生成Boss。
+## 参数 delta: 自上一帧经过的时间（秒）。
 func _update_wave(delta: float) -> void:
 	_wave_state["elapsed"] = float(_wave_state.get("elapsed", 0.0)) + delta
 	var elapsed := float(_wave_state.get("elapsed", 0.0))
@@ -835,6 +894,15 @@ func _spawn_boss() -> void:
 	_queue_story("The containment core is hostile. Break its growth cycle.", 3.4, "boss_spawn", 999.0)
 	_spawn_warning_ring(boss.position, Color(1.0, 0.32, 0.14))
 
+## 处理食物拾取效果，计分并应用特殊属性。
+##
+## 注册连击计数并计算连击倍率，更新分数与已吃食物数。
+## 根据食物的 growth 值增加蛇身长度。
+## 若食物携带 shield_time 或 magnet_time，则延长对应计时器。
+## 若食物有 explosion_radius，则触发区域爆炸伤害敌人。
+## 生成拾取粒子特效和屏幕震动。玩家拾取时检查升级解锁。
+## 参数 index: 食物在数组中的索引。
+## 参数 player_pickup: 是否为玩家拾取（否则为同伴拾取）。
 func _consume_food(index: int, player_pickup := true) -> void:
 	if index < 0 or index >= _foods.size():
 		return
@@ -905,6 +973,13 @@ func _select_upgrade(upgrade: Dictionary) -> void:
 	_set_event(String(upgrade.get("name", "Upgrade")), 2.4)
 	_update_hud()
 
+## 应用升级效果到玩家属性修饰符。
+##
+## 记录升级ID防止重复获取，将效果值累加到 _modifiers 字典中。
+## 整数类型效果以整数累加，浮点类型效果以浮点累加。
+## shield_now 效果直接延长无敌时间而非累加修饰符。
+## 更新运行统计中的升级名称和构建标签。
+## 参数 upgrade: 升级定义字典，包含 id、name、effects 等字段。
 func _apply_upgrade(upgrade: Dictionary) -> void:
 	var id := String(upgrade.get("id", ""))
 	if id == "" or _owned_upgrade_ids.has(id):
@@ -994,6 +1069,14 @@ func _try_revive(label: String) -> bool:
 	_set_event(label, 2.2)
 	return true
 
+## 对AI蛇造成伤害，若生命值归零则触发死亡。
+##
+## 计算实际伤害（对Boss有额外伤害加成），扣除AI生命值。
+## 若AI存活则仅生成警告环特效；若死亡则调用 _start_ai_death
+## 开始死亡流程，掉落食物并计分。精英和Boss有额外掉落奖励。
+## 参数 ai: 目标AI蛇代理。
+## 参数 damage: 基础伤害值。
+## 参数 food_value: 死亡时掉落的食物价值（用于计分）。
 func _damage_enemy(ai: SnakeAgent, damage: int, food_value: int) -> void:
 	if ai.dead or ai.dying:
 		return
