@@ -18,6 +18,8 @@ const SHIELD_RING_TEXTURE := preload("res://assets/generated/neon_ecology/slices
 const BOOST_PUFF_TEXTURE := preload("res://assets/generated/neon_ecology/slices/boost_puff.png")
 const MAX_VFX_PARTICLES := 260
 const MAX_SHOCKWAVES := 18
+const PARTICLE_POOL_SIZE := 300
+const SHOCKWAVE_POOL_SIZE := 22
 const LAVA_EDGE_WIDTH := 220.0
 const VISIBLE_FOOD_MARGIN := 120.0
 const FOOD_PULSE_TABLE_SIZE := 64
@@ -258,6 +260,8 @@ var _grid_offset := Vector2.ZERO
 var _world_time := 0.0
 var _particles: Array = []
 var _shockwaves: Array = []
+var _particle_pool: Array = []
+var _shockwave_pool: Array = []
 var _shake_timer := 0.0
 var _shake_duration := 0.0
 var _shake_strength := 0.0
@@ -285,6 +289,7 @@ func _ready() -> void:
 	_wave_state = RunDataUtil.new_wave_state()
 	_run_stats = RunDataUtil.new_run_stats()
 	_initialize_food_pulse_table()
+	_preallocate_pools()
 	AudioBus.play_bgm()
 	_play_area = GameConfigData.play_area_rect()
 	_terrain_regions = TerrainCatalogData.terrain_regions(_play_area)
@@ -673,12 +678,14 @@ func _update_effects(delta: float) -> void:
 		var particle: VfxParticle = _particles[i]
 		particle.update(delta)
 		if not particle.alive():
+			_return_particle(_particles[i])
 			_particles.remove_at(i)
 
 	for i in range(_shockwaves.size() - 1, -1, -1):
 		var shockwave: Shockwave = _shockwaves[i]
 		shockwave.update(delta)
 		if not shockwave.alive():
+			_return_shockwave(_shockwaves[i])
 			_shockwaves.remove_at(i)
 
 	if _shake_timer > 0.0:
@@ -1000,7 +1007,7 @@ func _damage_enemy(ai: SnakeAgent, damage: int, food_value: int) -> void:
 func _area_blast(position: Vector2, radius: float, damage: int, color: Color, award_score := true) -> void:
 	if radius <= 0.0:
 		return
-	_add_shockwave(Shockwave.new(position, color.lightened(0.22), radius, 0.34))
+	_add_shockwave(_get_shockwave(position, color.lightened(0.22), radius, 0.34))
 	for ai in _ai_snakes:
 		if ai.dead or ai.dying:
 			continue
@@ -1036,7 +1043,7 @@ func _spawn_death_followups(ai: SnakeAgent) -> void:
 		_ai_snakes.append(_make_ai_snake(ai.position + Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * 170.0, [], false))
 
 func _spawn_warning_ring(position: Vector2, color: Color) -> void:
-	_add_shockwave(Shockwave.new(position, color.lightened(0.18), 120.0, 0.32))
+	_add_shockwave(_get_shockwave(position, color.lightened(0.18), 120.0, 0.32))
 
 func _set_event(text: String, duration := 2.6) -> void:
 	_wave_state["last_event"] = text
@@ -1163,7 +1170,7 @@ func _spawn_ambient_motes(count: int) -> void:
 		)
 		var terrain := _terrain_for_position(position)
 		var mote_color: Color = terrain.get("particle_color", Color(0.26, 1.0, 0.68, 0.24))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			position,
 			Vector2(randf_range(-10.0, 10.0), randf_range(-26.0, -8.0)),
 			_color_alpha(mote_color, randf_range(0.16, 0.3)),
@@ -1175,7 +1182,7 @@ func _spawn_ambient_motes(count: int) -> void:
 func _spawn_shield_sparkles(count: int) -> void:
 	for i in range(count):
 		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			_player.position + direction * randf_range(_player.radius * 1.25, _player.radius * 1.95),
 			direction * randf_range(16.0, 52.0),
 			Color(0.68, 1.0, 0.95, 0.58),
@@ -1197,7 +1204,7 @@ func _spawn_lava_warning_sparks(delta: float) -> void:
 	_lava_spark_timer = 0.08 if quality >= 2 else 0.16
 	for i in range(spark_count):
 		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			_player.position + direction * randf_range(_player.radius * 0.4, _player.radius * 1.4),
 			direction * randf_range(60.0, 140.0) + Vector2(0.0, randf_range(-28.0, 12.0)),
 			Color(1.0, randf_range(0.28, 0.62), 0.12, 0.68),
@@ -1215,7 +1222,7 @@ func _spawn_boost_trail() -> void:
 	for i in range(particle_count):
 		var offset := back * randf_range(_player.radius * 0.75, _player.radius * 1.45) + side * randf_range(-_player.radius * 0.5, _player.radius * 0.5)
 		var velocity := back * randf_range(90.0, 190.0) + side * randf_range(-28.0, 28.0)
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			_player.position + offset,
 			velocity,
 			Color(0.36, 1.0, 0.48, 0.72),
@@ -1225,11 +1232,11 @@ func _spawn_boost_trail() -> void:
 		))
 
 func _spawn_food_burst(position: Vector2, color: Color) -> void:
-	_add_shockwave(Shockwave.new(position, color.lightened(0.24), 58.0, 0.22))
+	_add_shockwave(_get_shockwave(position, color.lightened(0.24), 58.0, 0.22))
 	var burst_count := 12 if SettingsStore.animations_on else 3
 	for i in range(burst_count):
 		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			position,
 			direction * randf_range(55.0, 165.0),
 			color.lightened(randf_range(0.0, 0.35)),
@@ -1239,13 +1246,13 @@ func _spawn_food_burst(position: Vector2, color: Color) -> void:
 		))
 
 func _spawn_death_burst(position: Vector2, color: Color) -> void:
-	_add_shockwave(Shockwave.new(position, color.lightened(0.18), 170.0, 0.48))
-	_add_shockwave(Shockwave.new(position, Color(1.0, 0.38, 0.16), 95.0, 0.32))
+	_add_shockwave(_get_shockwave(position, color.lightened(0.18), 170.0, 0.48))
+	_add_shockwave(_get_shockwave(position, Color(1.0, 0.38, 0.16), 95.0, 0.32))
 	var burst_count := 42 if SettingsStore.animations_on else 10
 	for i in range(burst_count):
 		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
 		var burst_color := color.lerp(Color(1.0, 0.42, 0.12), randf_range(0.15, 0.65))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			position + direction * randf_range(0.0, 18.0),
 			direction * randf_range(95.0, 360.0),
 			burst_color,
@@ -1263,7 +1270,7 @@ func _spawn_snake_dissolve_sparks(ai: SnakeAgent) -> void:
 		var point_index := randi_range(0, point_count - 1)
 		var source: Vector2 = ai.position if point_index == 0 else ai.segments[point_index - 1]
 		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
-		_add_particle(VfxParticle.new(
+		_add_particle(_get_particle(
 			source + direction * randf_range(0.0, ai.radius * 0.8),
 			direction * randf_range(42.0, 130.0),
 			ai.color.lightened(randf_range(0.08, 0.34)),
@@ -1289,6 +1296,7 @@ func _add_particle(particle: VfxParticle) -> void:
 	if budget <= 0:
 		return
 	if _particles.size() >= budget:
+		_return_particle(_particles[0])
 		_particles.remove_at(0)
 	_particles.append(particle)
 
@@ -1297,6 +1305,7 @@ func _add_shockwave(shockwave: Shockwave) -> void:
 	if budget <= 0:
 		return
 	if _shockwaves.size() >= budget:
+		_return_shockwave(_shockwaves[0])
 		_shockwaves.remove_at(0)
 	_shockwaves.append(shockwave)
 
@@ -1769,3 +1778,45 @@ func _is_circle_inside_play_area(position: Vector2, radius: float) -> bool:
 func _circles_overlap(a_position: Vector2, a_radius: float, b_position: Vector2, b_radius: float) -> bool:
 	var radius := a_radius + b_radius
 	return a_position.distance_squared_to(b_position) <= radius * radius
+
+func _preallocate_pools() -> void:
+	for i in range(PARTICLE_POOL_SIZE):
+		_particle_pool.append(VfxParticle.new())
+	for i in range(SHOCKWAVE_POOL_SIZE):
+		_shockwave_pool.append(Shockwave.new())
+
+func _get_particle(initial_position := Vector2.ZERO, initial_velocity := Vector2.ZERO, initial_color := Color.WHITE, initial_radius := 4.0, initial_lifetime := 0.4, initial_drag := 0.9) -> VfxParticle:
+	var particle: VfxParticle
+	if not _particle_pool.is_empty():
+		particle = _particle_pool.pop_back()
+	else:
+		particle = VfxParticle.new()
+	particle.position = initial_position
+	particle.velocity = initial_velocity
+	particle.color = initial_color
+	particle.radius = initial_radius
+	particle.lifetime = initial_lifetime
+	particle.age = 0.0
+	particle.drag = initial_drag
+	return particle
+
+func _return_particle(particle: VfxParticle) -> void:
+	if _particle_pool.size() < PARTICLE_POOL_SIZE:
+		_particle_pool.append(particle)
+
+func _get_shockwave(initial_position := Vector2.ZERO, initial_color := Color.WHITE, initial_max_radius := 120.0, initial_lifetime := 0.42) -> Shockwave:
+	var shockwave: Shockwave
+	if not _shockwave_pool.is_empty():
+		shockwave = _shockwave_pool.pop_back()
+	else:
+		shockwave = Shockwave.new()
+	shockwave.position = initial_position
+	shockwave.color = initial_color
+	shockwave.max_radius = initial_max_radius
+	shockwave.lifetime = initial_lifetime
+	shockwave.age = 0.0
+	return shockwave
+
+func _return_shockwave(shockwave: Shockwave) -> void:
+	if _shockwave_pool.size() < SHOCKWAVE_POOL_SIZE:
+		_shockwave_pool.append(shockwave)
