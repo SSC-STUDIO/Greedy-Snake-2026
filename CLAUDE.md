@@ -98,13 +98,6 @@ scenes/
 - Covered: UpgradeCatalog, RunData, TerrainCatalog, SettingsStore, scene loading
 - Missing: Arena.gd core logic (collision, AI, upgrades, combat)
 
-## Known Issues
-
-1. **Bug**: Player body collision only damages AI, not player (Arena.gd:641-645)
-2. **Bug**: Magnet time uses `magnet_radius` modifier incorrectly (Arena.gd:847)
-3. **Performance**: VfxParticle/Shockwave lack object pools
-4. **Performance**: `_foods.pop_front()` is O(n) operation
-
 ## Development Commands
 
 ```bash
@@ -118,11 +111,19 @@ godot --headless --path . --scene res://scenes/tests/SmokeRunner.tscn
 godot --headless --editor --path . --quit
 ```
 
-## Priority Improvements
+## Completed Improvements (2026-05-01)
 
-1. Initialize Git repository
-2. Add GitHub Actions CI workflow
-3. Create export presets for Linux/Windows/Web
-4. Add function docstrings to Arena.gd
-5. Implement VfxParticle object pool
-6. Add unit tests for collision logic
+1. ✅ Git repository initialized and pushed to GitHub
+2. ✅ GitHub Actions CI workflow (import check, smoke test, build)
+3. ✅ GitHub Actions Release workflow (Linux, Windows, Web)
+4. ✅ Fixed player body collision bug - now correctly damages player
+5. ✅ Fixed magnet duration bug - added `magnet_duration_bonus` modifier
+6. ✅ Implemented VfxParticle/Shockwave object pools (300+22 preallocated)
+7. ✅ Decoupled SettingsStore ↔ AudioBus circular dependency with signals
+
+## Remaining Improvements
+
+1. **Performance**: `_foods.pop_front()` is O(n) operation - consider ring buffer
+2. **Documentation**: Add function docstrings to Arena.gd (~60 functions)
+3. **Testing**: Add unit tests for collision logic (GUT or GdUnit)
+4. **Architecture**: Consider splitting Arena.gd into smaller modules
