@@ -3,6 +3,10 @@ extends Node
 const GameConfigData := preload("res://scripts/data/GameConfig.gd")
 const SAVE_PATH := "user://greedy_snake_2026_settings.cfg"
 
+signal bgm_volume_changed(value: float)
+signal sfx_volume_changed(value: float)
+signal sound_on_changed(enabled: bool)
+
 var volume := GameConfigData.DEFAULT_VOLUME
 var bgm_volume := 0.78
 var sfx_volume := 0.9
@@ -84,16 +88,17 @@ func set_volume(value: float) -> void:
 
 func set_bgm_volume(value: float) -> void:
 	bgm_volume = clampf(value, 0.0, 1.0)
-	AudioBus.refresh_volumes()
+	bgm_volume_changed.emit(bgm_volume)
 	save_settings()
 
 func set_sfx_volume(value: float) -> void:
 	sfx_volume = clampf(value, 0.0, 1.0)
-	AudioBus.refresh_volumes()
+	sfx_volume_changed.emit(sfx_volume)
 	save_settings()
 
 func set_sound_on(enabled: bool) -> void:
 	sound_on = enabled
+	sound_on_changed.emit(sound_on)
 	_apply_audio_volume()
 	save_settings()
 
@@ -152,7 +157,9 @@ func reset_to_defaults() -> void:
 	_apply_window_mode()
 	_apply_audio_volume()
 	_apply_antialiasing()
-	AudioBus.refresh_volumes()
+	sound_on_changed.emit(sound_on)
+	bgm_volume_changed.emit(bgm_volume)
+	sfx_volume_changed.emit(sfx_volume)
 	save_settings()
 
 func _apply_audio_volume() -> void:

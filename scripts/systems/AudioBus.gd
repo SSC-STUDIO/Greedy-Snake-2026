@@ -10,12 +10,18 @@ const ONE_SHOT_POOL_LIMIT := 12
 var _bgm_player: AudioStreamPlayer
 var _stream_cache := {}
 var _one_shot_players: Array[AudioStreamPlayer] = []
+var bgm_volume_value := 0.78
+var sfx_volume_value := 0.9
+var sound_on_value := true
 
 func _ready() -> void:
 	_bgm_player = AudioStreamPlayer.new()
 	_bgm_player.name = "BgmPlayer"
 	_bgm_player.bus = "Master"
 	add_child(_bgm_player)
+	SettingsStore.bgm_volume_changed.connect(_on_bgm_volume_changed)
+	SettingsStore.sfx_volume_changed.connect(_on_sfx_volume_changed)
+	SettingsStore.sound_on_changed.connect(_on_sound_on_changed)
 
 func play_bgm() -> void:
 	if not _can_play_audio():
@@ -24,7 +30,7 @@ func play_bgm() -> void:
 		_bgm_player.stream = _load_stream(BGM_PATH)
 	if _bgm_player.stream == null:
 		return
-	_bgm_player.volume_db = _volume_db(SettingsStore.bgm_volume)
+	_bgm_player.volume_db = _volume_db(bgm_volume_value)
 	if not _bgm_player.playing:
 		_bgm_player.play()
 
@@ -44,11 +50,18 @@ func play_death() -> void:
 func play_explosion() -> void:
 	_play_one_shot(EXPLOSION_PATH)
 
-func refresh_volumes() -> void:
+func _on_bgm_volume_changed(value: float) -> void:
+	bgm_volume_value = value
 	if _bgm_player != null:
-		_bgm_player.volume_db = _volume_db(SettingsStore.bgm_volume)
+		_bgm_player.volume_db = _volume_db(bgm_volume_value)
+
+func _on_sfx_volume_changed(value: float) -> void:
+	sfx_volume_value = value
 	for player in _one_shot_players:
-		player.volume_db = _volume_db(SettingsStore.sfx_volume)
+		player.volume_db = _volume_db(sfx_volume_value)
+
+func _on_sound_on_changed(enabled: bool) -> void:
+	sound_on_value = enabled
 
 func _play_one_shot(path: String) -> void:
 	if not _can_play_audio():
@@ -59,7 +72,7 @@ func _play_one_shot(path: String) -> void:
 	var player := _get_one_shot_player()
 	player.stream = stream
 	player.bus = "Master"
-	player.volume_db = _volume_db(SettingsStore.sfx_volume)
+	player.volume_db = _volume_db(sfx_volume_value)
 	player.play()
 
 func _load_stream(path: String) -> AudioStream:
@@ -86,7 +99,7 @@ func _get_one_shot_player() -> AudioStreamPlayer:
 	return fallback
 
 func _can_play_audio() -> bool:
-	return SettingsStore.sound_on and DisplayServer.get_name() != "headless"
+	return sound_on_value and DisplayServer.get_name() != "headless"
 
 func _volume_db(value: float) -> float:
 	var clamped := clampf(value, 0.0, 1.0)
