@@ -7,6 +7,7 @@ signal quit_requested
 
 const GameConfigData := preload("res://scripts/data/GameConfig.gd")
 const NeonAssetsData := preload("res://scripts/ui/NeonAssets.gd")
+const Responsive := preload("res://scripts/ui/ResponsiveLayout.gd")
 
 const TITLE_COLOR := Color(0.88, 1.0, 0.92)
 const MUTED_COLOR := Color(0.62, 0.76, 0.71)
@@ -15,6 +16,7 @@ const PANEL_COLOR := Color(0.018, 0.045, 0.047, 0.72)
 const OUTLINE_COLOR := Color(0.42, 0.95, 0.7, 0.28)
 
 func _ready() -> void:
+	Responsive.update_scale()
 	_build()
 
 func _build() -> void:
@@ -209,9 +211,9 @@ func _build_bottom_bar() -> Control:
 func _make_button(text: String, color: Color, height: int, font_size: int) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(292, height)
+	button.custom_minimum_size = Responsive.scale_vector(Vector2(292, height))
 	button.focus_mode = Control.FOCUS_ALL
-	button.add_theme_font_size_override("font_size", font_size)
+	button.add_theme_font_size_override("font_size", Responsive.scale_font(font_size))
 	button.add_theme_color_override("font_color", Color.WHITE)
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)

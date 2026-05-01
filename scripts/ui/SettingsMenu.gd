@@ -12,6 +12,7 @@ var _effects_buttons: Array[Button] = []
 var _minimap_buttons: Array[Button] = []
 
 func _ready() -> void:
+	Responsive.update_scale()
 	_build()
 
 func _build() -> void:
