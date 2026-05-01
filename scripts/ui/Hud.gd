@@ -75,6 +75,12 @@ var _pause_label: Label
 var _right_panel: PanelContainer
 var _mini_map: MiniMapView
 
+# 动画相关变量
+var _displayed_score := 0
+var _last_combo := 0
+var _score_tween: Tween
+var _combo_tween: Tween
+
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build()
@@ -82,13 +88,26 @@ func _ready() -> void:
 func update_snapshot(snapshot: Dictionary) -> void:
 	if _score_label == null:
 		return
-	_set_label_text(_score_label, "Score  %d" % int(snapshot.get("score", 0)))
+
+	# 分数滚动动画
+	var new_score := int(snapshot.get("score", 0))
+	if new_score != _displayed_score:
+		_animate_score(_displayed_score, new_score)
+		_displayed_score = new_score
+
 	_set_label_text(_ai_label, "AI  %d/%d" % [int(snapshot.get("ai_alive", 0)), int(snapshot.get("ai_total", 0))])
 	_set_label_text(_wave_label, "Wave  %d  %.0f%%" % [int(snapshot.get("wave", 1)), float(snapshot.get("pressure", 1.0)) * 100.0])
 	_set_label_text(_terrain_label, String(snapshot.get("terrain_name", "Unknown Sector")))
 	var terrain_color: Color = snapshot.get("terrain_color", Color(0.66, 1.0, 0.8))
 	_terrain_label.add_theme_color_override("font_color", Color(terrain_color.r, terrain_color.g, terrain_color.b, 0.95))
-	_set_label_text(_combo_label, "Combo  x%d  %.1fs" % [int(snapshot.get("combo", 0)), float(snapshot.get("combo_time", 0.0))])
+
+	# 连击高亮动画
+	var combo := int(snapshot.get("combo", 0))
+	if combo > _last_combo and combo > 1:
+		_combo_pulse()
+	_last_combo = combo
+	_set_label_text(_combo_label, "Combo  x%d  %.1fs" % [combo, float(snapshot.get("combo_time", 0.0))])
+
 	var tags: Array = snapshot.get("build_tags", [])
 	_set_label_text(_build_label, "Build  %s" % (", ".join(tags) if not tags.is_empty() else "none"))
 	var event_text := String(snapshot.get("event_text", ""))
@@ -111,6 +130,29 @@ func update_snapshot(snapshot: Dictionary) -> void:
 	_right_panel.visible = SettingsStore.minimap_on
 	if _right_panel.visible:
 		_mini_map.update_map(snapshot)
+
+## 分数滚动动画
+func _animate_score(from: int, to: int) -> void:
+	if not SettingsStore.animations_on:
+		_score_label.text = "Score  %d" % to
+		return
+	if _score_tween and _score_tween.is_valid():
+		_score_tween.kill()
+	_score_tween = create_tween()
+	_score_tween.tween_method(_set_score_text, from, to, 0.4)
+
+func _set_score_text(value: int) -> void:
+	_score_label.text = "Score  %d" % value
+
+## 连击脉冲动画
+func _combo_pulse() -> void:
+	if not SettingsStore.animations_on:
+		return
+	if _combo_tween and _combo_tween.is_valid():
+		_combo_tween.kill()
+	_combo_tween = _combo_label.create_tween()
+	_combo_tween.tween_property(_combo_label, "scale", Vector2(1.2, 1.2), 0.1)
+	_combo_tween.tween_property(_combo_label, "scale", Vector2.ONE, 0.15)
 
 func _build() -> void:
 	var top := MarginContainer.new()

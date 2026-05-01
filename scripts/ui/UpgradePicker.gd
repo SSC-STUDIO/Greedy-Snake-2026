@@ -39,6 +39,19 @@ func show_choices(choices: Array, build_tags: Array) -> void:
 		button.add_theme_stylebox_override("normal", _card_style(color.darkened(0.5), color, 0.28))
 		button.add_theme_stylebox_override("hover", _card_style(color.darkened(0.38), color, 0.56))
 		button.add_theme_stylebox_override("pressed", _card_style(color.darkened(0.6), color, 0.72))
+
+		# 卡片入场动画
+		if SettingsStore.animations_on:
+			button.modulate.a = 0.0
+			button.scale = Vector2(0.85, 0.85)
+			var tween := button.create_tween()
+			tween.set_parallel(true)
+			tween.tween_property(button, "modulate:a", 1.0, 0.3).set_delay(i * 0.08)
+			tween.tween_property(button, "scale", Vector2.ONE, 0.3).set_delay(i * 0.08).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+		else:
+			button.modulate.a = 1.0
+			button.scale = Vector2.ONE
+
 	show()
 	grab_focus()
 

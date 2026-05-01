@@ -25,6 +25,18 @@ func set_build_snapshot(snapshot: Dictionary) -> void:
 		", ".join(upgrades.slice(maxi(0, upgrades.size() - 4), upgrades.size())) if not upgrades.is_empty() else "No upgrades yet",
 	]
 
+	# 入场动画：淡入+缩放
+	if SettingsStore.animations_on and not visible:
+		modulate.a = 0.0
+		scale = Vector2(0.92, 0.92)
+		show()
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(self, "modulate:a", 1.0, 0.3)
+		tween.tween_property(self, "scale", Vector2.ONE, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	else:
+		show()
+
 func _build() -> void:
 	var background := TextureRect.new()
 	background.texture = NeonAssetsData.atlas_texture(NeonAssetsData.MENU_BACKGROUNDS, NeonAssetsData.PAUSE_BG)

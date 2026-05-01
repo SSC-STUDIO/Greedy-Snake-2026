@@ -219,6 +219,18 @@ func _make_button(text: String, color: Color, height: int, font_size: int) -> Bu
 	button.add_theme_stylebox_override("hover", _button_style(color, Color(0.9, 1.0, 0.96, 0.44)))
 	button.add_theme_stylebox_override("pressed", _button_style(color.darkened(0.18), Color(0.9, 1.0, 0.96, 0.62)))
 	button.add_theme_stylebox_override("focus", _button_style(color, Color(0.9, 1.0, 0.96, 0.72)))
+
+	# 添加按下动画
+	button.button_down.connect(func() -> void:
+		if SettingsStore.animations_on:
+			var tween := button.create_tween()
+			tween.tween_property(button, "scale", Vector2(0.96, 0.96), 0.08)
+	)
+	button.button_up.connect(func() -> void:
+		if SettingsStore.animations_on:
+			var tween := button.create_tween()
+			tween.tween_property(button, "scale", Vector2.ONE, 0.12)
+	)
 	return button
 
 func _make_icon_button(label: String, texture: Texture2D, color: Color, callback: Callable) -> Button:

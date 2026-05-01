@@ -40,6 +40,15 @@ func show_result(result) -> void:
 	_record_label.text = "%s  Seed %d" % [record_text, int(summary.get("challenge_seed", RunRecords.daily_seed()))]
 	show()
 
+	# 入场动画：淡入+缩放
+	if SettingsStore.animations_on:
+		modulate.a = 0.0
+		scale = Vector2(0.9, 0.9)
+		var tween := create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(self, "modulate:a", 1.0, 0.35)
+		tween.tween_property(self, "scale", Vector2.ONE, 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+
 func _build() -> void:
 	var background := TextureRect.new()
 	background.texture = NeonAssetsData.atlas_texture(NeonAssetsData.MENU_BACKGROUNDS, NeonAssetsData.GAME_OVER_BG)
