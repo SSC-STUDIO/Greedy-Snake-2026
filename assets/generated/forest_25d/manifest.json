@@ -1,0 +1,30 @@
+{
+  "source": {
+    "forest_floor": "assets/generated/forest_25d/_ai_source/forest_floor_ai_20260502.png",
+    "dirt_path": "assets/generated/forest_25d/_ai_source/dirt_path_ai_20260502.png",
+    "obstacles": "assets/generated/forest_25d/_ai_source/obstacle_sheet_ai_20260502.png",
+    "foreground_branch": "assets/generated/forest_25d/_ai_source/foreground_branch_ai_20260502.png",
+    "pickups": "assets/generated/forest_25d/_ai_source/pickup_sheet_ai_20260502.png",
+    "menu_background": "assets/generated/forest_25d/_ai_source/menu_background_ai_20260502.png"
+  },
+  "style": "AI-generated realistic 2.5D forest/jungle assets; local processing is crop/key/resize only",
+  "preserves_snake_assets": true,
+  "replaces_procedural_art": true,
+  "outputs": [
+    "menu_background.png",
+    "slices/forest_floor.png",
+    "slices/dirt_path.png",
+    "slices/dirt_path_patch.png",
+    "slices/ground_height_overlay.png",
+    "slices/tree_canopy.png",
+    "slices/stump.png",
+    "slices/rock.png",
+    "slices/root_cluster.png",
+    "slices/bush.png",
+    "slices/fallen_log.png",
+    "slices/foreground_branch.png",
+    "slices/food_berry.png",
+    "slices/leaf_shield_ring.png",
+    "slices/spore_boost_puff.png"
+  ]
+}

@@ -12,11 +12,16 @@ static var _scale: float = 1.0
 
 ## 更新缩放比例（应在场景初始化时调用）
 static func update_scale() -> void:
-	var viewport := Engine.get_main_loop().get_viewport() if Engine.get_main_loop() else null
+	var main_loop := Engine.get_main_loop()
+	if main_loop == null or not main_loop is SceneTree:
+		_scale = 1.0
+		return
+	var tree := main_loop as SceneTree
+	var viewport: Viewport = tree.root.get_viewport() if tree.root else null
 	if viewport == null:
 		_scale = 1.0
 		return
-	var current_width := viewport.get_visible_rect().size.x
+	var current_width: float = viewport.get_visible_rect().size.x
 	_scale = current_width / BASE_WIDTH
 
 ## 获取当前缩放比例
@@ -53,7 +58,11 @@ static func scale_separation(value: int) -> int:
 
 ## 获取当前屏幕尺寸
 static func get_screen_size() -> Vector2:
-	var viewport := Engine.get_main_loop().get_viewport() if Engine.get_main_loop() else null
+	var main_loop := Engine.get_main_loop()
+	if main_loop == null or not main_loop is SceneTree:
+		return Vector2(BASE_WIDTH, BASE_HEIGHT)
+	var tree := main_loop as SceneTree
+	var viewport: Viewport = tree.root.get_viewport() if tree.root else null
 	if viewport == null:
 		return Vector2(BASE_WIDTH, BASE_HEIGHT)
 	return viewport.get_visible_rect().size

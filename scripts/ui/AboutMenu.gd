@@ -3,9 +3,12 @@ extends Control
 signal menu_requested
 
 const NeonAssetsData := preload("res://scripts/ui/NeonAssets.gd")
+const UiMotion := preload("res://scripts/ui/UiAnimations.gd")
+const ABOUT_BACKGROUND_TEXTURE := preload("res://assets/generated/obsidian_ui/about_background.png")
+const UiThemeData := preload("res://scripts/ui/UiTheme.gd")
 
-const TITLE_COLOR := Color(0.88, 1.0, 0.92)
-const MUTED_COLOR := Color(0.62, 0.76, 0.71)
+const TITLE_COLOR := Color(0.9, 1.0, 0.82)
+const MUTED_COLOR := Color(0.7, 0.82, 0.62)
 
 func _ready() -> void:
 	_build()
@@ -26,7 +29,8 @@ func _build() -> void:
 	margin.add_child(layout)
 
 	var title := Label.new()
-	title.text = "About"
+	title.text = LocaleText.t("about.title")
+	UiThemeData.apply_font(title)
 	title.add_theme_font_size_override("font_size", 42)
 	title.add_theme_color_override("font_color", TITLE_COLOR)
 	layout.add_child(title)
@@ -38,7 +42,8 @@ func _build() -> void:
 	layout.add_child(body)
 
 	var icon := TextureRect.new()
-	icon.texture = NeonAssetsData.BRAND_ICON
+	icon.texture = NeonAssetsData.BRAND_HEAD_AI
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.custom_minimum_size = Vector2(260, 260)
@@ -62,19 +67,21 @@ func _build() -> void:
 
 	var name := Label.new()
 	name.text = "GREEDY SNAKE 2026"
+	UiThemeData.apply_font(name)
 	name.add_theme_font_size_override("font_size", 30)
 	name.add_theme_color_override("font_color", TITLE_COLOR)
 	info.add_child(name)
 
-	info.add_child(_info_row("Edition", "Neon Ecology"))
-	info.add_child(_info_row("Engine", "Godot 4.6"))
-	info.add_child(_info_row("Build", "2026.04.29"))
-	info.add_child(_info_row("Visual Pack", "Generated neon ecology atlas"))
-	info.add_child(_info_row("Sector", "A-01 containment habitat"))
-	info.add_child(_info_row("Mission", "Purge rogue AI growth"))
+	info.add_child(_info_row(LocaleText.t("about.edition"), LocaleText.t("about.edition_value")))
+	info.add_child(_info_row(LocaleText.t("about.engine"), "Godot 4.6"))
+	info.add_child(_info_row(LocaleText.t("about.build"), "2026.05.02"))
+	info.add_child(_info_row(LocaleText.t("about.visual_pack"), LocaleText.t("about.visual_pack_value")))
+	info.add_child(_info_row(LocaleText.t("about.habitat"), LocaleText.t("about.habitat_value")))
+	info.add_child(_info_row(LocaleText.t("about.mission"), LocaleText.t("about.mission_value")))
 
 	var note := Label.new()
-	note.text = "A restoration biosnake feeds through Bloom Nursery, Ion Marsh, Glass Reef, and Ember Vein while the sector broadcasts each containment failure."
+	note.text = LocaleText.t("about.note")
+	UiThemeData.apply_font(note)
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.add_theme_font_size_override("font_size", 16)
 	note.add_theme_color_override("font_color", MUTED_COLOR)
@@ -85,9 +92,16 @@ func _build() -> void:
 	layout.add_child(bottom)
 
 	var back := Button.new()
-	back.text = "Back"
+	UiThemeData.apply_button_font(back)
+	back.text = LocaleText.t("settings.back")
 	back.custom_minimum_size = Vector2(148, 46)
 	back.add_theme_font_size_override("font_size", 18)
+	back.add_theme_color_override("font_color", Color(0.94, 1.0, 0.84))
+	back.add_theme_color_override("font_hover_color", Color.WHITE)
+	back.add_theme_stylebox_override("normal", _button_style(Color(0.18, 0.38, 0.14).darkened(0.12), Color(0.84, 1.0, 0.52, 0.22)))
+	back.add_theme_stylebox_override("hover", _button_style(Color(0.18, 0.38, 0.14).lightened(0.1), Color(0.9, 1.0, 0.62, 0.5)))
+	back.add_theme_stylebox_override("pressed", _button_style(Color(0.18, 0.38, 0.14).darkened(0.22), Color(1.0, 0.78, 0.38, 0.72)))
+	UiMotion.bind_button_motion(back)
 	back.pressed.connect(func() -> void:
 		AudioBus.play_button()
 		menu_requested.emit()
@@ -96,14 +110,15 @@ func _build() -> void:
 
 func _add_background() -> void:
 	var background := TextureRect.new()
-	background.texture = NeonAssetsData.atlas_texture(NeonAssetsData.MENU_BACKGROUNDS, NeonAssetsData.SETTINGS_BG)
+	background.texture = ABOUT_BACKGROUND_TEXTURE
+	background.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	background.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
 
 	var shade := ColorRect.new()
-	shade.color = Color(0.0, 0.016, 0.018, 0.78)
+	shade.color = Color(0.0, 0.014, 0.006, 0.76)
 	shade.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
 
@@ -113,24 +128,24 @@ func _info_row(label_text: String, value_text: String) -> Control:
 	row.add_theme_constant_override("separation", 18)
 
 	var label := Label.new()
+	UiThemeData.apply_font(label)
 	label.text = label_text
 	label.custom_minimum_size = Vector2(130, 1)
 	label.add_theme_font_size_override("font_size", 16)
-	label.add_theme_color_override("font_color", Color(0.48, 1.0, 0.7))
+	label.add_theme_color_override("font_color", Color(0.72, 1.0, 0.46))
 	row.add_child(label)
 
 	var value := Label.new()
+	UiThemeData.apply_font(value)
 	value.text = value_text
 	value.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	value.add_theme_font_size_override("font_size", 17)
-	value.add_theme_color_override("font_color", Color(0.84, 0.94, 0.9))
+	value.add_theme_color_override("font_color", Color(0.88, 0.96, 0.82))
 	row.add_child(value)
 	return row
 
-func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.018, 0.045, 0.047, 0.76)
-	style.border_color = Color(0.42, 0.95, 0.7, 0.3)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	return style
+func _panel_style() -> StyleBoxTexture:
+	return UiThemeData.textured_panel_style(Color(0.022, 0.05, 0.024, 0.78), Color(0.72, 0.92, 0.42, 0.3), 10)
+
+func _button_style(fill: Color, border: Color) -> StyleBoxTexture:
+	return UiThemeData.textured_button_style(fill, border, 12)

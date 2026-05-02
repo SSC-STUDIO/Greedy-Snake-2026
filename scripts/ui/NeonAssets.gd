@@ -3,6 +3,7 @@ class_name NeonAssets
 
 const MENU_BACKGROUNDS := preload("res://assets/generated/neon_ecology/menu_backgrounds_sheet.png")
 const BRAND_ICON := preload("res://assets/generated/neon_ecology/slices/brand_icon.png")
+const BRAND_HEAD_AI := preload("res://assets/generated/neon_ecology/ai_textures/brand_head_ai.png")
 const SETTINGS_ICON := preload("res://assets/generated/neon_ecology/slices/settings_icon.png")
 const QUIT_ICON := preload("res://assets/generated/neon_ecology/slices/quit_icon.png")
 

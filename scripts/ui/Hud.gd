@@ -1,5 +1,7 @@
 extends Control
 
+const UiThemeData := preload("res://scripts/ui/UiTheme.gd")
+
 class MiniMapView:
 	extends Control
 
@@ -8,7 +10,6 @@ class MiniMapView:
 	var world_rect := Rect2()
 	var player_position := Vector2.ZERO
 	var ai_positions: Array = []
-	var terrain_regions: Array = []
 	var food_count := 0
 
 	func _ready() -> void:
@@ -26,23 +27,18 @@ class MiniMapView:
 		world_rect = snapshot.get("world_rect", Rect2())
 		player_position = snapshot.get("player_position", Vector2.ZERO)
 		ai_positions = snapshot.get("ai_positions", [])
-		terrain_regions = snapshot.get("terrain_regions", [])
 		food_count = int(snapshot.get("food_count", 0))
 		queue_redraw()
 
 	func _draw() -> void:
 		var bounds := Rect2(Vector2.ZERO, size)
-		draw_rect(bounds, Color(0.02, 0.045, 0.05, 0.84), true)
-		draw_rect(bounds, Color(0.25, 0.48, 0.42, 0.65), false, 1.0)
+		draw_rect(bounds, Color(0.01, 0.03, 0.035, 0.88), true)
+		draw_rect(bounds, Color(0.35, 0.88, 0.64, 0.48), false, 1.0)
 		if world_rect.size.x <= 0.0 or world_rect.size.y <= 0.0:
 			return
-		for raw_region in terrain_regions:
-			var region: Dictionary = raw_region
-			var region_rect: Rect2 = region.get("rect", Rect2())
-			var region_color: Color = region.get("color", Color(0.16, 0.5, 0.34, 0.18))
-			draw_rect(_world_rect_to_map(region_rect), Color(region_color.r, region_color.g, region_color.b, 0.24), true)
 		var food_alpha := clampf(float(food_count) / MAX_FOOD_FOR_ALPHA, 0.08, 0.35)
 		draw_rect(bounds.grow(-6), Color(0.28, 0.86, 0.48, food_alpha), true)
+		draw_rect(bounds.grow(-6), Color(0.08, 0.22, 0.18, 0.14), false, 1.0)
 		for ai_position in ai_positions:
 			draw_circle(_world_to_map(ai_position), 2.2, Color(0.96, 0.36, 0.28))
 		draw_circle(_world_to_map(player_position), 3.6, Color(0.2, 1.0, 0.58))
@@ -95,9 +91,19 @@ func update_snapshot(snapshot: Dictionary) -> void:
 		_animate_score(_displayed_score, new_score)
 		_displayed_score = new_score
 
-	_set_label_text(_ai_label, "AI  %d/%d" % [int(snapshot.get("ai_alive", 0)), int(snapshot.get("ai_total", 0))])
-	_set_label_text(_wave_label, "Wave  %d  %.0f%%" % [int(snapshot.get("wave", 1)), float(snapshot.get("pressure", 1.0)) * 100.0])
-	_set_label_text(_terrain_label, String(snapshot.get("terrain_name", "Unknown Sector")))
+	_set_label_text(_ai_label, LocaleText.format("hud.enemy", [
+		int(snapshot.get("remaining_enemies", snapshot.get("ai_alive", 0))),
+		int(snapshot.get("followers_alive", 0)),
+		int(snapshot.get("followers_total", 0)),
+		int(snapshot.get("followers_recruited", 0)),
+		int(snapshot.get("drone_count", 0)),
+	]))
+	_set_label_text(_wave_label, LocaleText.format("hud.wave", [
+		int(snapshot.get("wave", 1)),
+		int(snapshot.get("max_wave", 10)),
+		LocaleText.translate_title(String(snapshot.get("title", "Lone Snake"))),
+	]))
+	_set_label_text(_terrain_label, LocaleText.translate_enemy(String(snapshot.get("enemy_type", snapshot.get("terrain_name", "Hunter")))))
 	var terrain_color: Color = snapshot.get("terrain_color", Color(0.66, 1.0, 0.8))
 	_terrain_label.add_theme_color_override("font_color", Color(terrain_color.r, terrain_color.g, terrain_color.b, 0.95))
 
@@ -106,23 +112,25 @@ func update_snapshot(snapshot: Dictionary) -> void:
 	if combo > _last_combo and combo > 1:
 		_combo_pulse()
 	_last_combo = combo
-	_set_label_text(_combo_label, "Combo  x%d  %.1fs" % [combo, float(snapshot.get("combo_time", 0.0))])
+	_set_label_text(_combo_label, LocaleText.format("hud.combo", [combo, float(snapshot.get("combo_time", 0.0))]))
 
 	var tags: Array = snapshot.get("build_tags", [])
-	_set_label_text(_build_label, "Build  %s" % (", ".join(tags) if not tags.is_empty() else "none"))
+	_set_label_text(_build_label, LocaleText.format("hud.build", [LocaleText.join_tags(tags)]))
 	var event_text := String(snapshot.get("event_text", ""))
 	_event_label.visible = event_text != ""
 	_set_label_text(_event_label, event_text)
+	if event_text != "" and SettingsStore.animations_on:
+		_event_label.modulate.a = minf(1.0, _event_label.modulate.a + 0.12)
 
-	var boost_text := "Boost" if bool(snapshot.get("boosting", false)) else "Cruise"
+	var boost_text := LocaleText.t("hud.boost") if bool(snapshot.get("boosting", false)) else LocaleText.t("hud.cruise")
 	if bool(snapshot.get("invulnerable", false)):
-		_set_label_text(_status_label, "%s  Shield %.1fs" % [boost_text, float(snapshot.get("invulnerability_time", 0.0))])
+		_set_label_text(_status_label, LocaleText.format("hud.shield", [boost_text, float(snapshot.get("invulnerability_time", 0.0))]))
 	else:
 		_set_label_text(_status_label, boost_text)
 
 	if bool(snapshot.get("in_lava", false)):
 		_lava_label.visible = true
-		_set_label_text(_lava_label, "Lava  %.1fs" % float(snapshot.get("lava_time", 0.0)))
+		_set_label_text(_lava_label, LocaleText.format("hud.lava", [float(snapshot.get("lava_time", 0.0))]))
 	else:
 		_lava_label.visible = false
 
@@ -134,7 +142,7 @@ func update_snapshot(snapshot: Dictionary) -> void:
 ## 分数滚动动画
 func _animate_score(from: int, to: int) -> void:
 	if not SettingsStore.animations_on:
-		_score_label.text = "Score  %d" % to
+		_score_label.text = LocaleText.format("hud.score", [to])
 		return
 	if _score_tween and _score_tween.is_valid():
 		_score_tween.kill()
@@ -142,7 +150,7 @@ func _animate_score(from: int, to: int) -> void:
 	_score_tween.tween_method(_set_score_text, from, to, 0.4)
 
 func _set_score_text(value: int) -> void:
-	_score_label.text = "Score  %d" % value
+	_score_label.text = LocaleText.format("hud.score", [value])
 
 ## 连击脉冲动画
 func _combo_pulse() -> void:
@@ -181,13 +189,13 @@ func _build() -> void:
 	left.add_theme_constant_override("separation", 4)
 	left_margin.add_child(left)
 
-	_score_label = _make_label("Score  0", 24, Color(0.88, 1.0, 0.92))
+	_score_label = _make_label(LocaleText.format("hud.score", [0]), 24, Color(0.88, 1.0, 0.92))
 	left.add_child(_score_label)
-	_status_label = _make_label("Cruise", 15, Color(0.62, 0.82, 0.76))
+	_status_label = _make_label(LocaleText.t("hud.cruise"), 15, Color(0.62, 0.82, 0.76))
 	left.add_child(_status_label)
-	_combo_label = _make_label("Combo  x0", 15, Color(0.88, 0.95, 0.62))
+	_combo_label = _make_label(LocaleText.format("hud.combo", [0, 0.0]), 15, Color(0.88, 0.95, 0.62))
 	left.add_child(_combo_label)
-	_lava_label = _make_label("Lava", 17, Color(1.0, 0.42, 0.24))
+	_lava_label = _make_label(LocaleText.format("hud.lava", [0.0]), 17, Color(1.0, 0.42, 0.24))
 	_lava_label.visible = false
 	left.add_child(_lava_label)
 
@@ -209,34 +217,37 @@ func _build() -> void:
 	right.alignment = BoxContainer.ALIGNMENT_BEGIN
 	right.add_theme_constant_override("separation", 6)
 	right_margin.add_child(right)
-	_ai_label = _make_label("AI  0/0", 17, Color(0.82, 0.9, 0.86))
+	_ai_label = _make_label(LocaleText.format("hud.enemy", [0, 0, 0, 0, 0]), 17, Color(0.82, 0.9, 0.86))
 	_ai_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_child(_ai_label)
-	_wave_label = _make_label("Wave  1", 16, Color(0.66, 1.0, 0.8))
+	_wave_label = _make_label(LocaleText.format("hud.wave", [1, 10, LocaleText.translate_title("Lone Snake")]), 16, Color(0.66, 1.0, 0.8))
 	_wave_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_child(_wave_label)
-	_terrain_label = _make_label("Unknown Sector", 15, Color(0.62, 0.9, 0.78))
+	_terrain_label = _make_label(LocaleText.translate_enemy("Hunter"), 15, Color(0.72, 0.92, 0.46))
 	_terrain_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	right.add_child(_terrain_label)
 	_mini_map = MiniMapView.new()
 	right.add_child(_mini_map)
-	_build_label = _make_label("Build  none", 13, Color(0.62, 0.76, 0.71))
+	_build_label = _make_label(LocaleText.format("hud.build", [LocaleText.t("common.none")]), 13, Color(0.62, 0.76, 0.71))
 	_build_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_build_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(_build_label)
 
-	_event_label = _make_label("", 28, Color(0.94, 1.0, 0.78))
+	_event_label = _make_label("", 22, Color(0.94, 1.0, 0.78))
 	_event_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_event_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_event_label.clip_text = true
+	_event_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_event_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_event_label.offset_left = -260
-	_event_label.offset_right = 260
-	_event_label.offset_top = 96
-	_event_label.offset_bottom = 136
+	_event_label.offset_left = -390
+	_event_label.offset_right = 390
+	_event_label.offset_top = 104
+	_event_label.offset_bottom = 150
 	_event_label.visible = false
+	_event_label.add_theme_stylebox_override("normal", _event_style())
 	add_child(_event_label)
 
-	_pause_label = _make_label("Paused", 26, Color(0.86, 1.0, 0.92))
+	_pause_label = _make_label(LocaleText.t("pause.title"), 26, Color(0.86, 1.0, 0.92))
 	_pause_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_pause_label.set_anchors_preset(Control.PRESET_CENTER)
@@ -245,10 +256,12 @@ func _build() -> void:
 	_pause_label.offset_top = -24
 	_pause_label.offset_bottom = 24
 	_pause_label.visible = false
+	_pause_label.add_theme_stylebox_override("normal", _pause_style())
 	add_child(_pause_label)
 
 func _make_label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
+	UiThemeData.apply_font(label)
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
@@ -261,10 +274,18 @@ func _set_label_text(label: Label, value: String) -> void:
 func _make_panel(minimum_size: Vector2) -> PanelContainer:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = minimum_size
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.018, 0.045, 0.047, 0.74)
-	style.border_color = Color(0.35, 0.86, 0.62, 0.28)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
+	var style := UiThemeData.textured_panel_style(Color(0.012, 0.035, 0.04, 0.76), Color(0.42, 0.96, 0.7, 0.36), 15)
 	panel.add_theme_stylebox_override("panel", style)
 	return panel
+
+func _event_style() -> StyleBoxTexture:
+	var style := UiThemeData.textured_panel_style(Color(0.02, 0.075, 0.06, 0.72), Color(0.75, 1.0, 0.58, 0.4), 18)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	return style
+
+func _pause_style() -> StyleBoxTexture:
+	var style := UiThemeData.textured_panel_style(Color(0.02, 0.04, 0.045, 0.78), Color(0.65, 1.0, 0.8, 0.42), 14)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	return style

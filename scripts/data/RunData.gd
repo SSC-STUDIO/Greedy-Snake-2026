@@ -20,7 +20,7 @@ class_name RunData
 ##   magnet_radius: float - 磁力吸引半径，单位：格，默认 0.0
 ##   magnet_duration_bonus: float - 磁力持续时间加成（叠加式），单位：秒，默认 0.0
 ##   pickup_radius: float - 自动拾取半径，单位：格，默认 0.0
-##   companion_count: int - 伴侣蛇数量，单位：条，默认 0
+##   drone_count: int - 自动拾取无人机数量，单位：个，默认 0
 ##   special_food_chance: float - 特殊食物出现概率加成（叠加式），单位：概率（0-1），默认 0.0
 ##   kill_score_mult: float - 击杀分数倍率加成（叠加式），单位：倍，默认 0.0
 ##   boss_damage: int - Boss伤害加成（叠加式），单位：点，默认 0
@@ -44,7 +44,7 @@ static func new_modifier_state() -> Dictionary:
 		"magnet_radius": 0.0,
 		"magnet_duration_bonus": 0.0,
 		"pickup_radius": 0.0,
-		"companion_count": 0,
+		"drone_count": 0,
 		"special_food_chance": 0.0,
 		"kill_score_mult": 0.0,
 		"boss_damage": 0,
@@ -58,11 +58,16 @@ static func new_modifier_state() -> Dictionary:
 ##   elapsed: float - 当前波次已用时间，单位：秒，默认 0.0
 ##   wave: int - 当前波次编号，单位：波，默认 1
 ##   pressure: float - 压力系数（控制敌人密度/难度），单位：倍，默认 1.0
-##   next_wave_time: float - 距下一波次的倒计时，单位：秒，默认 60.0
-##   next_elite_time: float - 距下一个精英敌人的倒计时，单位：秒，默认 42.0
-##   boss_warning: bool - Boss是否已发出预警，默认 false
-##   boss_spawned: bool - Boss是否已生成，默认 false
-##   boss_defeated: bool - Boss是否已被击败，默认 false
+##   phase: String - 当前阶段（fighting / reward / victory），默认 fighting
+##   wave_time: float - 当前波内已用时间，单位：秒，默认 0.0
+##   reward_timer: float - 奖励阶段剩余时间，单位：秒，默认 0.0
+##   coronation_timer: float - 通关加冕阶段剩余时间，单位：秒，默认 0.0
+##   enemy_type: String - 当前波敌人类型标识，默认 Hunter
+##   remaining_enemies: int - 当前仍在场的波次敌人数，默认 0
+##   followers_alive: int - 当前存活跟班数，默认 0
+##   followers_total: int - 当前跟班列表总数（含濒死未移除），默认 0
+##   followers_recruited: int - 本局累计招募的跟班总数，默认 0
+##   title: String - 当前称号/波次标题，默认 Lone Snake
 ##   edge_shield_wave: int - 边界护盾生效的波次，-1 表示未激活，默认 -1
 ##   last_event: String - 上一次事件描述文本，默认 "Wave 1"
 ##   event_time: float - 事件显示倒计时，单位：秒，默认 3.0
@@ -71,11 +76,17 @@ static func new_wave_state() -> Dictionary:
 		"elapsed": 0.0,
 		"wave": 1,
 		"pressure": 1.0,
-		"next_wave_time": 60.0,
-		"next_elite_time": 42.0,
-		"boss_warning": false,
-		"boss_spawned": false,
-		"boss_defeated": false,
+		"phase": "fighting",
+		"wave_time": 0.0,
+		"reward_timer": 0.0,
+		"coronation_timer": 0.0,
+		"enemy_type": "Hunter",
+		"remaining_enemies": 0,
+		"followers_alive": 0,
+		"followers_total": 0,
+		"followers_recruited": 0,
+		"title": "Lone Snake",
+		"wave_clear_pending": false,
 		"edge_shield_wave": -1,
 		"last_event": "Wave 1",
 		"event_time": 3.0,
@@ -109,6 +120,11 @@ static func new_run_stats() -> Dictionary:
 		"upgrades": [],
 		"build_tags": [],
 		"waves": 1,
+		"victory": false,
+		"title": "Lone Snake",
+		"followers_alive": 0,
+		"followers_total": 0,
+		"followers_recruited": 0,
 		"challenge_seed": challenge_seed_for_today(),
 	}
 

@@ -6,6 +6,7 @@ const SAVE_PATH := "user://greedy_snake_2026_settings.cfg"
 signal bgm_volume_changed(value: float)
 signal sfx_volume_changed(value: float)
 signal sound_on_changed(enabled: bool)
+signal language_changed(language: String)
 
 var volume := GameConfigData.DEFAULT_VOLUME
 var bgm_volume := 0.78
@@ -15,11 +16,12 @@ var sound_on := true
 var snake_speed := 1
 var animations_on := true
 var anti_aliasing_on := true
-var fullscreen_on := false
+var fullscreen_on := true
 var effects_quality := 2
 var screen_shake_on := true
 var minimap_on := true
 var minimap_size := 1
+var language := "en"
 
 func _ready() -> void:
 	load_settings()
@@ -42,6 +44,7 @@ func get_snapshot() -> Dictionary:
 		"screen_shake_on": screen_shake_on,
 		"minimap_on": minimap_on,
 		"minimap_size": minimap_size,
+		"language": language,
 	}
 
 func load_settings() -> void:
@@ -63,6 +66,7 @@ func load_settings() -> void:
 	screen_shake_on = bool(config.get_value("display", "screen_shake_on", screen_shake_on))
 	minimap_on = bool(config.get_value("display", "minimap_on", minimap_on))
 	minimap_size = GameConfigData.clamp_minimap_size(int(config.get_value("display", "minimap_size", minimap_size)))
+	language = _normalize_language(String(config.get_value("ui", "language", language)))
 
 func save_settings() -> void:
 	var config := ConfigFile.new()
@@ -79,6 +83,7 @@ func save_settings() -> void:
 	config.set_value("display", "screen_shake_on", screen_shake_on)
 	config.set_value("display", "minimap_on", minimap_on)
 	config.set_value("display", "minimap_size", minimap_size)
+	config.set_value("ui", "language", language)
 	config.save(SAVE_PATH)
 
 func set_volume(value: float) -> void:
@@ -140,6 +145,14 @@ func set_minimap_size(value: int) -> void:
 	minimap_size = GameConfigData.clamp_minimap_size(value)
 	save_settings()
 
+func set_language(value: String) -> void:
+	var next_language := _normalize_language(value)
+	if language == next_language:
+		return
+	language = next_language
+	language_changed.emit(language)
+	save_settings()
+
 func reset_to_defaults() -> void:
 	volume = GameConfigData.DEFAULT_VOLUME
 	bgm_volume = 0.78
@@ -149,17 +162,19 @@ func reset_to_defaults() -> void:
 	snake_speed = 1
 	animations_on = true
 	anti_aliasing_on = true
-	fullscreen_on = false
+	fullscreen_on = true
 	effects_quality = 2
 	screen_shake_on = true
 	minimap_on = true
 	minimap_size = 1
+	language = "en"
 	_apply_window_mode()
 	_apply_audio_volume()
 	_apply_antialiasing()
 	sound_on_changed.emit(sound_on)
 	bgm_volume_changed.emit(bgm_volume)
 	sfx_volume_changed.emit(sfx_volume)
+	language_changed.emit(language)
 	save_settings()
 
 func _apply_audio_volume() -> void:
@@ -177,3 +192,8 @@ func _apply_antialiasing() -> void:
 	if viewport == null:
 		return
 	viewport.msaa_2d = Viewport.MSAA_4X if anti_aliasing_on else Viewport.MSAA_DISABLED
+
+func _normalize_language(value: String) -> String:
+	if value == "zh":
+		return "zh"
+	return "en"

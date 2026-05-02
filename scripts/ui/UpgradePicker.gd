@@ -4,6 +4,8 @@ class_name UpgradePicker
 signal upgrade_selected(upgrade: Dictionary)
 
 const UpgradeCatalogData := preload("res://scripts/data/UpgradeCatalog.gd")
+const UiMotion := preload("res://scripts/ui/UiAnimations.gd")
+const UiThemeData := preload("res://scripts/ui/UiTheme.gd")
 const UPGRADE_ICONS := preload("res://assets/generated/neon_ecology/upgrade_icons_atlas.png")
 const ICON_CELL_SIZE := Vector2i(256, 256)
 const ICON_COLUMNS := 6
@@ -14,12 +16,13 @@ var _current_choices: Array = []
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	focus_mode = Control.FOCUS_ALL
 	_build()
 	hide()
 
 func show_choices(choices: Array, build_tags: Array) -> void:
 	_current_choices = choices.duplicate(true)
-	_tag_label.text = "Build  %s" % (", ".join(build_tags) if not build_tags.is_empty() else "new run")
+	_tag_label.text = LocaleText.format("upgrade.build", [LocaleText.join_tags(build_tags, "common.new_run")])
 	for i in range(_choice_buttons.size()):
 		var button := _choice_buttons[i]
 		if i >= choices.size():
@@ -31,9 +34,9 @@ func show_choices(choices: Array, build_tags: Array) -> void:
 		button.show()
 		button.text = "%d  %s\n%s\n%s" % [
 			i + 1,
-			String(upgrade.get("name", "Upgrade")),
-			String(upgrade.get("description", "")),
-			" / ".join(upgrade.get("tags", [])),
+			LocaleText.translate_upgrade_name(upgrade),
+			LocaleText.translate_upgrade_description(upgrade),
+			" / ".join(LocaleText.translate_tags(upgrade.get("tags", []))),
 		]
 		button.icon = _icon_for(upgrade)
 		button.add_theme_stylebox_override("normal", _card_style(color.darkened(0.5), color, 0.28))
@@ -53,6 +56,10 @@ func show_choices(choices: Array, build_tags: Array) -> void:
 			button.scale = Vector2.ONE
 
 	show()
+	for button in _choice_buttons:
+		if button.visible:
+			button.grab_focus()
+			return
 	grab_focus()
 
 func choose_index(index: int) -> void:
@@ -88,13 +95,15 @@ func _build() -> void:
 	margin.add_child(layout)
 
 	var title := Label.new()
-	title.text = "Choose Upgrade"
+	title.text = LocaleText.t("upgrade.title")
+	UiThemeData.apply_font(title)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 32)
 	title.add_theme_color_override("font_color", Color(0.9, 1.0, 0.94))
 	layout.add_child(title)
 
 	_tag_label = Label.new()
+	UiThemeData.apply_font(_tag_label)
 	_tag_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_tag_label.add_theme_font_size_override("font_size", 15)
 	_tag_label.add_theme_color_override("font_color", Color(0.64, 0.82, 0.76))
@@ -106,8 +115,10 @@ func _build() -> void:
 
 	for i in range(3):
 		var button := Button.new()
+		UiThemeData.apply_button_font(button)
 		var index := i
 		button.custom_minimum_size = Vector2(286, 198)
+		button.focus_mode = Control.FOCUS_ALL
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
@@ -116,6 +127,7 @@ func _build() -> void:
 		button.add_theme_font_size_override("font_size", 17)
 		button.add_theme_constant_override("icon_max_width", 76)
 		button.pressed.connect(func() -> void: _pick(index))
+		UiMotion.bind_button_motion(button, Vector2(1.018, 1.025), Vector2(0.97, 0.95))
 		row.add_child(button)
 		_choice_buttons.append(button)
 
@@ -139,20 +151,11 @@ func _icon_for(upgrade: Dictionary) -> Texture2D:
 	texture.region = Rect2i(column * ICON_CELL_SIZE.x, row * ICON_CELL_SIZE.y, ICON_CELL_SIZE.x, ICON_CELL_SIZE.y)
 	return texture
 
-func _panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.02, 0.04, 0.045, 0.98)
-	style.border_color = Color(0.48, 1.0, 0.72, 0.68)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	return style
+func _panel_style() -> StyleBoxTexture:
+	return UiThemeData.textured_panel_style(Color(0.02, 0.04, 0.045, 0.96), Color(0.48, 1.0, 0.72, 0.68), 12)
 
-func _card_style(fill: Color, border: Color, alpha: float) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(fill.r, fill.g, fill.b, 0.92)
-	style.border_color = Color(border.r, border.g, border.b, alpha)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
+func _card_style(fill: Color, border: Color, alpha: float) -> StyleBoxTexture:
+	var style := UiThemeData.textured_button_style(Color(fill.r, fill.g, fill.b, 0.88), Color(border.r, border.g, border.b, alpha), 10)
 	style.content_margin_left = 14
 	style.content_margin_right = 14
 	style.content_margin_top = 14

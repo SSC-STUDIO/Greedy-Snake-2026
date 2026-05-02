@@ -1,6 +1,11 @@
 [gd_scene format=3 uid="uid://c1v8s7tk5yxdr"]
 
 [ext_resource type="Script" uid="uid://ccdblea5xfkye" path="res://scripts/systems/Main.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dvyw13fmubx4w" path="res://assets/generated/neon_ecology/gameplay_sprites_atlas.png" id="2_rvslj"]
 
 [node name="Main" type="Node" unique_id=507393906]
 script = ExtResource("1")
+
+[node name="GameplaySpritesAtlas" type="Sprite2D" parent="." unique_id=1993875675]
+position = Vector2(176, 461)
+texture = ExtResource("2_rvslj")

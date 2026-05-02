@@ -4,3 +4,9 @@
 export/
 build/
 dist/
+
+# Python (asset / tooling scripts under tools/)
+__pycache__/
+*.py[cod]
+*.pyo
+.Python

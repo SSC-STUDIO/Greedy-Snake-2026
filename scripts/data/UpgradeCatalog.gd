@@ -270,8 +270,8 @@ const UPGRADES := [
 		"name": "Feeder Drone",
 		"rarity": "rare",
 		"tags": ["summon", "consume"],
-		"description": "A drone gathers nearby food.",
-		"effects": {"companion_count": 1},
+			"description": "A drone gathers nearby food.",
+			"effects": {"drone_count": 1},
 		"icon_region": Rect2i(384, 64, 64, 64),
 	},
 	## [rare | summon | consume] Raises the spawn rate of special food.
@@ -320,8 +320,8 @@ const UPGRADES := [
 		"name": "Nest Signal",
 		"rarity": "legendary",
 		"tags": ["summon"],
-		"description": "Gain two drones and a wider magnet field.",
-		"effects": {"companion_count": 2, "magnet_radius": 120.0},
+			"description": "Gain two drones and a wider magnet field.",
+			"effects": {"drone_count": 2, "magnet_radius": 120.0},
 		"icon_region": Rect2i(192, 128, 64, 64),
 	},
 ]

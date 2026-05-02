@@ -4,23 +4,41 @@ const GameConfigData := preload("res://scripts/data/GameConfig.gd")
 const UpgradeCatalogData := preload("res://scripts/data/UpgradeCatalog.gd")
 const RunDataUtil := preload("res://scripts/data/RunData.gd")
 const TerrainCatalogData := preload("res://scripts/data/TerrainCatalog.gd")
+const WaveCatalogData := preload("res://scripts/data/WaveCatalog.gd")
+const TerrainHazardRendererData := preload("res://scripts/game/TerrainHazardRenderer.gd")
 const UPGRADE_PICKER_SCRIPT := preload("res://scripts/ui/UpgradePicker.gd")
+const NOISE_TILE_TEXTURE := preload("res://assets/generated/obsidian_ui/obsidian_noise_tile.png")
 const HUD_SCENE := preload("res://scenes/ui/Hud.tscn")
 const PAUSE_SCENE := preload("res://scenes/ui/PauseOverlay.tscn")
 const GAME_OVER_SCENE := preload("res://scenes/ui/GameOverDialog.tscn")
-const ENVIRONMENT_ATLAS := preload("res://assets/generated/neon_ecology/environment_tiles_atlas.png")
 const PLAYER_HEAD_TEXTURE := preload("res://assets/generated/neon_ecology/slices/player_head.png")
-const PLAYER_BODY_TEXTURE := preload("res://assets/generated/neon_ecology/slices/player_body.png")
+const PLAYER_BODY_TEXTURE := preload("res://assets/generated/neon_ecology/slices/snake_body_texture.png")
 const AI_HEAD_TEXTURE := preload("res://assets/generated/neon_ecology/slices/ai_head.png")
+const AI_BODY_TEXTURE := preload("res://assets/generated/neon_ecology/slices/snake_body_ai_texture.png")
 const ELITE_HEAD_TEXTURE := preload("res://assets/generated/neon_ecology/slices/elite_head.png")
-const FOOD_SEED_TEXTURE := preload("res://assets/generated/neon_ecology/slices/food_seed.png")
-const SHIELD_RING_TEXTURE := preload("res://assets/generated/neon_ecology/slices/shield_ring.png")
-const BOOST_PUFF_TEXTURE := preload("res://assets/generated/neon_ecology/slices/boost_puff.png")
+const ELITE_BODY_TEXTURE := preload("res://assets/generated/neon_ecology/slices/snake_body_elite_texture.png")
+const FOOD_SEED_TEXTURE := preload("res://assets/generated/forest_25d/slices/food_berry.png")
+const SHIELD_RING_TEXTURE := preload("res://assets/generated/forest_25d/slices/leaf_shield_ring.png")
+const BOOST_PUFF_TEXTURE := preload("res://assets/generated/forest_25d/slices/spore_boost_puff.png")
+const BODY_RENDER_ROTATION_OFFSET := PI * 0.5
+const FOREST_FLOOR_TEXTURE := preload("res://assets/generated/forest_25d/slices/forest_floor.png")
+const DIRT_PATH_PATCH_TEXTURE := preload("res://assets/generated/forest_25d/slices/dirt_path_patch.png")
+const GROUND_HEIGHT_TEXTURE := preload("res://assets/generated/forest_25d/slices/ground_height_overlay.png")
+const TREE_CANOPY_TEXTURE := preload("res://assets/generated/forest_25d/slices/tree_canopy.png")
+const STUMP_TEXTURE := preload("res://assets/generated/forest_25d/slices/stump.png")
+const ROCK_TEXTURE := preload("res://assets/generated/forest_25d/slices/rock.png")
+const ROOT_CLUSTER_TEXTURE := preload("res://assets/generated/forest_25d/slices/root_cluster.png")
+const BUSH_TEXTURE := preload("res://assets/generated/forest_25d/slices/bush.png")
+const FALLEN_LOG_TEXTURE := preload("res://assets/generated/forest_25d/slices/fallen_log.png")
+const FOREGROUND_BRANCH_TEXTURE := preload("res://assets/generated/forest_25d/slices/foreground_branch.png")
 const MAX_VFX_PARTICLES := 260
 const MAX_SHOCKWAVES := 18
 const PARTICLE_POOL_SIZE := 300
 const SHOCKWAVE_POOL_SIZE := 22
 const LAVA_EDGE_WIDTH := 220.0
+const FOREST_TILE_WORLD_SIZE := 1536.0
+const FOREST_HEIGHT_TILE_WORLD_SIZE := 1536.0
+const FOREST_PATH_TILE_WORLD_SIZE := 768.0
 const VISIBLE_FOOD_MARGIN := 120.0
 const FOOD_PULSE_TABLE_SIZE := 64
 const LOW_PARTICLE_BUDGET := 56
@@ -36,8 +54,17 @@ const UPGRADE_FOOD_THRESHOLDS := [14, 36, 68, 112, 166, 230, 304, 392]
 const UPGRADE_TIME_THRESHOLDS := [18.0, 42.0, 74.0, 112.0, 156.0, 206.0, 262.0, 324.0]
 const BASE_MAGNET_RADIUS := 34.0
 const COMPANION_PICKUP_INTERVAL := 0.2
-const BOSS_WAVE := 4
 const AI_DEATH_DISSOLVE_TIME := 0.72
+const PLAYER_LENGTH_RADIUS_STEP := 14
+const PLAYER_LENGTH_RADIUS_MAX := 9.0
+const FOLLOWERS_PER_WAVE := 3
+const WAVE_REWARD_TIME := 2.1
+const CORONATION_TIME := 3.4
+const FRIENDLY_CONTACT_DAMAGE_COOLDOWN := 0.45
+const AI_OBSTACLE_PROBE_DISTANCE := 170.0
+const AI_FLANK_DISTANCE := 280.0
+const AI_ROUTE_SAMPLE_STEP := 78.0
+const AI_ROUTE_SAMPLE_COUNT := 5
 
 class FoodDot:
 	var position := Vector2.ZERO
@@ -91,6 +118,20 @@ class SnakeAgent:
 	var summon_count := 0
 	var blink := false
 	var phase_timer := 0.0
+	var team := "enemy"
+	var enemy_type := "hunter"
+	var ability := "hunter"
+	var follower_index := -1
+	var attack_timer := 0.0
+	var attack_phase := 0
+	var attack_cooldown := 0.0
+	var contact_cooldown := 0.0
+	var shield_timer := 0.0
+	var status_timer := 0.0
+	var spawned_children := 0
+	var wave_member := true
+	var target_position := Vector2.ZERO
+	var beam_direction := Vector2.DOWN
 
 class VfxParticle:
 	var position := Vector2.ZERO
@@ -145,6 +186,69 @@ class Shockwave:
 		if lifetime <= 0.001:
 			return 1.0
 		return clampf(age / lifetime, 0.0, 1.0)
+
+class HazardZone:
+	var position := Vector2.ZERO
+	var radius := 80.0
+	var color := Color.WHITE
+	var damage := 1
+	var slow := 0.0
+	var lifetime := 2.0
+	var age := 0.0
+	var team := "enemy"
+
+	func _init(initial_position := Vector2.ZERO, initial_radius := 80.0, initial_color := Color.WHITE, initial_damage := 1, initial_lifetime := 2.0, initial_team := "enemy", initial_slow := 0.0) -> void:
+		position = initial_position
+		radius = initial_radius
+		color = initial_color
+		damage = initial_damage
+		lifetime = initial_lifetime
+		team = initial_team
+		slow = initial_slow
+
+	func update(delta: float) -> void:
+		age += delta
+
+	func alive() -> bool:
+		return age < lifetime
+
+	func progress() -> float:
+		if lifetime <= 0.001:
+			return 1.0
+		return clampf(age / lifetime, 0.0, 1.0)
+
+class BeamStrike:
+	var origin := Vector2.ZERO
+	var direction := Vector2.DOWN
+	var color := Color.WHITE
+	var width := 34.0
+	var length := 720.0
+	var damage := 1
+	var warning_time := 0.7
+	var active_time := 0.25
+	var age := 0.0
+	var fired := false
+	var team := "enemy"
+
+	func _init(initial_origin := Vector2.ZERO, initial_direction := Vector2.DOWN, initial_color := Color.WHITE, initial_team := "enemy", initial_damage := 1, initial_width := 34.0, initial_length := 720.0) -> void:
+		origin = initial_origin
+		direction = initial_direction.normalized() if initial_direction.length_squared() > 0.001 else Vector2.DOWN
+		color = initial_color
+		team = initial_team
+		damage = initial_damage
+		width = initial_width
+		length = initial_length
+
+	func update(delta: float) -> void:
+		age += delta
+		if age >= warning_time:
+			fired = true
+
+	func alive() -> bool:
+		return age < warning_time + active_time
+
+	func is_active() -> bool:
+		return age >= warning_time and alive()
 
 class FoodSpatialGrid:
 	var cell_size := GameConfigData.FOOD_GRID_CELL_SIZE
@@ -229,6 +333,7 @@ var _game_over_dialog
 var _upgrade_picker: UpgradePicker
 var _player := SnakeAgent.new()
 var _ai_snakes: Array = []
+var _follower_snakes: Array = []
 var _foods: Array = []
 var _food_grid := FoodSpatialGrid.new()
 var _visible_food_indices: Array = []
@@ -260,6 +365,8 @@ var _grid_offset := Vector2.ZERO
 var _world_time := 0.0
 var _particles: Array = []
 var _shockwaves: Array = []
+var _hazard_zones: Array = []
+var _beam_strikes: Array = []
 var _particle_pool: Array = []
 var _shockwave_pool: Array = []
 var _shake_timer := 0.0
@@ -282,6 +389,11 @@ var _story_queue: Array = []
 var _story_cooldowns := {}
 var _seen_terrain_ids := {}
 var _current_player_terrain_id := ""
+# Terrain hazard system
+var _terrain_hazard_renderer: TerrainHazardRenderer = null
+var _hazard_damage_cooldown: float = 0.0
+var _follower_serial := 0
+var _victory_triggered := false
 
 func _ready() -> void:
 	randomize()
@@ -296,6 +408,11 @@ func _ready() -> void:
 	_difficulty = GameConfigData.difficulty(SettingsStore.difficulty)
 	_base_player_speed = GameConfigData.player_speed_for(SettingsStore.snake_speed, SettingsStore.difficulty)
 	_grid_offset = Vector2(randf_range(0.0, 240.0), randf_range(0.0, 240.0))
+
+	# Initialize terrain hazard renderer
+	_terrain_hazard_renderer = TerrainHazardRendererData.new()
+	_terrain_hazard_renderer.generate_hazards(_terrain_regions, _play_area, randi())
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 	_camera = Camera2D.new()
 	_camera.name = "ArenaCamera"
@@ -325,10 +442,10 @@ func _ready() -> void:
 	_canvas.add_child(_upgrade_picker)
 
 	_reset_player()
-	_queue_story(TerrainCatalogData.START_STORY, 3.2, "start", 999.0)
+	_queue_story(LocaleText.t("story.start"), 3.2, "start", 999.0)
 	_update_terrain_state()
 	_spawn_foods()
-	_spawn_ai_snakes()
+	_start_campaign_wave(1)
 	_update_hud()
 	queue_redraw()
 
@@ -379,14 +496,24 @@ func _physics_process(delta: float) -> void:
 	var clamped_delta := minf(delta, 0.1)
 	_update_run_timers(clamped_delta)
 	_update_wave(clamped_delta)
+	if _game_over:
+		_update_effects(clamped_delta)
+		_update_camera(clamped_delta)
+		_update_hud()
+		queue_redraw()
+		return
 	_update_player(clamped_delta)
 	_update_terrain_state()
 	_update_ai(clamped_delta)
+	_update_followers(clamped_delta)
+	_update_companions(clamped_delta)
+	_update_combat_zones(clamped_delta)
 	_refresh_visible_food_cache(_visible_world_rect().grow(VISIBLE_FOOD_MARGIN))
 	_update_magnet_pickups(clamped_delta)
-	_update_companions(clamped_delta)
 	_check_food_collisions()
 	_check_snake_collisions()
+	_check_follower_collisions()
+	_check_terrain_hazards(clamped_delta)
 	_update_lava(clamped_delta)
 	_update_particle_emitters(clamped_delta)
 	_update_effects(clamped_delta)
@@ -398,14 +525,18 @@ func _draw() -> void:
 	var visible := _visible_world_rect().grow(120.0)
 	_refresh_visible_food_cache(visible)
 	_draw_world(visible)
+	_draw_hazard_zones()
+	_draw_beam_strikes()
 	_draw_shockwaves()
 	_draw_food(visible)
 	var snake_visible := visible.grow(260.0)
 	for ai in _ai_snakes:
 		if _is_snake_visible(ai, snake_visible):
 			_draw_snake(ai, false)
+	for follower in _follower_snakes:
+		if _is_snake_visible(follower, snake_visible):
+			_draw_snake(follower, false)
 	_draw_snake(_player, true)
-	_draw_companions()
 	_draw_particles()
 
 func _reset_player() -> void:
@@ -414,6 +545,7 @@ func _reset_player() -> void:
 	_player.previous_position = _player.position
 	_player.direction = Vector2.DOWN
 	_player.color = Color(0.08, 0.86, 0.42)
+	_update_player_radius()
 	_player.segments.clear()
 	for i in range(5):
 		_player.segments.append(_player.position - Vector2.DOWN * GameConfigData.SNAKE_SEGMENT_SPACING * float(i + 1))
@@ -432,6 +564,7 @@ func _reset_player() -> void:
 	_story_cooldowns.clear()
 	_seen_terrain_ids.clear()
 	_current_player_terrain_id = ""
+	_update_player_radius()
 
 func _spawn_foods() -> void:
 	_foods.clear()
@@ -446,6 +579,91 @@ func _spawn_ai_snakes() -> void:
 	var ai_count := int(_difficulty.get("ai_count", 20))
 	for i in range(ai_count):
 		_ai_snakes.append(_make_ai_snake())
+
+func _start_campaign_wave(wave: int) -> void:
+	var definition := WaveCatalogData.wave_for(wave)
+	_ai_snakes.clear()
+	_hazard_zones.clear()
+	_beam_strikes.clear()
+	_wave_state["wave"] = wave
+	_wave_state["phase"] = "fighting"
+	_wave_state["wave_time"] = 0.0
+	_wave_state["reward_timer"] = 0.0
+	_wave_state["pressure"] = 1.0 + float(wave - 1) * 0.12
+	_wave_state["enemy_type"] = String(definition.get("name", "Hunter"))
+	_wave_state["title"] = String(definition.get("title", "Lone Snake"))
+	_wave_state["remaining_enemies"] = int(definition.get("count", 0))
+	_sync_follower_counters()
+	_set_event(LocaleText.wave_event(wave, String(definition.get("event", "Wave %d" % wave))), 3.0)
+	_queue_story(LocaleText.wave_story(wave, String(definition.get("story", LocaleText.terrain_wave_story(wave)))), 3.1, "campaign_wave_%d" % wave, 999.0)
+	for i in range(int(definition.get("count", 1))):
+		_ai_snakes.append(_make_campaign_enemy(definition, i))
+	for follower in _follower_snakes:
+		if follower.dead:
+			continue
+		follower.position = _player.position + Vector2.RIGHT.rotated(float(follower.follower_index) * 2.1) * (150.0 + float(follower.follower_index % 3) * 24.0)
+		follower.previous_position = follower.position
+		follower.direction = (_player.position - follower.position).normalized()
+		_rebuild_segments(follower, follower.segments.size())
+
+func _make_campaign_enemy(definition: Dictionary, index: int) -> SnakeAgent:
+	var enemy := _make_ai_snake(_random_ai_spawn_position(), [], bool(definition.get("final", false)))
+	enemy.enemy_type = String(definition.get("id", "hunter"))
+	enemy.ability = String(definition.get("ability", enemy.enemy_type))
+	enemy.team = "enemy"
+	enemy.wave_member = true
+	enemy.is_elite = int(_wave_state.get("wave", 1)) >= 5 or bool(definition.get("final", false))
+	enemy.is_boss = bool(definition.get("final", false)) or enemy.ability == "devour"
+	enemy.color = definition.get("color", enemy.color)
+	enemy.speed_multiplier = float(definition.get("speed", enemy.speed_multiplier)) * randf_range(0.94, 1.06)
+	enemy.aggression = float(definition.get("aggression", enemy.aggression))
+	enemy.health = int(definition.get("health", enemy.health))
+	enemy.max_health = enemy.health
+	enemy.score_value = int(definition.get("score", 12 + int(_wave_state.get("wave", 1)) * 4))
+	enemy.drop_value = int(definition.get("drop", 8 + int(_wave_state.get("wave", 1)) * 2))
+	enemy.radius *= float(definition.get("radius", 1.0))
+	enemy.attack_cooldown = randf_range(0.5, 2.6) + float(index % 3) * 0.28
+	if enemy.ability == "split":
+		enemy.split_count = 2
+	elif enemy.ability == "summon":
+		enemy.summon_count = 1
+	elif enemy.ability == "mine":
+		enemy.attack_cooldown = randf_range(1.2, 2.2)
+	elif enemy.ability == "beam":
+		enemy.attack_cooldown = randf_range(1.4, 2.5)
+	elif enemy.ability == "emperor":
+		enemy.split_count = 2
+		enemy.summon_count = 2
+		enemy.death_explosion = 300.0
+		enemy.attack_cooldown = 0.8
+	_rebuild_segments(enemy, enemy.segments.size() + int(definition.get("segments", 0)))
+	return enemy
+
+func _make_follower_snake(index: int) -> SnakeAgent:
+	var follower := SnakeAgent.new()
+	follower.team = "follower"
+	follower.enemy_type = "follower"
+	follower.ability = "follower"
+	follower.follower_index = index
+	follower.position = _player.position + Vector2.RIGHT.rotated(float(index) * 2.399) * (130.0 + float(index % 4) * 22.0)
+	follower.previous_position = follower.position
+	follower.direction = (_player.position - follower.position).normalized()
+	follower.radius = GameConfigData.INITIAL_SNAKE_RADIUS * 0.72
+	follower.color = Color(0.1, 0.95, 0.62).lerp(Color(0.38, 1.0, 0.95), float(index % 5) / 8.0)
+	follower.speed_multiplier = 1.03 + float(index % 3) * 0.035
+	follower.aggression = 0.95
+	follower.health = 2
+	follower.max_health = 2
+	follower.score_value = 0
+	follower.drop_value = 0
+	_rebuild_segments(follower, 4)
+	return follower
+
+func _rebuild_segments(agent: SnakeAgent, count: int) -> void:
+	agent.segments.clear()
+	var safe_dir := agent.direction.normalized() if agent.direction.length_squared() > 0.001 else Vector2.DOWN
+	for i in range(maxi(1, count)):
+		agent.segments.append(agent.position - safe_dir * GameConfigData.SNAKE_SEGMENT_SPACING * float(i + 1))
 
 func _make_food(position := Vector2.INF) -> FoodDot:
 	var food_position := position
@@ -544,6 +762,7 @@ func _update_player(delta: float) -> void:
 		_boost_trail_timer = 0.0
 		_dash_shockwave_timer = minf(_dash_shockwave_timer, 0.35)
 	_player.position += _player.direction * speed * delta
+	_resolve_blocking_hazard(_player)
 	_follow_segments(_player)
 
 	if _invulnerability_timer > 0.0:
@@ -572,7 +791,9 @@ func _update_ai(delta: float) -> void:
 			continue
 
 		ai.previous_position = ai.position
-		var to_player: Vector2 = _player.position - ai.position
+		_update_enemy_ability(ai, delta)
+		var target_position := _enemy_target_position(ai)
+		var to_player: Vector2 = target_position - ai.position
 		var distance_squared := to_player.length_squared()
 		var near_player := distance_squared <= 900.0 * 900.0
 		var far_offscreen := distance_squared > 2200.0 * 2200.0 and not active_view.has_point(ai.position)
@@ -585,15 +806,14 @@ func _update_ai(delta: float) -> void:
 		ai.turn_timer += delta
 		if ai.turn_timer >= turn_interval:
 			ai.turn_timer = 0.0
-			var target: Vector2 = ai.direction
-			if distance_squared > 100.0 * 100.0 and randf() < ai.aggression * 0.5:
-				target = to_player / sqrt(distance_squared)
-			elif randf() < 0.55:
-				target = ai.direction.rotated(randf_range(-PI / 3.0, PI / 3.0)).normalized()
-			target = _wall_avoidance_direction(ai.position, target)
-			ai.direction = _smooth_direction(ai.direction, target, 0.18)
+			var target: Vector2 = _choose_ai_direction(ai, target_position, distance_squared, near_player)
+			ai.direction = _smooth_direction(ai.direction, target, 0.22 + ai.aggression * 0.08)
 
 		var pressure := float(_wave_state.get("pressure", 1.0))
+		var ability_speed_bonus := 0.0
+		if ai.status_timer > 0.0:
+			ai.status_timer = maxf(0.0, ai.status_timer - delta)
+			ability_speed_bonus = 0.75
 		if ai.is_boss:
 			ai.phase_timer += delta
 			if ai.phase_timer >= 5.5:
@@ -602,8 +822,9 @@ func _update_ai(delta: float) -> void:
 				_spawn_warning_ring(ai.position, Color(1.0, 0.32, 0.14))
 			elif ai.phase_timer < 0.55:
 				pressure += 0.75
-		var speed: float = _base_player_speed * ai.speed_multiplier * pressure * _terrain_speed_multiplier(ai.position)
+		var speed: float = _base_player_speed * (ai.speed_multiplier + ability_speed_bonus) * pressure * _terrain_speed_multiplier(ai.position)
 		ai.position += ai.direction * speed * delta
+		_resolve_blocking_hazard(ai)
 		var body_interval := 0.0
 		if far_offscreen:
 			body_interval = 0.085
@@ -617,11 +838,252 @@ func _update_ai(delta: float) -> void:
 			_start_ai_death(ai, 10, false)
 		i += 1
 
+func _enemy_target_position(ai: SnakeAgent) -> Vector2:
+	var target := _player.position
+	var best_distance := ai.position.distance_squared_to(target)
+	for follower in _follower_snakes:
+		if follower.dead or follower.dying:
+			continue
+		var distance := ai.position.distance_squared_to(follower.position)
+		if distance < best_distance * 0.82:
+			best_distance = distance
+			target = follower.position
+	return target
+
+func _choose_ai_direction(ai: SnakeAgent, target_position: Vector2, distance_squared: float, near_player: bool) -> Vector2:
+	var to_target := target_position - ai.position
+	var direct := to_target.normalized() if to_target.length_squared() > 0.001 else ai.direction
+	var target := direct
+	if distance_squared > 100.0 * 100.0:
+		var flank_weight := clampf(ai.aggression * (0.34 if near_player else 0.18), 0.0, 0.42)
+		var hash_cell := Vector2i(floori(ai.position.x / 64.0), floori(ai.position.y / 64.0))
+		var side_sign := -1.0 if _cell_hash_int(hash_cell, 2) == 0 else 1.0
+		var flank_target := target_position + direct.orthogonal() * AI_FLANK_DISTANCE * side_sign
+		target = direct.lerp((flank_target - ai.position).normalized(), flank_weight).normalized()
+	elif randf() < 0.4:
+		target = ai.direction.rotated(randf_range(-PI / 4.0, PI / 4.0)).normalized()
+	var candidates := _ai_direction_candidates(ai.direction, target, direct)
+	return _best_ai_route_direction(ai, target_position, candidates, near_player)
+
+func _ai_direction_candidates(current: Vector2, target: Vector2, direct: Vector2) -> Array:
+	var safe_current := current.normalized() if current.length_squared() > 0.001 else Vector2.DOWN
+	var safe_target := target.normalized() if target.length_squared() > 0.001 else safe_current
+	var safe_direct := direct.normalized() if direct.length_squared() > 0.001 else safe_target
+	return [
+		safe_target,
+		safe_direct,
+		safe_current,
+		safe_target.rotated(0.36),
+		safe_target.rotated(-0.36),
+		safe_target.rotated(0.72),
+		safe_target.rotated(-0.72),
+		safe_current.rotated(0.52),
+		safe_current.rotated(-0.52),
+		safe_direct.orthogonal(),
+		-safe_direct.orthogonal(),
+	]
+
+func _best_ai_route_direction(ai: SnakeAgent, target_position: Vector2, candidates: Array, near_player: bool) -> Vector2:
+	var best_direction := ai.direction.normalized() if ai.direction.length_squared() > 0.001 else Vector2.DOWN
+	var best_score := -INF
+	for candidate in candidates:
+		var direction: Vector2 = candidate
+		if direction.length_squared() <= 0.001:
+			continue
+		direction = direction.normalized()
+		var score := _score_ai_route(ai, direction, target_position, near_player)
+		if score > best_score:
+			best_score = score
+			best_direction = direction
+	return _wall_avoidance_direction(ai.position, best_direction).normalized()
+
+func _score_ai_route(ai: SnakeAgent, direction: Vector2, target_position: Vector2, near_player: bool) -> float:
+	var safe_radius := ai.radius * 1.2
+	var score := 0.0
+	var origin_distance := ai.position.distance_to(target_position)
+	var current_direction := ai.direction.normalized() if ai.direction.length_squared() > 0.001 else direction
+	score += direction.dot(current_direction) * 42.0
+	score += direction.dot((target_position - ai.position).normalized()) * (80.0 + ai.aggression * 60.0)
+	for step in range(1, AI_ROUTE_SAMPLE_COUNT + 1):
+		var distance := AI_ROUTE_SAMPLE_STEP * float(step)
+		var sample := ai.position + direction * distance
+		var sample_weight := float(AI_ROUTE_SAMPLE_COUNT - step + 1)
+		if not _is_circle_inside_play_area(sample, safe_radius):
+			score -= 260.0 * sample_weight
+			continue
+		if _terrain_hazard_renderer != null and not _terrain_hazard_renderer.get_blocking_cell_near_position(sample, safe_radius).is_empty():
+			score -= 340.0 * sample_weight
+			continue
+		score += sample_weight * 18.0
+		score += (origin_distance - sample.distance_to(target_position)) * (0.18 if near_player else 0.12)
+		for zone in _hazard_zones:
+			if zone.team == "enemy":
+				continue
+			if sample.distance_squared_to(zone.position) <= pow(zone.radius + safe_radius, 2.0):
+				score -= 90.0 * sample_weight
+	for beam in _beam_strikes:
+		if beam.team != "enemy" and _point_in_beam(ai.position + direction * AI_ROUTE_SAMPLE_STEP, safe_radius, beam):
+			score -= 160.0
+	return score
+
+func _update_enemy_ability(ai: SnakeAgent, delta: float) -> void:
+	ai.attack_timer += delta
+	ai.attack_cooldown = maxf(0.0, ai.attack_cooldown - delta)
+	ai.contact_cooldown = maxf(0.0, ai.contact_cooldown - delta)
+	ai.shield_timer = maxf(0.0, ai.shield_timer - delta)
+	if ai.attack_cooldown > 0.0:
+		return
+	match ai.ability:
+		"dash":
+			_enemy_dash(ai)
+			ai.attack_cooldown = randf_range(3.0, 4.6)
+		"shield":
+			ai.shield_timer = 1.45
+			_spawn_warning_ring(ai.position, ai.color.lightened(0.28))
+			ai.attack_cooldown = randf_range(4.2, 5.8)
+		"venom":
+			_spawn_hazard_zone(ai.position, 96.0, ai.color, 1, 3.2, "enemy", 0.35)
+			ai.attack_cooldown = randf_range(2.3, 3.5)
+		"mine":
+			_spawn_hazard_zone(ai.position - ai.direction.normalized() * 70.0, 62.0, ai.color, 1, 6.0, "enemy")
+			ai.attack_cooldown = randf_range(2.0, 3.0)
+		"beam":
+			_spawn_beam(ai, 1)
+			ai.attack_cooldown = randf_range(3.4, 5.2)
+		"devour":
+			_enemy_devour(ai)
+			ai.attack_cooldown = randf_range(2.2, 3.4)
+		"emperor":
+			_enemy_emperor_attack(ai)
+			ai.attack_cooldown = randf_range(1.35, 2.35)
+		_:
+			pass
+
+func _enemy_dash(ai: SnakeAgent) -> void:
+	var target := _enemy_target_position(ai)
+	var direction := (target - ai.position).normalized()
+	if direction.length_squared() <= 0.001:
+		direction = ai.direction
+	ai.direction = direction
+	ai.phase_timer = 0.0
+	ai.status_timer = 0.55
+	_spawn_warning_ring(ai.position, Color(0.45, 0.8, 1.0))
+	_add_particle(_get_particle(ai.position, -direction * 80.0, ai.color.lightened(0.24), 6.0, 0.34, 0.82))
+
+func _enemy_devour(ai: SnakeAgent) -> void:
+	var best_index := -1
+	var best_distance := INF
+	var query := Rect2(ai.position - Vector2(260.0, 260.0), Vector2(520.0, 520.0))
+	for index in _food_indices_for_rect(query):
+		var food: FoodDot = _foods[index]
+		if food.radius <= 0.0:
+			continue
+		var distance := ai.position.distance_squared_to(food.position)
+		if distance < best_distance:
+			best_distance = distance
+			best_index = index
+	if best_index >= 0:
+		_foods[best_index] = _make_food()
+		_food_grid.upsert_index(_foods, best_index)
+		ai.health = mini(ai.max_health, ai.health + 1)
+		ai.speed_multiplier += 0.05
+		_spawn_warning_ring(ai.position, Color(1.0, 0.38, 0.58))
+
+func _enemy_emperor_attack(ai: SnakeAgent) -> void:
+	var phase := ai.attack_phase % 4
+	ai.attack_phase += 1
+	match phase:
+		0:
+			_enemy_dash(ai)
+		1:
+			_spawn_beam(ai, 2)
+		2:
+			_spawn_hazard_zone(ai.position, 130.0, Color(0.36, 1.0, 0.24), 1, 3.4, "enemy", 0.4)
+		_:
+			if ai.spawned_children < 8:
+				ai.spawned_children += 1
+				var definition := WaveCatalogData.wave_for(6)
+				var summon := _make_campaign_enemy(definition, ai.spawned_children)
+				summon.position = ai.position + Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * 180.0
+				summon.wave_member = true
+				_ai_snakes.append(summon)
+				_spawn_warning_ring(summon.position, summon.color)
+
+func _spawn_beam(ai: SnakeAgent, damage: int) -> void:
+	var target := _enemy_target_position(ai)
+	var direction := (target - ai.position).normalized()
+	if direction.length_squared() <= 0.001:
+		direction = ai.direction
+	_beam_strikes.append(BeamStrike.new(ai.position, direction, ai.color.lightened(0.2), "enemy", damage, 34.0 + float(damage) * 8.0, 920.0))
+	_spawn_warning_ring(ai.position, ai.color)
+
+func _update_followers(delta: float) -> void:
+	var i := 0
+	while i < _follower_snakes.size():
+		var follower: SnakeAgent = _follower_snakes[i]
+		if follower.dead:
+			_follower_snakes.remove_at(i)
+			continue
+		if follower.dying:
+			_update_ai_death(follower, delta)
+			i += 1
+			continue
+		follower.previous_position = follower.position
+		follower.contact_cooldown = maxf(0.0, follower.contact_cooldown - delta)
+		var target := _nearest_enemy_position(follower.position)
+		if target == Vector2.INF:
+			target = _player.position + Vector2.RIGHT.rotated(_world_time * 0.9 + float(follower.follower_index) * 2.399) * (130.0 + float(follower.follower_index % 4) * 28.0)
+		var desired := (target - follower.position).normalized()
+		if desired.length_squared() <= 0.001:
+			desired = follower.direction
+		follower.direction = _smooth_direction(follower.direction, _wall_avoidance_direction(follower.position, desired), 0.24)
+		var speed := _base_player_speed * follower.speed_multiplier * (1.0 + float(_wave_state.get("wave", 1)) * 0.018)
+		follower.position += follower.direction * speed * delta
+		_resolve_blocking_hazard(follower)
+		_follow_segments(follower)
+		if not _is_circle_inside_play_area(follower.position, follower.radius):
+			follower.position = follower.position.lerp(_player.position, 0.08)
+		_update_follower_pickup(follower)
+		i += 1
+
+func _nearest_enemy_position(from: Vector2) -> Vector2:
+	var target := Vector2.INF
+	var best_distance := INF
+	for enemy in _ai_snakes:
+		if enemy.dead or enemy.dying:
+			continue
+		var distance := from.distance_squared_to(enemy.position)
+		if distance < best_distance:
+			best_distance = distance
+			target = enemy.position
+	return target
+
+func _update_follower_pickup(follower: SnakeAgent) -> void:
+	if int(_world_time * 10.0 + follower.follower_index) % 3 != 0:
+		return
+	var pickup_radius := 54.0 + float(_modifiers.get("magnet_radius", 0.0)) * 0.18
+	var query := Rect2(follower.position - Vector2(pickup_radius, pickup_radius), Vector2(pickup_radius * 2.0, pickup_radius * 2.0))
+	var best_index := -1
+	var best_distance := INF
+	for index in _food_indices_for_rect(query):
+		var food: FoodDot = _foods[index]
+		if food.radius <= 0.0:
+			continue
+		var distance := follower.position.distance_squared_to(food.position)
+		if distance < best_distance:
+			best_distance = distance
+			best_index = index
+	if best_index >= 0:
+		_consume_food(best_index, false)
+		_foods[best_index] = _make_food()
+		_food_grid.upsert_index(_foods, best_index)
+
 func _update_ai_death(ai: SnakeAgent, delta: float) -> void:
 	ai.death_timer += delta
 	if not ai.drop_done:
-		_drop_food_for_snake(ai, ai.drop_value)
-		_spawn_death_followups(ai)
+		if ai.team == "enemy":
+			_drop_food_for_snake(ai, ai.drop_value)
+			_spawn_death_followups(ai)
 		ai.drop_done = true
 	ai.body_timer -= delta
 	if ai.body_timer <= 0.0:
@@ -663,7 +1125,7 @@ func _check_food_collisions() -> void:
 ## 任一碰撞导致游戏结束后立即返回，跳过后续检测。
 func _check_snake_collisions() -> void:
 	_refresh_player_body_bounds()
-	var player_body_radius: float = _player.radius * 0.82
+	var player_body_radius: float = _collision_body_radius(_player)
 	var has_player_body := not _player.segments.is_empty()
 	for ai in _ai_snakes:
 		if ai.dead or ai.dying:
@@ -672,18 +1134,54 @@ func _check_snake_collisions() -> void:
 			if not _resolve_player_enemy_contact(ai):
 				return
 
-		var ai_body_radius: float = ai.radius * 0.82
-		for segment in ai.segments:
+		for segment_index in range(ai.segments.size()):
+			var segment: Vector2 = ai.segments[segment_index]
+			var ai_body_radius: float = _collision_body_radius(ai, float(segment_index + 1) / float(ai.segments.size() + 1))
 			if _circles_overlap(_player.position, _player.radius, segment, ai_body_radius):
 				if not _resolve_player_enemy_contact(ai):
 					return
 
 		if has_player_body and _player_body_bounds.grow(ai.radius + player_body_radius).has_point(ai.position):
-			for player_segment in _player.segments:
-				if _circles_overlap(ai.position, ai.radius, player_segment, player_body_radius):
+			for player_index in range(_player.segments.size()):
+				var player_segment: Vector2 = _player.segments[player_index]
+				var current_player_body_radius: float = _collision_body_radius(_player, float(player_index + 1) / float(_player.segments.size() + 1))
+				if _circles_overlap(ai.position, ai.radius, player_segment, current_player_body_radius):
 					if not _resolve_player_enemy_contact(ai):
 						return
 					break
+
+func _check_follower_collisions() -> void:
+	for follower in _follower_snakes:
+		if follower.dead or follower.dying:
+			continue
+		for enemy in _ai_snakes:
+			if enemy.dead or enemy.dying:
+				continue
+			if _circles_overlap(follower.position, follower.radius, enemy.position, enemy.radius):
+				if follower.contact_cooldown <= 0.0:
+					follower.contact_cooldown = FRIENDLY_CONTACT_DAMAGE_COOLDOWN
+					_damage_enemy(enemy, 1, 8)
+					_spawn_warning_ring(enemy.position, follower.color)
+				if enemy.contact_cooldown <= 0.0:
+					enemy.contact_cooldown = FRIENDLY_CONTACT_DAMAGE_COOLDOWN
+					_damage_follower(follower, 1, enemy.color)
+			for segment_index in range(enemy.segments.size()):
+				var segment: Vector2 = enemy.segments[segment_index]
+				var enemy_radius := _collision_body_radius(enemy, float(segment_index + 1) / float(enemy.segments.size() + 1))
+				if _circles_overlap(follower.position, follower.radius, segment, enemy_radius):
+					if enemy.contact_cooldown <= 0.0:
+						enemy.contact_cooldown = FRIENDLY_CONTACT_DAMAGE_COOLDOWN
+						_damage_follower(follower, 1, enemy.color)
+					break
+
+func _damage_follower(follower: SnakeAgent, damage: int, color: Color) -> void:
+	if follower.dead or follower.dying:
+		return
+	follower.health -= maxi(1, damage)
+	_spawn_warning_ring(follower.position, color)
+	if follower.health <= 0:
+		_start_ai_death(follower, 0, false)
+		_set_event(LocaleText.t("event.follower_lost"), 1.4)
 
 func _update_lava(delta: float) -> void:
 	if _invulnerability_timer > 0.0:
@@ -697,7 +1195,7 @@ func _update_lava(delta: float) -> void:
 	if int(_modifiers.get("edge_shield", 0)) > 0 and int(_wave_state.get("edge_shield_wave", -1)) != int(_wave_state.get("wave", 1)):
 		_wave_state["edge_shield_wave"] = int(_wave_state.get("wave", 1))
 		_invulnerability_timer = maxf(_invulnerability_timer, 2.5 + float(_modifiers.get("shield_bonus", 0.0)))
-		_set_event("Emergency shield")
+		_set_event(LocaleText.t("event.emergency_shield"))
 		_spawn_warning_ring(_player.position, Color(0.62, 1.0, 0.96))
 
 	_lava_timer += delta
@@ -705,6 +1203,115 @@ func _update_lava(delta: float) -> void:
 	_spawn_lava_warning_sparks(delta)
 	if _lava_timer >= float(_difficulty.get("lava_warning_time", 5.0)):
 		_trigger_game_over("Lava")
+
+## Check terrain hazards (thorn roots, mud slows, and blocking trunks).
+func _check_terrain_hazards(delta: float) -> void:
+	if _terrain_hazard_renderer == null or _invulnerability_timer > 0.0:
+		return
+
+	# Update cooldown
+	if _hazard_damage_cooldown > 0.0:
+		_hazard_damage_cooldown -= delta
+		return
+
+	var hazard: Dictionary = _terrain_hazard_renderer.get_hazard_at_position(_player.position)
+	if hazard.is_empty():
+		return
+
+	var hazard_type: String = hazard.get("hazard_type", "none")
+	match hazard_type:
+		"damage":
+			# Thorn or toxic ground damage.
+			var damage: int = int(hazard.get("hazard_damage", 1))
+			_spawn_damage_particles(_player.position, 5 + damage * 2)
+			_start_screen_shake(1.6 + float(damage) * 0.5, 0.1)
+			# For now, damage triggers invulnerability and visual feedback
+			_invulnerability_timer = 0.5
+			_hazard_damage_cooldown = 1.0
+			_set_event(LocaleText.t("event.thorn_strike"))
+		"slow":
+			# Mud slows are handled in speed calculation via terrain_speed_multiplier.
+			pass
+		"block":
+			_resolve_blocking_hazard(_player, true)
+			_hazard_damage_cooldown = 0.3
+
+func _update_combat_zones(delta: float) -> void:
+	for i in range(_hazard_zones.size() - 1, -1, -1):
+		var zone: HazardZone = _hazard_zones[i]
+		zone.update(delta)
+		if not zone.alive():
+			_hazard_zones.remove_at(i)
+			continue
+		_apply_hazard_zone(zone)
+		if _game_over:
+			return
+	for i in range(_beam_strikes.size() - 1, -1, -1):
+		var beam: BeamStrike = _beam_strikes[i]
+		var was_active := beam.is_active()
+		beam.update(delta)
+		if beam.is_active() and not was_active:
+			_apply_beam_strike(beam)
+			if _game_over:
+				return
+			_add_shockwave(_get_shockwave(beam.origin + beam.direction * minf(beam.length * 0.3, 260.0), beam.color, 130.0, 0.24))
+		if not beam.alive():
+			_beam_strikes.remove_at(i)
+
+func _spawn_hazard_zone(position: Vector2, radius: float, color: Color, damage: int, lifetime: float, team := "enemy", slow := 0.0) -> void:
+	_hazard_zones.append(HazardZone.new(position, radius, color, damage, lifetime, team, slow))
+	_add_shockwave(_get_shockwave(position, color.lightened(0.16), radius, 0.34))
+
+func _apply_hazard_zone(zone: HazardZone) -> void:
+	if zone.team == "enemy":
+		if _player.position.distance_squared_to(zone.position) <= pow(zone.radius + _player.radius, 2.0):
+			if _hazard_damage_cooldown <= 0.0 and _invulnerability_timer <= 0.0:
+				_hazard_damage_cooldown = 0.65
+				if zone.damage > 0 and not _try_revive(LocaleText.t("event.revive_toxic_guard")):
+					_trigger_game_over("Venom")
+					return
+			if zone.slow > 0.0:
+				_player.direction = _smooth_direction(_player.direction, -(_player.position - zone.position).normalized(), zone.slow * 0.08)
+		for follower in _follower_snakes:
+			if follower.dead or follower.dying:
+				continue
+			if follower.position.distance_squared_to(zone.position) <= pow(zone.radius + follower.radius, 2.0) and follower.contact_cooldown <= 0.0:
+				follower.contact_cooldown = 0.65
+				_damage_follower(follower, zone.damage, zone.color)
+	else:
+		for enemy in _ai_snakes:
+			if enemy.dead or enemy.dying:
+				continue
+			if enemy.position.distance_squared_to(zone.position) <= pow(zone.radius + enemy.radius, 2.0):
+				_damage_enemy(enemy, zone.damage, 8)
+
+func _apply_beam_strike(beam: BeamStrike) -> void:
+	if beam.team == "enemy":
+		if _point_in_beam(_player.position, _player.radius, beam):
+			if _invulnerability_timer > 0.0 or _try_revive(LocaleText.t("event.revive_beam_guard")):
+				pass
+			else:
+				_trigger_game_over("Beam")
+				return
+		for follower in _follower_snakes:
+			if follower.dead or follower.dying:
+				continue
+			if _point_in_beam(follower.position, follower.radius, beam):
+				_damage_follower(follower, beam.damage, beam.color)
+	else:
+		for enemy in _ai_snakes:
+			if enemy.dead or enemy.dying:
+				continue
+			if _point_in_beam(enemy.position, enemy.radius, beam):
+				_damage_enemy(enemy, beam.damage, 10)
+
+func _point_in_beam(position: Vector2, radius: float, beam: BeamStrike) -> bool:
+	var relative: Vector2 = position - beam.origin
+	var forward: float = relative.dot(beam.direction)
+	if forward < 0.0 or forward > beam.length:
+		return false
+	var side: float = abs(relative.dot(beam.direction.orthogonal()))
+	return side <= beam.width * 0.5 + radius
 
 func _update_effects(delta: float) -> void:
 	_world_time += delta
@@ -771,6 +1378,47 @@ func _grow_player() -> void:
 	if not _player.segments.is_empty():
 		tail = _player.segments.back()
 	_player.segments.append(tail - _player.direction * GameConfigData.SNAKE_SEGMENT_SPACING)
+	_update_player_radius()
+
+func _update_player_radius() -> void:
+	var length_bonus: float = minf(PLAYER_LENGTH_RADIUS_MAX, float(_player.segments.size()) / float(PLAYER_LENGTH_RADIUS_STEP))
+	_player.radius = GameConfigData.INITIAL_SNAKE_RADIUS + length_bonus
+
+func _visual_radius_for_agent(agent: SnakeAgent, ratio: float = 0.0) -> float:
+	var length_bonus: float = minf(0.24, float(agent.segments.size()) / 90.0)
+	var taper: float = 1.0 - ratio * (0.24 + length_bonus * 0.45)
+	return agent.radius * clampf(taper, 0.54, 1.24)
+
+func _collision_body_radius(agent: SnakeAgent, ratio: float = 0.5) -> float:
+	return _visual_radius_for_agent(agent, ratio) * 0.78
+
+func _resolve_blocking_hazard(agent: SnakeAgent, force_feedback: bool = false) -> bool:
+	if _terrain_hazard_renderer == null:
+		return false
+	var hit: Dictionary = _terrain_hazard_renderer.get_blocking_cell_near_position(agent.position, agent.radius * 0.9)
+	if hit.is_empty():
+		return false
+	var center: Vector2 = hit.get("center", agent.position)
+	var push_dir: Vector2 = agent.position - center
+	if push_dir.length_squared() <= 0.001:
+		push_dir = -agent.direction if agent.direction.length_squared() > 0.001 else Vector2.UP
+	push_dir = push_dir.normalized()
+	var cell_size: float = _terrain_hazard_renderer.get_cell_size()
+	var target_distance: float = agent.radius + cell_size * 0.54
+	agent.position = center + push_dir * target_distance
+	agent.direction = _smooth_direction(agent.direction, push_dir.rotated(randf_range(-0.35, 0.35)).normalized(), 0.38)
+	if agent == _player or force_feedback:
+		_spawn_obstacle_impact(agent.position, push_dir)
+		_start_screen_shake(1.8, 0.07)
+		_set_event(LocaleText.t("event.wall_impact"), 0.9)
+	return true
+
+func _spawn_obstacle_impact(position: Vector2, normal: Vector2) -> void:
+	var tangent: Vector2 = normal.orthogonal()
+	for i in range(7):
+		var velocity: Vector2 = normal * randf_range(55.0, 130.0) + tangent * randf_range(-60.0, 60.0)
+		var color := Color(0.08, 0.24, 0.22, 0.9).lerp(Color(0.2, 1.0, 0.68, 0.86), randf())
+		_add_particle(_get_particle(position + tangent * randf_range(-9.0, 9.0), velocity, color, randf_range(2.5, 5.5), randf_range(0.22, 0.44), 0.86))
 
 func _start_ai_death(ai: SnakeAgent, food_value: int, award_score := true) -> void:
 	if ai.dying or ai.dead:
@@ -837,62 +1485,110 @@ func _update_run_timers(delta: float) -> void:
 		_magnet_timer = maxf(0.0, _magnet_timer - delta)
 	_update_story_events(delta)
 
-## 更新波次状态，推进游戏难度曲线。
-##
-## 累计elapsed时间，当达到下一波次阈值时：
-## - 增加波次计数，提升压力系数（AI速度加成）
-## - 生成增援AI，数量随波次递增
-## - 显示波次事件并播放剧情文本
-## 周期性生成精英敌人，间隔随波次缩短。
-## 达到Boss波次前发出警告，达到Boss波次时生成Boss。
-## 参数 delta: 自上一帧经过的时间（秒）。
 func _update_wave(delta: float) -> void:
+	var phase := String(_wave_state.get("phase", "fighting"))
+	if _game_over and phase != "victory":
+		return
 	_wave_state["elapsed"] = float(_wave_state.get("elapsed", 0.0)) + delta
-	var elapsed := float(_wave_state.get("elapsed", 0.0))
-	while elapsed >= float(_wave_state.get("next_wave_time", 60.0)):
-		_wave_state["wave"] = int(_wave_state.get("wave", 1)) + 1
-		_wave_state["pressure"] = 1.0 + float(int(_wave_state.get("wave", 1)) - 1) * 0.1
-		_wave_state["next_wave_time"] = float(_wave_state.get("next_wave_time", 60.0)) + 60.0
-		_spawn_reinforcements(2 + int(_wave_state.get("wave", 1)))
-		_set_event("Wave %d" % int(_wave_state.get("wave", 1)))
-		_queue_story(TerrainCatalogData.wave_story(int(_wave_state.get("wave", 1))), 3.0, "wave_%d" % int(_wave_state.get("wave", 1)), 999.0)
-	if elapsed >= float(_wave_state.get("next_elite_time", 42.0)):
-		_spawn_elite()
-		_wave_state["next_elite_time"] = elapsed + maxf(32.0, 70.0 - float(_wave_state.get("wave", 1)) * 5.0)
-	if not bool(_wave_state.get("boss_warning", false)) and int(_wave_state.get("wave", 1)) >= BOSS_WAVE - 1:
-		_wave_state["boss_warning"] = true
-		_set_event("Boss signal detected", 4.0)
-		_queue_story("A rogue core is waking below the ecology grid.", 3.0, "boss_warning", 999.0)
-	if not bool(_wave_state.get("boss_spawned", false)) and int(_wave_state.get("wave", 1)) >= BOSS_WAVE:
-		_spawn_boss()
+	_wave_state["wave_time"] = float(_wave_state.get("wave_time", 0.0)) + delta
+	if phase == "victory":
+		_wave_state["coronation_timer"] = maxf(0.0, float(_wave_state.get("coronation_timer", 0.0)) - delta)
+		return
+	if phase == "reward":
+		var timer := maxf(0.0, float(_wave_state.get("reward_timer", 0.0)) - delta)
+		_wave_state["reward_timer"] = timer
+		if timer <= 0.0:
+			var next_wave := int(_wave_state.get("wave", 1)) + 1
+			if next_wave <= WaveCatalogData.max_wave():
+				_start_campaign_wave(next_wave)
+		return
+	var remaining := _count_living_wave_enemies()
+	_wave_state["remaining_enemies"] = remaining
+	_sync_follower_counters()
+	if remaining <= 0 and not bool(_wave_state.get("wave_clear_pending", false)):
+		_wave_state["wave_clear_pending"] = true
+		_complete_campaign_wave()
 
-func _spawn_reinforcements(count: int) -> void:
-	var limit := int(_difficulty.get("ai_count", 20)) + int(_wave_state.get("wave", 1)) * 4
+func _count_living_wave_enemies() -> int:
+	var count := 0
+	for enemy in _ai_snakes:
+		if enemy.dead:
+			continue
+		if enemy.wave_member:
+			count += 1
+	return count
+
+func _complete_campaign_wave() -> void:
+	var wave := int(_wave_state.get("wave", 1))
+	_run_stats["waves"] = maxi(int(_run_stats.get("waves", 1)), wave)
+	if wave >= WaveCatalogData.max_wave():
+		_trigger_victory()
+		return
+	_add_wave_followers(FOLLOWERS_PER_WAVE)
+	_wave_state["phase"] = "reward"
+	_wave_state["reward_timer"] = WAVE_REWARD_TIME
+	_wave_state["wave_clear_pending"] = false
+	var title := WaveCatalogData.title_for_wave(wave)
+	_wave_state["title"] = title
+	_run_stats["title"] = title
+	if wave == 5:
+		_set_event(LocaleText.t("event.snake_king"), 3.2)
+	else:
+		_set_event(LocaleText.t("event.wave_clear"), 2.8)
+	_queue_story(LocaleText.t("event.wave_clear"), 2.8, "wave_clear_%d" % wave, 999.0)
+
+func _add_wave_followers(count: int) -> void:
 	for i in range(count):
-		if _ai_snakes.size() >= limit:
-			return
-		_ai_snakes.append(_make_ai_snake())
+		_follower_serial += 1
+		var follower := _make_follower_snake(_follower_serial)
+		_follower_snakes.append(follower)
+	_run_stats["followers_recruited"] = int(_run_stats.get("followers_recruited", 0)) + count
+	_sync_follower_counters()
 
-func _spawn_elite() -> void:
-	var affix_count := clampi(1 + floori(float(_wave_state.get("wave", 1)) / 3.0), 1, 3)
-	var affixes := UpgradeCatalogData.random_affixes(affix_count)
-	var elite := _make_ai_snake(Vector2.INF, affixes, false)
-	elite.score_value = 30 + int(_wave_state.get("wave", 1)) * 5
-	_ai_snakes.append(elite)
-	var names: Array = []
-	for affix in affixes:
-		names.append(String(affix.get("name", "Elite")))
-	_set_event("Elite  %s" % " / ".join(names), 3.2)
-	_queue_story("Mutation logged: %s elite adapting to the sector." % " / ".join(names), 2.8, "elite_story", 18.0)
-	_spawn_warning_ring(elite.position, elite.color)
+func _living_followers() -> int:
+	var count := 0
+	for follower in _follower_snakes:
+		if not follower.dead and not follower.dying:
+			count += 1
+	return count
 
-func _spawn_boss() -> void:
-	_wave_state["boss_spawned"] = true
-	var boss := _make_ai_snake(_random_ai_spawn_position(), UpgradeCatalogData.random_affixes(2), true)
-	_ai_snakes.append(boss)
-	_set_event("Boss Wave", 4.0)
-	_queue_story("The containment core is hostile. Break its growth cycle.", 3.4, "boss_spawn", 999.0)
-	_spawn_warning_ring(boss.position, Color(1.0, 0.32, 0.14))
+func _sync_follower_counters() -> void:
+	var alive := _living_followers()
+	var total := _follower_snakes.size()
+	var recruited := int(_run_stats.get("followers_recruited", 0))
+	_wave_state["followers_alive"] = alive
+	_wave_state["followers_total"] = total
+	_wave_state["followers_recruited"] = recruited
+	_run_stats["followers_alive"] = alive
+	_run_stats["followers_total"] = total
+
+func _trigger_victory() -> void:
+	if _victory_triggered:
+		return
+	_victory_triggered = true
+	_game_over = true
+	_wave_state["phase"] = "victory"
+	_wave_state["coronation_timer"] = CORONATION_TIME
+	_wave_state["title"] = "Snake Emperor"
+	_run_stats["victory"] = true
+	_run_stats["title"] = "Snake Emperor"
+	_run_stats["death_reason"] = "Victory"
+	_run_stats["followers_recruited"] = int(_run_stats.get("followers_recruited", 0))
+	_sync_follower_counters()
+	_set_event(LocaleText.t("event.snake_emperor"), CORONATION_TIME)
+	_spawn_coronation_burst()
+	_start_screen_shake(4.5, 0.34)
+	var summary := _build_run_summary()
+	summary["record"] = RunRecords.submit_run(summary)
+	_game_over_dialog.show_result(summary)
+	_update_hud()
+
+func _spawn_coronation_burst() -> void:
+	for i in range(5):
+		_add_shockwave(_get_shockwave(_player.position, Color(1.0, 0.82, 0.28).lerp(Color(0.2, 1.0, 0.62), float(i) / 5.0), 160.0 + float(i) * 80.0, 0.72 + float(i) * 0.08))
+	for i in range(80 if SettingsStore.animations_on else 20):
+		var direction := Vector2.RIGHT.rotated(randf_range(0.0, TAU))
+		_add_particle(_get_particle(_player.position + direction * randf_range(0.0, 32.0), direction * randf_range(120.0, 420.0), Color(1.0, 0.78, 0.24).lerp(Color(0.26, 1.0, 0.68), randf()), randf_range(3.0, 8.0), randf_range(0.5, 1.0), 0.9))
 
 ## 处理食物拾取效果，计分并应用特殊属性。
 ##
@@ -918,10 +1614,10 @@ func _consume_food(index: int, player_pickup := true) -> void:
 	_grow_player_by(maxi(1, food.growth + int(_modifiers.get("growth_bonus", 0))))
 	if food.shield_time > 0.0:
 		_invulnerability_timer = maxf(_invulnerability_timer, food.shield_time + float(_modifiers.get("shield_bonus", 0.0)))
-		_set_event("Shield +%.0fs" % food.shield_time, 1.8)
+		_set_event(LocaleText.format("event.shield_seconds", [food.shield_time]), 1.8)
 	if food.magnet_time > 0.0:
 		_magnet_timer = maxf(_magnet_timer, food.magnet_time + float(_modifiers.get("magnet_duration_bonus", 0.0)))
-		_set_event("Magnet field", 1.8)
+		_set_event(LocaleText.t("event.magnet_field"), 1.8)
 	var explosion := food.explosion_radius + float(_modifiers.get("explosion_radius", 0.0))
 	if explosion > 0.0:
 		explosion += float(_modifiers.get("combo_explosion", 0.0)) * float(_combo_count)
@@ -961,7 +1657,7 @@ func _maybe_offer_upgrade() -> void:
 	_next_upgrade_index += 1
 	_upgrade_choices = choices
 	_upgrade_choice_active = true
-	_set_event("Upgrade ready", 1.4)
+	_set_event(LocaleText.t("event.upgrade_ready"), 1.4)
 	_upgrade_picker.show_choices(choices, _current_build_tags())
 
 func _select_upgrade(upgrade: Dictionary) -> void:
@@ -970,7 +1666,7 @@ func _select_upgrade(upgrade: Dictionary) -> void:
 	_apply_upgrade(upgrade)
 	_upgrade_choice_active = false
 	_upgrade_picker.hide()
-	_set_event(String(upgrade.get("name", "Upgrade")), 2.4)
+	_set_event(LocaleText.translate_upgrade_name(upgrade), 2.4)
 	_update_hud()
 
 ## 应用升级效果到玩家属性修饰符。
@@ -998,6 +1694,7 @@ func _apply_upgrade(upgrade: Dictionary) -> void:
 			_modifiers[key] = float(_modifiers.get(key, 0.0)) + float(value)
 	_run_stats["upgrades"] = _upgrade_names()
 	_run_stats["build_tags"] = _current_build_tags()
+	_sync_follower_counters()
 
 func _update_magnet_pickups(delta: float) -> void:
 	var radius := BASE_MAGNET_RADIUS + float(_modifiers.get("magnet_radius", 0.0))
@@ -1022,15 +1719,15 @@ func _update_magnet_pickups(delta: float) -> void:
 		processed += 1
 
 func _update_companions(delta: float) -> void:
-	var companions := int(_modifiers.get("companion_count", 0))
-	if companions <= 0:
+	var drone_count := int(_modifiers.get("drone_count", 0))
+	if drone_count <= 0:
 		return
 	_companion_timer -= delta
 	if _companion_timer > 0.0:
 		return
 	_companion_timer = COMPANION_PICKUP_INTERVAL
-	for companion_index in range(mini(companions, 4)):
-		var angle := _world_time * (1.4 + companion_index * 0.18) + TAU * float(companion_index) / float(maxi(1, companions))
+	for companion_index in range(mini(drone_count, 4)):
+		var angle := _world_time * (1.4 + companion_index * 0.18) + TAU * float(companion_index) / float(maxi(1, drone_count))
 		var companion_position := _player.position + Vector2.RIGHT.rotated(angle) * (92.0 + float(companion_index) * 16.0)
 		var pickup_radius := 82.0 + float(_modifiers.get("magnet_radius", 0.0)) * 0.35
 		var query := Rect2(companion_position - Vector2(pickup_radius, pickup_radius), Vector2(pickup_radius * 2.0, pickup_radius * 2.0))
@@ -1054,7 +1751,7 @@ func _resolve_player_enemy_contact(ai: SnakeAgent) -> bool:
 		_damage_enemy(ai, 1, 12)
 		_start_screen_shake(5.5, 0.12)
 		return true
-	if _try_revive("Last chance"):
+	if _try_revive(LocaleText.t("event.revive_last_chance")):
 		return true
 	_trigger_game_over("Collision")
 	return false
@@ -1080,6 +1777,9 @@ func _try_revive(label: String) -> bool:
 func _damage_enemy(ai: SnakeAgent, damage: int, food_value: int) -> void:
 	if ai.dead or ai.dying:
 		return
+	if ai.ability == "shield" and ai.shield_timer > 0.0 and damage <= 1:
+		_spawn_warning_ring(ai.position, Color(0.72, 1.0, 1.0))
+		return
 	var actual_damage := damage + (int(_modifiers.get("boss_damage", 0)) if ai.is_boss else 0)
 	ai.health -= maxi(1, actual_damage)
 	if ai.health > 0:
@@ -1099,6 +1799,10 @@ func _area_blast(position: Vector2, radius: float, damage: int, color: Color, aw
 				_damage_enemy(ai, damage, 12)
 			else:
 				ai.health -= damage
+				if ai.health > 0:
+					_spawn_warning_ring(ai.position, ai.color)
+					continue
+				_start_ai_death(ai, maxi(0, ai.drop_value), false)
 
 func _award_kill_score(ai: SnakeAgent) -> void:
 	var points := int(round(float(ai.score_value) * (1.0 + float(_modifiers.get("kill_score_mult", 0.0)))))
@@ -1108,9 +1812,8 @@ func _award_kill_score(ai: SnakeAgent) -> void:
 		_run_stats["elite_kills"] = int(_run_stats.get("elite_kills", 0)) + 1
 	if ai.is_boss:
 		_run_stats["boss_kills"] = int(_run_stats.get("boss_kills", 0)) + 1
-		_wave_state["boss_defeated"] = true
-		_set_event("Boss defeated", 4.0)
-		_queue_story("Rogue core suppressed. SECTOR A-01 is breathing again.", 3.4, "boss_defeated", 999.0)
+		_set_event(LocaleText.t("event.boss_defeated"), 4.0)
+		_queue_story(LocaleText.t("event.boss_story"), 3.4, "boss_defeated", 999.0)
 
 func _spawn_death_followups(ai: SnakeAgent) -> void:
 	if ai.death_explosion > 0.0:
@@ -1119,18 +1822,55 @@ func _spawn_death_followups(ai: SnakeAgent) -> void:
 		_area_blast(ai.position, float(_modifiers.get("kill_explosion", 0.0)), 1, ai.color)
 	for i in range(ai.split_count):
 		var split := _make_ai_snake(ai.position + Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * randf_range(70.0, 150.0), [], false)
+		split.team = "enemy"
+		split.enemy_type = "split_fragment"
+		split.ability = "hunter"
+		split.wave_member = ai.wave_member
+		split.color = ai.color.lightened(0.08)
+		split.health = 1
+		split.max_health = 1
+		split.score_value = max(4, int(ai.score_value * 0.35))
+		split.drop_value = max(2, int(ai.drop_value * 0.35))
 		split.radius *= 0.82
 		split.speed_multiplier *= 1.08
 		_ai_snakes.append(split)
 	for i in range(ai.summon_count):
-		_ai_snakes.append(_make_ai_snake(ai.position + Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * 170.0, [], false))
+		if ai.spawned_children >= 6:
+			break
+		ai.spawned_children += 1
+		var summon := _make_ai_snake(ai.position + Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * 170.0, [], false)
+		summon.team = "enemy"
+		summon.enemy_type = "brood_guard"
+		summon.ability = "hunter"
+		summon.wave_member = ai.wave_member
+		summon.color = ai.color.lerp(Color(0.2, 1.0, 0.6), 0.25)
+		summon.health = 1
+		summon.max_health = 1
+		summon.score_value = 6
+		summon.drop_value = 4
+		_ai_snakes.append(summon)
 
 func _spawn_warning_ring(position: Vector2, color: Color) -> void:
 	_add_shockwave(_get_shockwave(position, color.lightened(0.18), 120.0, 0.32))
 
+## Spawn damage particles at a position (for hazard damage feedback)
+func _spawn_damage_particles(position: Vector2, count: int) -> void:
+	for i in range(count):
+		var p: VfxParticle = _get_particle(
+			position + Vector2(randf_range(-8.0, 8.0), randf_range(-8.0, 8.0)),
+			Vector2(randf_range(-60.0, 60.0), randf_range(-80.0, -20.0)),
+			Color(1.0, 0.35, 0.1, 0.9),
+			randf_range(2.0, 5.0),
+			randf_range(0.25, 0.55)
+		)
+		_add_particle(p)
+
 func _set_event(text: String, duration := 2.6) -> void:
 	_wave_state["last_event"] = text
 	_wave_state["event_time"] = duration
+
+func _localized_wave_event(wave: int, fallback: String) -> String:
+	return LocaleText.wave_event(wave, fallback)
 
 func _queue_story(text: String, duration := 2.8, key := "", cooldown := 10.0) -> void:
 	if text == "":
@@ -1163,21 +1903,24 @@ func _advance_story_queue() -> void:
 	_set_event(String(item.get("text", "")), float(item.get("duration", 2.8)))
 
 func _update_terrain_state() -> void:
-	var terrain := _terrain_for_position(_player.position)
-	var terrain_id := String(terrain.get("id", ""))
-	if terrain_id == "" or terrain_id == _current_player_terrain_id:
-		return
-	_current_player_terrain_id = terrain_id
-	if not _seen_terrain_ids.has(terrain_id):
-		_seen_terrain_ids[terrain_id] = true
-		_queue_story(String(terrain.get("story_intro", "")), 2.8, "terrain_%s" % terrain_id, 999.0)
+	var terrain: Dictionary = _terrain_for_position(_player.position)
+	var terrain_id: String = String(terrain.get("id", ""))
+	if terrain_id != "":
+		_current_player_terrain_id = terrain_id
 
 func _terrain_for_position(position: Vector2) -> Dictionary:
 	return TerrainCatalogData.terrain_for_position(position, _play_area)
 
 func _terrain_speed_multiplier(position: Vector2) -> float:
-	var terrain := _terrain_for_position(position)
-	return clampf(float(terrain.get("speed_multiplier", 1.0)), 0.92, 1.08)
+	var terrain: Dictionary = _terrain_for_position(position)
+	var base_speed: float = clampf(float(terrain.get("speed_multiplier", 1.0)), 0.92, 1.08)
+
+	# Apply hazard slow if on ice crack
+	if _terrain_hazard_renderer != null:
+		var hazard_slow: float = _terrain_hazard_renderer.get_slow_multiplier(position)
+		base_speed *= hazard_slow
+
+	return base_speed
 
 func _current_build_tags() -> Array:
 	return UpgradeCatalogData.summarize_tags(_owned_upgrades)
@@ -1185,7 +1928,7 @@ func _current_build_tags() -> Array:
 func _upgrade_names() -> Array:
 	var names: Array = []
 	for upgrade in _owned_upgrades:
-		names.append(String(upgrade.get("name", "Upgrade")))
+		names.append(LocaleText.translate_upgrade_name(upgrade))
 	return names
 
 func _build_snapshot() -> Dictionary:
@@ -1193,6 +1936,11 @@ func _build_snapshot() -> Dictionary:
 		"build_tags": _current_build_tags(),
 		"upgrade_names": _upgrade_names(),
 		"wave": int(_wave_state.get("wave", 1)),
+		"title": String(_wave_state.get("title", "Lone Snake")),
+		"followers_alive": _living_followers(),
+		"followers_total": _follower_snakes.size(),
+		"followers_recruited": int(_run_stats.get("followers_recruited", 0)),
+		"drone_count": int(_modifiers.get("drone_count", 0)),
 		"max_combo": _max_combo,
 	}
 
@@ -1205,6 +1953,12 @@ func _build_run_summary() -> Dictionary:
 	summary["upgrades"] = _upgrade_names()
 	summary["build_tags"] = _current_build_tags()
 	summary["waves"] = int(_wave_state.get("wave", 1))
+	summary["victory"] = bool(_run_stats.get("victory", false))
+	summary["title"] = String(_run_stats.get("title", _wave_state.get("title", "Lone Snake")))
+	summary["followers_alive"] = _living_followers()
+	summary["followers_total"] = _follower_snakes.size()
+	summary["followers_recruited"] = int(_run_stats.get("followers_recruited", 0))
+	summary["drone_count"] = int(_modifiers.get("drone_count", 0))
 	summary["challenge_seed"] = int(_run_stats.get("challenge_seed", RunRecords.daily_seed()))
 	if String(summary.get("death_reason", "")) == "":
 		summary["death_reason"] = "Unknown"
@@ -1216,6 +1970,106 @@ func _set_paused(value: bool) -> void:
 	if _paused:
 		_pause_overlay.set_build_snapshot(_build_snapshot())
 	_update_hud()
+
+func _debug_enabled() -> bool:
+	return OS.is_debug_build() or DisplayServer.get_name() == "headless"
+
+func debug_campaign_state() -> Dictionary:
+	if not _debug_enabled():
+		return {}
+	return {
+		"wave": int(_wave_state.get("wave", 1)),
+		"phase": String(_wave_state.get("phase", "fighting")),
+		"remaining": _count_living_wave_enemies(),
+		"followers_alive": _living_followers(),
+		"followers_total": _follower_snakes.size(),
+		"followers_recruited": int(_run_stats.get("followers_recruited", 0)),
+		"drone_count": int(_modifiers.get("drone_count", 0)),
+		"victory": bool(_run_stats.get("victory", false)),
+		"title": String(_wave_state.get("title", "Lone Snake")),
+	}
+
+func debug_clear_current_wave() -> void:
+	if not _debug_enabled():
+		return
+	for enemy in _ai_snakes:
+		enemy.dead = true
+		enemy.dying = false
+	_update_wave(0.0)
+	if String(_wave_state.get("phase", "")) == "reward":
+		_wave_state["reward_timer"] = 0.0
+		_update_wave(0.0)
+
+func debug_wave_enemy_state() -> Array:
+	if not _debug_enabled():
+		return []
+	var enemies: Array = []
+	for enemy in _ai_snakes:
+		if not enemy.wave_member:
+			continue
+		enemies.append({
+			"enemy_type": enemy.enemy_type,
+			"dead": enemy.dead,
+			"dying": enemy.dying,
+			"health": enemy.health,
+		})
+	return enemies
+
+func debug_damage_wave_enemy(index: int, damage: int = 99, food_value: int = 0) -> bool:
+	if not _debug_enabled():
+		return false
+	var wave_index := -1
+	for enemy in _ai_snakes:
+		if not enemy.wave_member or enemy.dead:
+			continue
+		wave_index += 1
+		if wave_index == index:
+			_damage_enemy(enemy, damage, food_value)
+			return true
+	return false
+
+func debug_area_blast_wave_enemy(index: int, damage: int = 99, award_score := false) -> bool:
+	if not _debug_enabled():
+		return false
+	var wave_index := -1
+	for enemy in _ai_snakes:
+		if not enemy.wave_member or enemy.dead:
+			continue
+		wave_index += 1
+		if wave_index == index:
+			_area_blast(enemy.position, enemy.radius + 18.0, damage, enemy.color, award_score)
+			return true
+	return false
+
+func debug_apply_upgrade(id: String) -> bool:
+	if not _debug_enabled():
+		return false
+	var upgrade := UpgradeCatalogData.upgrade_by_id(id)
+	if upgrade.is_empty():
+		return false
+	_apply_upgrade(upgrade)
+	return true
+
+func debug_add_followers(count: int) -> bool:
+	if not _debug_enabled():
+		return false
+	if count <= 0:
+		return false
+	_add_wave_followers(count)
+	return true
+
+func debug_damage_follower(index: int, damage: int = 99) -> bool:
+	if not _debug_enabled():
+		return false
+	var follower_index := -1
+	for follower in _follower_snakes:
+		if follower.dead:
+			continue
+		follower_index += 1
+		if follower_index == index:
+			_damage_follower(follower, damage, Color(1.0, 0.3, 0.2))
+			return true
+	return false
 
 func _set_keyboard_direction(direction: Vector2) -> void:
 	if _game_over:
@@ -1410,18 +2264,26 @@ func _update_hud() -> void:
 	_hud_snapshot["combo"] = _combo_count
 	_hud_snapshot["combo_time"] = _combo_timer
 	_hud_snapshot["wave"] = int(_wave_state.get("wave", 1))
+	_hud_snapshot["max_wave"] = WaveCatalogData.max_wave()
 	_hud_snapshot["pressure"] = float(_wave_state.get("pressure", 1.0))
+	_hud_snapshot["wave_phase"] = String(_wave_state.get("phase", "fighting"))
+	_hud_snapshot["enemy_type"] = String(_wave_state.get("enemy_type", "Hunter"))
+	_hud_snapshot["remaining_enemies"] = int(_wave_state.get("remaining_enemies", alive_count))
+	_hud_snapshot["title"] = String(_wave_state.get("title", "Lone Snake"))
+	_hud_snapshot["followers_alive"] = _living_followers()
+	_hud_snapshot["followers_total"] = _follower_snakes.size()
+	_hud_snapshot["followers_recruited"] = int(_run_stats.get("followers_recruited", 0))
+	_hud_snapshot["drone_count"] = int(_modifiers.get("drone_count", 0))
 	_hud_snapshot["build_tags"] = _current_build_tags()
 	_hud_snapshot["event_text"] = String(_wave_state.get("last_event", "")) if float(_wave_state.get("event_time", 0.0)) > 0.0 else ""
 	var terrain := _terrain_for_position(_player.position)
-	_hud_snapshot["terrain_name"] = String(terrain.get("name", "Unknown Sector"))
+	_hud_snapshot["terrain_name"] = String(terrain.get("name", "Obsidian Maze"))
 	_hud_snapshot["terrain_color"] = terrain.get("accent", Color(0.48, 1.0, 0.7, 0.6))
-	_hud_snapshot["terrain_regions"] = _terrain_regions
 	_hud_snapshot["in_lava"] = _lava_timer > 0.0
 	_hud_snapshot["lava_time"] = maxf(0.0, float(_difficulty.get("lava_warning_time", 5.0)) - _lava_timer)
 	_hud_snapshot["paused"] = _paused
 	_hud_snapshot["ai_alive"] = alive_count
-	_hud_snapshot["ai_total"] = maxi(int(_difficulty.get("ai_count", 20)), _ai_snakes.size())
+	_hud_snapshot["ai_total"] = maxi(int(_wave_state.get("remaining_enemies", alive_count)), _ai_snakes.size())
 	_hud_snapshot["world_rect"] = _play_area
 	_hud_snapshot["player_position"] = _player.position
 	_hud_snapshot["ai_positions"] = _hud_ai_positions
@@ -1430,8 +2292,8 @@ func _update_hud() -> void:
 
 func _draw_lava_edge(visible: Rect2) -> void:
 	var pulse := 0.5 + 0.5 * sin(_world_time * 2.8)
-	var hot := Color(1.0, 0.22, 0.06, 0.22 + pulse * 0.08)
-	var ember := Color(1.0, 0.55, 0.14, 0.42)
+	var hot := Color(0.18, 0.06, 0.025, 0.26 + pulse * 0.08)
+	var ember := Color(0.95, 0.58, 0.2, 0.38)
 	var left := Rect2(_play_area.position - Vector2(LAVA_EDGE_WIDTH, 0.0), Vector2(LAVA_EDGE_WIDTH, _play_area.size.y))
 	var right := Rect2(Vector2(_play_area.position.x + _play_area.size.x, _play_area.position.y), Vector2(LAVA_EDGE_WIDTH, _play_area.size.y))
 	var top := Rect2(_play_area.position - Vector2(0.0, LAVA_EDGE_WIDTH), Vector2(_play_area.size.x, LAVA_EDGE_WIDTH))
@@ -1457,7 +2319,7 @@ func _draw_lava_edge(visible: Rect2) -> void:
 		var offset_amount: float = 18.0 + 68.0 * abs(sin(float(i) * 12.989 + _world_time * 0.4))
 		var ember_position: Vector2 = position + normal * offset_amount + wobble
 		var ember_radius: float = 2.0 + 2.0 * abs(sin(_world_time * 3.1 + float(i) * 0.7))
-		draw_circle(ember_position, ember_radius * 2.4, Color(1.0, 0.16, 0.04, 0.08))
+		draw_circle(ember_position, ember_radius * 2.4, Color(0.98, 0.42, 0.08, 0.07))
 		draw_circle(ember_position, ember_radius, ember)
 
 func _draw_shockwaves() -> void:
@@ -1480,6 +2342,27 @@ func _draw_shockwaves() -> void:
 			draw_circle(shockwave.position, radius * 0.32, _color_alpha(shockwave.color, alpha * 0.14))
 		drawn += 1
 
+func _draw_hazard_zones() -> void:
+	for zone in _hazard_zones:
+		var progress: float = zone.progress()
+		var alpha: float = (1.0 - progress) * 0.26 + 0.08
+		draw_circle(zone.position, zone.radius, _color_alpha(zone.color, alpha))
+		draw_arc(zone.position, zone.radius * (0.82 + progress * 0.18), 0.0, TAU, 48, _color_alpha(zone.color.lightened(0.18), alpha * 1.7), 2.2)
+		if SettingsStore.animations_on:
+			draw_circle(zone.position, zone.radius * 0.28, _color_alpha(zone.color.lightened(0.28), alpha * 0.45))
+
+func _draw_beam_strikes() -> void:
+	for beam in _beam_strikes:
+		var end: Vector2 = beam.origin + beam.direction * beam.length
+		var alpha: float = 0.34
+		var width: float = beam.width * 0.42
+		if beam.is_active():
+			alpha = 0.82
+			width = beam.width
+		draw_line(beam.origin, end, _color_alpha(beam.color, alpha * 0.18), width + 18.0)
+		draw_line(beam.origin, end, _color_alpha(beam.color.lightened(0.24), alpha), width)
+		draw_line(beam.origin, end, _color_alpha(Color.WHITE, alpha * 0.42), maxf(2.0, width * 0.18))
+
 func _draw_particles() -> void:
 	var visible := _visible_world_rect().grow(140.0)
 	var drawn := 0
@@ -1499,104 +2382,155 @@ func _draw_particles() -> void:
 		drawn += 1
 
 func _draw_world(visible: Rect2) -> void:
-	draw_rect(_play_area.grow(900.0), Color(0.38, 0.06, 0.02), true)
+	draw_rect(_play_area.grow(900.0), Color(0.035, 0.005, 0.002), true)
 	_draw_lava_edge(visible)
-	draw_rect(_play_area, Color(0.018, 0.04, 0.043), true)
-	_draw_terrain_regions(visible)
-	draw_texture_rect_region(ENVIRONMENT_ATLAS, _play_area, Rect2(16, 848, 152, 143), Color(1.0, 1.0, 1.0, 0.28))
+	draw_rect(_play_area, Color(0.004, 0.009, 0.011), true)
+	_draw_unified_field(visible)
+	_draw_noise_overlay(visible)
 	_draw_grid(visible)
-	var boundary_alpha := 0.72 + 0.2 * sin(_world_time * 4.0)
+	_draw_terrain_hazards(visible)
+	var boundary_alpha := 0.72 + 0.18 * sin(_world_time * 4.0)
 	draw_rect(_play_area, Color(1.0, 0.42, 0.18, boundary_alpha), false, 7.0)
 	draw_rect(_play_area.grow(-10.0), Color(0.14, 0.95, 0.62, 0.16), false, 2.0)
 	var edge_warning := _edge_warning_ratio()
 	if edge_warning > 0.0 and _lava_timer <= 0.0:
 		var warning_pulse := 0.5 + 0.5 * sin(_world_time * 10.0)
-		draw_arc(_player.position, _player.radius * (2.25 + warning_pulse * 0.12), 0.0, TAU, 42, Color(1.0, 0.62, 0.18, edge_warning * 0.42), 2.0)
+		draw_arc(_player.position, _player.radius * (2.25 + warning_pulse * 0.12), 0.0, TAU, 42, Color(0.96, 0.64, 0.22, edge_warning * 0.42), 2.0)
 	if _lava_timer > 0.0:
 		var warning_pulse := 0.5 + 0.5 * sin(_world_time * 12.0)
-		draw_circle(_player.position, _player.radius * (2.15 + warning_pulse * 0.24), Color(1.0, 0.22, 0.08, 0.2))
-		draw_arc(_player.position, _player.radius * (2.55 + warning_pulse * 0.25), 0.0, TAU, 54, Color(1.0, 0.54, 0.18, 0.58), 3.0)
+		draw_circle(_player.position, _player.radius * (2.15 + warning_pulse * 0.24), Color(0.72, 0.24, 0.08, 0.18))
+		draw_arc(_player.position, _player.radius * (2.55 + warning_pulse * 0.25), 0.0, TAU, 54, Color(0.96, 0.62, 0.22, 0.52), 3.0)
 
-func _draw_terrain_regions(visible: Rect2) -> void:
-	var boss_pollution := bool(_wave_state.get("boss_spawned", false)) and not bool(_wave_state.get("boss_defeated", false))
-	for raw_terrain in _terrain_regions:
-		var terrain: Dictionary = raw_terrain
-		var rect: Rect2 = terrain.get("rect", Rect2())
-		if not rect.intersects(visible):
+func _draw_unified_field(visible: Rect2) -> void:
+	var field := _play_area.intersection(visible)
+	if field.size.x <= 0.0 or field.size.y <= 0.0:
+		return
+	draw_rect(field, Color(0.006, 0.015, 0.018), true)
+	var wash_alpha := 0.035 + 0.012 * sin(_world_time * 0.9)
+	draw_rect(field, Color(0.0, 0.22, 0.16, wash_alpha), true)
+	var boss_pollution := String(_wave_state.get("enemy_type", "")) == "Emperor Core" and String(_wave_state.get("phase", "fighting")) == "fighting"
+	if boss_pollution:
+		var pulse := 0.5 + 0.5 * sin(_world_time * 5.0)
+		draw_rect(field, Color(0.95, 0.2, 0.08, 0.04 + pulse * 0.03), true)
+
+func _draw_noise_overlay(visible: Rect2) -> void:
+	var field := _play_area.intersection(visible)
+	if field.size.x <= 0.0 or field.size.y <= 0.0:
+		return
+	_draw_aligned_tiled_texture(NOISE_TILE_TEXTURE, field, 1024.0, Color(0.32, 0.72, 0.62, 0.075))
+
+func _draw_forest_paths(visible: Rect2) -> void:
+	pass
+
+func _draw_soft_path(points: Array[Vector2], width: float, visible: Rect2) -> void:
+	for segment_index in range(points.size() - 1):
+		var start_point: Vector2 = points[segment_index]
+		var end_point: Vector2 = points[segment_index + 1]
+		var segment := end_point - start_point
+		var length := segment.length()
+		if length <= 1.0:
 			continue
-		var terrain_color: Color = terrain.get("color", Color(0.1, 0.3, 0.25, 0.15))
-		var accent: Color = terrain.get("accent", Color(0.4, 1.0, 0.7, 0.4))
-		draw_rect(rect, terrain_color, true)
-		draw_rect(rect, _color_alpha(accent, 0.24), false, 3.0)
-		if boss_pollution:
-			var pulse := 0.5 + 0.5 * sin(_world_time * 5.0)
-			draw_rect(rect, Color(1.0, 0.18, 0.08, 0.035 + pulse * 0.025), true)
-		_draw_terrain_marks(rect, String(terrain.get("id", "")), accent, visible)
+		var segment_bounds := Rect2(start_point, Vector2.ZERO).expand(end_point).grow(width * 1.35)
+		if not segment_bounds.intersects(visible.grow(width)):
+			continue
+		var direction := segment / length
+		var normal := direction.orthogonal()
+		var stamp_count: int = maxi(1, ceili(length / (width * 0.54)))
+		for stamp_index in range(stamp_count + 1):
+			var t: float = clampf(float(stamp_index) / float(stamp_count), 0.0, 1.0)
+			var cell := Vector2i(segment_index, stamp_index)
+			var offset := normal * ((_cell_hash_float(cell, 113) - 0.5) * width * 0.16)
+			var position := start_point.lerp(end_point, t) + offset
+			if not visible.grow(width * 1.3).has_point(position):
+				continue
+			var rotation := direction.angle() + (_cell_hash_float(cell, 127) - 0.5) * 0.18
+			var length_scale := 1.36 + _cell_hash_float(cell, 139) * 0.18
+			var width_scale := 1.18 + _cell_hash_float(cell, 151) * 0.14
+			_draw_texture_centered(DIRT_PATH_PATCH_TEXTURE, position, Vector2(width * length_scale, width * width_scale), rotation, Color(0.86, 0.74, 0.54, 0.48))
 
-func _draw_terrain_marks(rect: Rect2, terrain_id: String, color: Color, visible: Rect2) -> void:
-	var seed_offset: float = float(abs(hash(terrain_id)) % 997)
-	var step: float = 520.0
-	var start_x: float = floor((visible.position.x - rect.position.x) / step) * step + rect.position.x
-	var end_x: float = minf(rect.position.x + rect.size.x, visible.position.x + visible.size.x)
-	var x: float = start_x
-	while x <= end_x:
-		var start_y: float = floor((visible.position.y - rect.position.y) / step) * step + rect.position.y
-		var end_y: float = minf(rect.position.y + rect.size.y, visible.position.y + visible.size.y)
-		var y: float = start_y
-		while y <= end_y:
-			var position := Vector2(x, y) + Vector2(
-				sin(seed_offset + x * 0.01) * 80.0,
-				cos(seed_offset + y * 0.01) * 80.0
-			)
-			if rect.has_point(position) and visible.has_point(position):
-				match terrain_id:
-					"bloom_nursery":
-						draw_circle(position, 22.0, _color_alpha(color, 0.08))
-						draw_arc(position, 38.0, 0.0, TAU, 24, _color_alpha(color, 0.22), 1.5)
-					"ion_marsh":
-						draw_line(position - Vector2(34.0, 0.0), position + Vector2(34.0, 0.0), _color_alpha(color, 0.18), 2.0)
-						draw_line(position - Vector2(0.0, 22.0), position + Vector2(0.0, 22.0), _color_alpha(color, 0.12), 1.5)
-					"glass_reef":
-						draw_rect(Rect2(position - Vector2(18.0, 18.0), Vector2(36.0, 36.0)), _color_alpha(color, 0.09), false, 2.0)
-					"ember_vein":
-						draw_arc(position, 32.0, -PI * 0.2, PI * 1.1, 18, _color_alpha(color, 0.2), 2.0)
-			y += step
-		x += step
+func _points_bounds(points: Array[Vector2]) -> Rect2:
+	if points.is_empty():
+		return Rect2()
+	var min_position := points[0]
+	var max_position := points[0]
+	for i in range(1, points.size()):
+		var point := points[i]
+		min_position.x = minf(min_position.x, point.x)
+		min_position.y = minf(min_position.y, point.y)
+		max_position.x = maxf(max_position.x, point.x)
+		max_position.y = maxf(max_position.y, point.y)
+	return Rect2(min_position, max_position - min_position)
+
+func _draw_ground_detail(visible: Rect2) -> void:
+	pass
+
+func _draw_terrain_hazards(visible: Rect2) -> void:
+	if _terrain_hazard_renderer == null:
+		return
+	var cell_size: float = _terrain_hazard_renderer.get_cell_size()
+	var padded: Rect2 = visible.grow(cell_size)
+	var min_cell: Vector2i = Vector2i(floori(padded.position.x / cell_size), floori(padded.position.y / cell_size))
+	var max_cell: Vector2i = Vector2i(floori((padded.position.x + padded.size.x) / cell_size), floori((padded.position.y + padded.size.y) / cell_size))
+	for cy in range(min_cell.y, max_cell.y + 1):
+		for cx in range(min_cell.x, max_cell.x + 1):
+			var cell: Vector2i = Vector2i(cx, cy)
+			if _terrain_hazard_renderer.hazard_cells.has(cell):
+				_draw_hazard_cell(cell, _terrain_hazard_renderer.hazard_cells[cell], cell_size)
+
+func _draw_hazard_cell(cell: Vector2i, data: Dictionary, cell_size: float) -> void:
+	var hazard_type: String = String(data.get("hazard_type", "none"))
+	var pos: Vector2 = Vector2(float(cell.x) * cell_size, float(cell.y) * cell_size)
+	var center: Vector2 = pos + Vector2(cell_size * 0.5, cell_size * 0.5)
+	match hazard_type:
+		"damage":
+			draw_circle(center, cell_size * 0.48, Color(0.55, 0.12, 0.04, 0.18))
+			draw_arc(center, cell_size * 0.35, 0.0, TAU, 28, Color(0.95, 0.42, 0.12, 0.46), 2.0)
+		"slow":
+			draw_circle(center, cell_size * 0.48, Color(0.12, 0.32, 0.08, 0.16))
+			var crack_color: Color = Color(0.42, 0.74, 0.28, 0.34)
+			draw_line(center, pos + Vector2(cell_size * 0.18, cell_size * 0.28), crack_color, 1.4)
+			draw_line(center, pos + Vector2(cell_size * 0.82, cell_size * 0.72), crack_color, 1.4)
+			draw_line(center, pos + Vector2(cell_size * 0.62, cell_size * 0.14), crack_color, 1.0)
+		"block":
+			_draw_wall_obstacle(cell, center, cell_size)
 
 func _draw_grid(visible: Rect2) -> void:
+	var clipped := _play_area.intersection(visible)
+	if clipped.size.x <= 0.0 or clipped.size.y <= 0.0:
+		return
 	var quality := _effects_quality()
 	var minor_step := 60.0 if SettingsStore.animations_on and quality >= 2 else 120.0
 	if SettingsStore.animations_on and quality == 1:
 		minor_step = 90.0
-	var minor_start_x: float = floor((visible.position.x + _grid_offset.x) / minor_step) * minor_step - _grid_offset.x
-	var minor_end_x := visible.position.x + visible.size.x
+	var minor_start_x: float = floor((clipped.position.x + _grid_offset.x) / minor_step) * minor_step - _grid_offset.x
+	var minor_end_x := clipped.position.x + clipped.size.x
 	var minor_x: float = minor_start_x
 	while minor_x <= minor_end_x:
-		draw_line(Vector2(minor_x, visible.position.y), Vector2(minor_x, visible.position.y + visible.size.y), Color(0.08, 0.18, 0.17, 0.11), 1.0)
+		draw_line(Vector2(minor_x, clipped.position.y), Vector2(minor_x, clipped.position.y + clipped.size.y), Color(0.08, 0.18, 0.17, 0.10), 1.0)
 		minor_x += minor_step
 
-	var minor_start_y: float = floor((visible.position.y + _grid_offset.y) / minor_step) * minor_step - _grid_offset.y
-	var minor_end_y := visible.position.y + visible.size.y
+	var minor_start_y: float = floor((clipped.position.y + _grid_offset.y) / minor_step) * minor_step - _grid_offset.y
+	var minor_end_y := clipped.position.y + clipped.size.y
 	var minor_y: float = minor_start_y
 	while minor_y <= minor_end_y:
-		draw_line(Vector2(visible.position.x, minor_y), Vector2(visible.position.x + visible.size.x, minor_y), Color(0.08, 0.18, 0.17, 0.11), 1.0)
+		draw_line(Vector2(clipped.position.x, minor_y), Vector2(clipped.position.x + clipped.size.x, minor_y), Color(0.08, 0.18, 0.17, 0.10), 1.0)
 		minor_y += minor_step
 
 	var step := 240.0
-	var start_x: float = floor((visible.position.x + _grid_offset.x) / step) * step - _grid_offset.x
-	var end_x := visible.position.x + visible.size.x
+	var start_x: float = floor((clipped.position.x + _grid_offset.x) / step) * step - _grid_offset.x
+	var end_x := clipped.position.x + clipped.size.x
 	var x: float = start_x
 	while x <= end_x:
-		var line_alpha := 0.24 + 0.06 * sin(_world_time * 1.6 + x * 0.01)
-		draw_line(Vector2(x, visible.position.y), Vector2(x, visible.position.y + visible.size.y), Color(0.13, 0.42, 0.34, line_alpha), 1.0)
+		var line_alpha := 0.22 + 0.06 * sin(_world_time * 1.6 + x * 0.01)
+		draw_line(Vector2(x, clipped.position.y), Vector2(x, clipped.position.y + clipped.size.y), Color(0.13, 0.42, 0.34, line_alpha), 1.0)
 		x += step
 
-	var start_y: float = floor((visible.position.y + _grid_offset.y) / step) * step - _grid_offset.y
-	var end_y := visible.position.y + visible.size.y
+	var start_y: float = floor((clipped.position.y + _grid_offset.y) / step) * step - _grid_offset.y
+	var end_y := clipped.position.y + clipped.size.y
 	var y: float = start_y
 	while y <= end_y:
-		var line_alpha := 0.24 + 0.06 * sin(_world_time * 1.6 + y * 0.01)
-		draw_line(Vector2(visible.position.x, y), Vector2(visible.position.x + visible.size.x, y), Color(0.13, 0.42, 0.34, line_alpha), 1.0)
+		var line_alpha := 0.22 + 0.06 * sin(_world_time * 1.6 + y * 0.01)
+		draw_line(Vector2(clipped.position.x, y), Vector2(clipped.position.x + clipped.size.x, y), Color(0.13, 0.42, 0.34, line_alpha), 1.0)
 		y += step
 
 func _draw_food(visible: Rect2) -> void:
@@ -1616,73 +2550,187 @@ func _draw_food(visible: Rect2) -> void:
 		if detail_level >= 2:
 			draw_circle(food.position - Vector2(food.radius * 0.24, food.radius * 0.24), maxf(1.0, food.radius * 0.34), Color(1.0, 1.0, 1.0, 0.42))
 
-func _draw_companions() -> void:
-	var companions := int(_modifiers.get("companion_count", 0))
-	if companions <= 0:
-		return
-	for companion_index in range(mini(companions, 4)):
-		var angle := _world_time * (1.4 + companion_index * 0.18) + TAU * float(companion_index) / float(maxi(1, companions))
-		var position := _player.position + Vector2.RIGHT.rotated(angle) * (92.0 + float(companion_index) * 16.0)
-		draw_circle(position, 13.0, Color(0.0, 0.0, 0.0, 0.24))
-		draw_circle(position, 9.0, Color(0.55, 1.0, 0.82, 0.86))
-		draw_arc(position, 18.0, 0.0, TAU, 28, Color(0.36, 1.0, 0.58, 0.42), 2.0)
-
 func _draw_snake(agent: SnakeAgent, is_player: bool) -> void:
 	if agent.dead:
 		return
-	var base_color := agent.color
+	var use_player_skin := _agent_uses_player_skin(agent)
+	var base_color: Color = agent.color
 	if agent.blink and not is_player:
 		base_color.a = 0.45 + 0.55 * abs(sin(_world_time * 7.0))
-	var death_progress := clampf(agent.death_timer / AI_DEATH_DISSOLVE_TIME, 0.0, 1.0) if agent.dying else 0.0
-	var death_alpha := 1.0 - death_progress
+	var death_progress: float = clampf(agent.death_timer / AI_DEATH_DISSOLVE_TIME, 0.0, 1.0) if agent.dying else 0.0
+	var death_alpha: float = 1.0 - death_progress
 	base_color.a *= death_alpha
-	var segment_count := agent.segments.size()
-	var point_count := segment_count + 1
+	var segment_count: int = agent.segments.size()
+	var point_count: int = segment_count + 1
+	var body_texture: Texture2D = _snake_body_texture_for_agent(agent, use_player_skin)
 
 	if segment_count > 0:
 		for i in range(segment_count - 1, -1, -1):
 			var current: Vector2 = agent.segments[i]
 			var previous: Vector2 = agent.position if i == 0 else agent.segments[i - 1]
-			var ratio := float(i + 1) / float(point_count)
-			var width := agent.radius * (1.75 - ratio * 0.44) * (1.0 - death_progress * 0.32)
+			var ratio: float = float(i + 1) / float(point_count)
+			var width: float = _visual_radius_for_agent(agent, ratio) * 1.84 * (1.0 - death_progress * 0.32)
 			draw_line(current, previous, Color(0.0, 0.0, 0.0, 0.2 * death_alpha), width + 4.0)
 			draw_line(current, previous, base_color.darkened(ratio * 0.22), width)
 
 	for i in range(segment_count - 1, -1, -1):
-		var ratio := float(i + 1) / float(segment_count + 1)
-		var segment_radius := agent.radius * (1.0 - ratio * 0.28) * (1.0 - death_progress * 0.4)
-		var dissolve_offset := Vector2.ZERO
+		var ratio: float = float(i + 1) / float(segment_count + 1)
+		var segment_radius: float = _visual_radius_for_agent(agent, ratio) * (1.0 - death_progress * 0.4)
+		var dissolve_offset: Vector2 = Vector2.ZERO
 		if agent.dying:
 			dissolve_offset = Vector2.RIGHT.rotated(float(i) * 2.399 + _world_time * 1.6) * death_progress * agent.radius * 0.22
 		var segment_position: Vector2 = agent.segments[i] + dissolve_offset
-		draw_circle(segment_position, segment_radius + 2.0, Color(0.0, 0.0, 0.0, 0.18 * death_alpha))
-		_draw_texture_centered(PLAYER_BODY_TEXTURE, segment_position, Vector2.ONE * segment_radius * 2.7, 0.0, base_color.darkened(ratio * 0.18))
-		draw_circle(segment_position - Vector2(segment_radius * 0.22, segment_radius * 0.25), segment_radius * 0.32, _color_alpha(base_color.lightened(0.42), 0.24 * death_alpha))
+		var next_point: Vector2 = agent.position if i == 0 else agent.segments[i - 1]
+		var previous_point: Vector2 = agent.segments[i + 1] if i + 1 < segment_count else segment_position - agent.direction * GameConfigData.SNAKE_SEGMENT_SPACING
+		var segment_direction: Vector2 = (next_point - previous_point).normalized()
+		if segment_direction.length_squared() <= 0.001:
+			segment_direction = agent.direction
+		_draw_snake_body_segment(segment_position, segment_direction.rotated(BODY_RENDER_ROTATION_OFFSET), segment_radius, body_texture, use_player_skin, base_color, death_alpha)
 
 	if is_player and _invulnerability_timer > 0.0:
-		var pulse := 0.5 + 0.5 * sin((GameConfigData.COLLISION_GRACE_PERIOD - _invulnerability_timer) * 8.0)
-		var shield_arc_points := 48 if _effects_quality() >= 2 else 32
+		var pulse: float = 0.5 + 0.5 * sin((GameConfigData.COLLISION_GRACE_PERIOD - _invulnerability_timer) * 8.0)
+		var shield_arc_points: int = 48 if _effects_quality() >= 2 else 32
 		_draw_texture_centered(SHIELD_RING_TEXTURE, agent.position, Vector2.ONE * agent.radius * (4.2 + pulse * 0.24), 0.0, Color(0.8, 1.0, 1.0, 0.62))
 		draw_arc(agent.position, agent.radius * (1.35 + pulse * 0.08), 0.0, TAU, shield_arc_points, Color(0.62, 0.98, 1.0, 0.72), 2.0)
 
 	if is_player and _is_boosting():
-		var boost_pulse := 0.5 + 0.5 * sin(_world_time * 20.0)
-		var boost_arc_points := 42 if _effects_quality() >= 2 else 28
+		var boost_pulse: float = 0.5 + 0.5 * sin(_world_time * 20.0)
+		var boost_arc_points: int = 42 if _effects_quality() >= 2 else 28
 		_draw_texture_centered(BOOST_PUFF_TEXTURE, agent.position - agent.direction.normalized() * agent.radius * 1.6, Vector2(agent.radius * 3.8, agent.radius * 2.5), agent.direction.angle() - PI, Color(0.75, 1.0, 0.78, 0.62))
 		draw_arc(agent.position, agent.radius * (1.28 + boost_pulse * 0.06), -PI * 0.15, TAU - PI * 0.15, boost_arc_points, Color(0.72, 1.0, 0.45, 0.58), 2.5)
 
-	var head_radius := agent.radius * (1.0 - death_progress * 0.28)
-	draw_circle(agent.position, head_radius + 3.5, Color(0.0, 0.0, 0.0, 0.24 * death_alpha))
-	var head_texture: Texture2D = PLAYER_HEAD_TEXTURE if is_player else AI_HEAD_TEXTURE
-	if not is_player and (agent.is_elite or agent.is_boss or (agent.color.r > 0.75 and agent.color.b > 0.55)):
-		head_texture = ELITE_HEAD_TEXTURE
-	_draw_texture_centered(head_texture, agent.position, Vector2.ONE * head_radius * 3.25, _texture_rotation_for_direction(agent.direction), base_color.lightened(0.06))
-	draw_circle(agent.position - Vector2(head_radius * 0.22, head_radius * 0.26), head_radius * 0.42, _color_alpha(base_color.lightened(0.5), 0.28 * death_alpha))
-	if not is_player and not agent.dying and agent.max_health > 1:
-		var width := head_radius * (2.2 if agent.is_boss else 1.55)
-		var top := agent.position + Vector2(-width * 0.5, -head_radius * 2.0)
+	var head_radius: float = _visual_radius_for_agent(agent, 0.0) * (1.0 - death_progress * 0.28)
+	_draw_snake_head(agent, head_radius, is_player, use_player_skin, base_color, death_alpha)
+	if agent.team == "enemy" and not agent.dying and agent.max_health > 1:
+		var width: float = head_radius * (2.2 if agent.is_boss else 1.55)
+		var top: Vector2 = agent.position + Vector2(-width * 0.5, -head_radius * 2.0)
 		draw_rect(Rect2(top, Vector2(width, 5.0)), Color(0.0, 0.0, 0.0, 0.42), true)
 		draw_rect(Rect2(top, Vector2(width * clampf(float(agent.health) / float(agent.max_health), 0.0, 1.0), 5.0)), Color(1.0, 0.36, 0.2, 0.86), true)
+
+func _draw_snake_head(agent: SnakeAgent, head_radius: float, is_player: bool, use_player_skin: bool, base_color: Color, alpha: float) -> void:
+	var dir: Vector2 = agent.direction.normalized()
+	if dir.length_squared() <= 0.001:
+		dir = Vector2.DOWN
+	var texture: Texture2D = _snake_head_texture_for_agent(agent, use_player_skin)
+	var tint := base_color.lightened(0.06)
+	tint.a *= alpha
+	var scale: float = 3.25 if is_player else (3.45 if agent.is_boss else 3.05)
+	var head_size := Vector2(head_radius * scale * 0.72, head_radius * scale)
+	draw_circle(agent.position + Vector2(6.0, 10.0), head_radius * 1.42, Color(0.0, 0.0, 0.0, 0.28 * alpha))
+	_draw_texture_centered(texture, agent.position, head_size, _texture_rotation_for_direction(dir), tint)
+	_draw_snake_head_lighting(agent.position, dir, head_radius * 1.04, alpha)
+
+func _agent_uses_player_skin(agent: SnakeAgent) -> bool:
+	return agent == _player or agent.team == "follower"
+
+func _snake_uses_elite_texture(agent: SnakeAgent) -> bool:
+	return agent.is_elite or agent.is_boss or (agent.color.r > 0.75 and agent.color.b > 0.55)
+
+func _snake_head_texture_for_agent(agent: SnakeAgent, use_player_skin: bool) -> Texture2D:
+	if use_player_skin:
+		return PLAYER_HEAD_TEXTURE
+	if _snake_uses_elite_texture(agent):
+		return ELITE_HEAD_TEXTURE
+	return AI_HEAD_TEXTURE
+
+func _snake_body_texture_for_agent(agent: SnakeAgent, use_player_skin: bool) -> Texture2D:
+	if use_player_skin:
+		return PLAYER_BODY_TEXTURE
+	if _snake_uses_elite_texture(agent):
+		return ELITE_BODY_TEXTURE
+	return AI_BODY_TEXTURE
+
+func _draw_snake_body_segment(position: Vector2, direction: Vector2, radius: float, texture: Texture2D, is_player: bool, base_color: Color, alpha: float) -> void:
+	var safe_dir: Vector2 = direction.normalized()
+	if safe_dir.length_squared() <= 0.001:
+		safe_dir = Vector2.DOWN
+	var tint := base_color.lightened(0.08 if is_player else 0.06)
+	tint.a *= alpha
+	var body_size := Vector2(GameConfigData.SNAKE_SEGMENT_SPACING * 1.28, radius * 2.18)
+	draw_circle(position + Vector2(4.0, 7.0), radius * 1.27, Color(0.0, 0.0, 0.0, 0.24 * alpha))
+	_draw_texture_centered(texture, position, body_size, _texture_rotation_for_direction(safe_dir), tint)
+
+func _draw_forest_obstacle(cell: Vector2i, center: Vector2, cell_size: float) -> void:
+	_draw_wall_obstacle(cell, center, cell_size)
+
+func _draw_forest_foreground(visible: Rect2) -> void:
+	pass
+
+func _draw_wall_obstacle(cell: Vector2i, center: Vector2, cell_size: float) -> void:
+	var base_size := cell_size * (0.9 + _cell_hash_float(cell, 19) * 0.05)
+	var rect := Rect2(center - Vector2.ONE * base_size * 0.5, Vector2.ONE * base_size)
+	var bevel := cell_size * 0.14
+	var top_lift := cell_size * (0.12 + _cell_hash_float(cell, 31) * 0.08)
+	var shadow_rect := rect.grow(cell_size * 0.08)
+	shadow_rect.position += Vector2(cell_size * 0.16, cell_size * 0.2)
+	draw_rect(shadow_rect, Color(0.0, 0.0, 0.0, 0.34), true)
+	draw_rect(rect, Color(0.012, 0.032, 0.036, 0.98), true)
+	var top_points: PackedVector2Array = [
+		rect.position,
+		rect.position + Vector2(rect.size.x, 0.0),
+		rect.position + Vector2(rect.size.x - bevel, bevel + top_lift),
+		rect.position + Vector2(bevel, bevel + top_lift),
+	]
+	draw_colored_polygon(top_points, Color(0.035, 0.11, 0.105, 0.96))
+	var side_points: PackedVector2Array = [
+		rect.position + Vector2(rect.size.x, 0.0),
+		rect.position + rect.size,
+		rect.position + rect.size - Vector2(bevel, bevel),
+		rect.position + Vector2(rect.size.x - bevel, bevel + top_lift),
+	]
+	draw_colored_polygon(side_points, Color(0.006, 0.018, 0.022, 0.98))
+	var rim_alpha := 0.42 + 0.12 * sin(_world_time * 2.4 + float(cell.x * 3 + cell.y * 5))
+	draw_rect(rect, Color(0.14, 0.95, 0.62, rim_alpha), false, 1.4)
+	if _cell_hash_int(cell, 5) == 0:
+		var glint_y := rect.position.y + rect.size.y * (0.28 + _cell_hash_float(cell, 53) * 0.28)
+		draw_line(Vector2(rect.position.x + cell_size * 0.16, glint_y), Vector2(rect.position.x + rect.size.x - cell_size * 0.18, glint_y), Color(0.6, 1.0, 0.78, 0.16), 1.2)
+
+func _draw_aligned_tiled_texture(texture: Texture2D, rect: Rect2, tile_size: float, modulate: Color = Color.WHITE) -> void:
+	if texture == null or rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+	var texture_size := texture.get_size()
+	if texture_size.x <= 0.0 or texture_size.y <= 0.0:
+		return
+	var start := Vector2(
+		floor(rect.position.x / tile_size) * tile_size,
+		floor(rect.position.y / tile_size) * tile_size
+	)
+	var end := rect.position + rect.size
+	var y := start.y
+	while y < end.y:
+		var x := start.x
+		while x < end.x:
+			var tile_rect := Rect2(Vector2(x, y), Vector2(tile_size, tile_size))
+			var clipped := tile_rect.intersection(rect)
+			if clipped.size.x > 0.0 and clipped.size.y > 0.0:
+				var source_position := (clipped.position - tile_rect.position) / tile_size * texture_size
+				var source_size := clipped.size / tile_size * texture_size
+				draw_texture_rect_region(texture, clipped, Rect2(source_position, source_size), modulate)
+			x += tile_size
+		y += tile_size
+
+func _cell_hash_int(cell: Vector2i, modulo: int) -> int:
+	var value := int(abs(cell.x * 73856093) + abs(cell.y * 19349663) + 83492791)
+	if modulo <= 0:
+		return value
+	return value % modulo
+
+func _cell_hash_float(cell: Vector2i, salt: int = 0) -> float:
+	var value := int(cell.x * 92837111) ^ int(cell.y * 689287499) ^ int(salt * 283923481)
+	value = abs(value % 1000003)
+	value = (value * 110351 + 12345) % 1000003
+	return float(value) / 1000003.0
+
+func _draw_snake_head_lighting(position: Vector2, direction: Vector2, radius: float, alpha: float) -> void:
+	var safe_dir: Vector2 = direction.normalized()
+	if safe_dir.length_squared() <= 0.001:
+		safe_dir = Vector2.DOWN
+	var side: Vector2 = safe_dir.orthogonal()
+	draw_arc(position - safe_dir * radius * 0.12, radius * 1.02, -PI * 0.86, PI * 0.08, 24, _color_alpha(Color(0.78, 1.0, 0.68), 0.28 * alpha), maxf(1.5, radius * 0.1))
+	draw_arc(position + safe_dir * radius * 0.2, radius * 1.15, PI * 0.16, PI * 1.08, 24, _color_alpha(Color(0.0, 0.02, 0.012), 0.24 * alpha), maxf(1.5, radius * 0.11))
+	for side_sign in [-1.0, 1.0]:
+		var glow_center: Vector2 = position + safe_dir * radius * 0.28 + side * radius * 0.52 * side_sign
+		draw_circle(glow_center, radius * 0.14, _color_alpha(Color(0.18, 1.0, 0.78), 0.22 * alpha))
 
 func _visible_world_rect() -> Rect2:
 	var size := get_viewport_rect().size
@@ -1703,6 +2751,8 @@ func _food_pulse(index: int) -> float:
 	return float(_food_pulse_table[(frame + index * 7) % FOOD_PULSE_TABLE_SIZE])
 
 func _refresh_visible_food_cache(rect: Rect2) -> void:
+	if _visible_food_cache_valid and _rect_covers(_visible_food_rect, rect):
+		return
 	_visible_food_rect = rect
 	_food_grid.query_rect_into(rect, _visible_food_indices)
 	_visible_food_cache_valid = true
@@ -1777,17 +2827,28 @@ func _texture_rotation_for_direction(direction: Vector2) -> float:
 	return direction.angle() - Vector2.DOWN.angle()
 
 func _random_position_in_play_area() -> Vector2:
-	return Vector2(
-		randf_range(_play_area.position.x, _play_area.position.x + _play_area.size.x),
-		randf_range(_play_area.position.y, _play_area.position.y + _play_area.size.y)
-	)
+	for i in range(48):
+		var position := Vector2(
+			randf_range(_play_area.position.x, _play_area.position.x + _play_area.size.x),
+			randf_range(_play_area.position.y, _play_area.position.y + _play_area.size.y)
+		)
+		if _is_spawn_position_clear(position, 28.0):
+			return position
+	return _play_area.get_center()
 
 func _random_ai_spawn_position() -> Vector2:
 	for i in range(32):
 		var position := Vector2.RIGHT.rotated(randf_range(0.0, TAU)) * randf_range(420.0, GameConfigData.AI_SPAWN_RADIUS)
-		if _play_area.has_point(position) and position.distance_to(_player.position) > 360.0:
+		if _play_area.has_point(position) and position.distance_to(_player.position) > 360.0 and _is_spawn_position_clear(position, GameConfigData.INITIAL_SNAKE_RADIUS * 1.6):
 			return position
 	return _random_position_in_play_area()
+
+func _is_spawn_position_clear(position: Vector2, radius: float) -> bool:
+	if not _play_area.has_point(position):
+		return false
+	if _terrain_hazard_renderer == null:
+		return true
+	return _terrain_hazard_renderer.get_blocking_cell_near_position(position, radius).is_empty()
 
 func _point_on_play_area_perimeter(distance: float) -> Vector2:
 	var width := _play_area.size.x
@@ -1844,6 +2905,23 @@ func _wall_avoidance_direction(position: Vector2, preferred: Vector2) -> Vector2
 	if avoidance.length_squared() <= 0.001:
 		return preferred
 	return (preferred + avoidance.normalized() * 0.75).normalized()
+
+func _avoid_blocking_hazards(position: Vector2, preferred: Vector2, radius: float) -> Vector2:
+	if _terrain_hazard_renderer == null:
+		return preferred
+	var safe_preferred := preferred.normalized() if preferred.length_squared() > 0.001 else Vector2.DOWN
+	var probe := position + safe_preferred * AI_OBSTACLE_PROBE_DISTANCE
+	if _terrain_hazard_renderer.get_blocking_cell_near_position(probe, radius).is_empty():
+		return safe_preferred
+	var left := safe_preferred.rotated(PI * 0.5)
+	var right := safe_preferred.rotated(-PI * 0.5)
+	var left_hit := _terrain_hazard_renderer.get_blocking_cell_near_position(position + left * AI_OBSTACLE_PROBE_DISTANCE, radius)
+	var right_hit := _terrain_hazard_renderer.get_blocking_cell_near_position(position + right * AI_OBSTACLE_PROBE_DISTANCE, radius)
+	if left_hit.is_empty() and not right_hit.is_empty():
+		return (safe_preferred * 0.35 + left).normalized()
+	if right_hit.is_empty() and not left_hit.is_empty():
+		return (safe_preferred * 0.35 + right).normalized()
+	return safe_preferred.rotated(0.72 if randf() < 0.5 else -0.72).normalized()
 
 func _smooth_direction(current: Vector2, target: Vector2, weight: float) -> Vector2:
 	var normalized_current := current.normalized() if current.length_squared() > 0.001 else target.normalized()

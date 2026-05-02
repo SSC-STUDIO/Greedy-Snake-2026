@@ -18,6 +18,7 @@ config/icon="res://assets/generated/neon_ecology/slices/brand_icon.png"
 [autoload]
 
 SettingsStore="*res://scripts/systems/SettingsStore.gd"
+LocaleText="*res://scripts/systems/LocaleText.gd"
 AudioBus="*res://scripts/systems/AudioBus.gd"
 SceneRouter="*res://scripts/systems/SceneRouter.gd"
 RunRecords="*res://scripts/systems/RunRecords.gd"
@@ -28,9 +29,10 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/handheld/orientation=0
+window/mode=2
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=2
 anti_aliasing/quality/msaa_2d=2
 textures/vram_compression/use_2d_compression=true
