@@ -13,3 +13,6 @@ signal player_health_changed(current: int, maximum: int)
 signal announcement(text: String)
 signal player_died
 signal rusty_gate_melted
+signal swing_started
+signal dash_performed
+signal jumped

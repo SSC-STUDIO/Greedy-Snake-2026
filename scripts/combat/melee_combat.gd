@@ -118,6 +118,8 @@ func _begin_windup() -> void:
 	_state = State.WINDUP
 	_timer = windup_time
 	_set_lock(true)
+	GameEvents.swing_started.emit()
+	Sfx.play(&"swing")
 
 
 func _begin_active() -> void:

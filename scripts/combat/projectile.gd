@@ -43,6 +43,7 @@ func deflect(by: Node2D) -> void:
 	velocity = aim * maxf(velocity.length() * 1.45, 180.0)
 	GameEvents.parried.emit(self, by)
 	GameEvents.announcement.emit("弹反！")
+	Sfx.play(&"parry")
 	_update_visual()
 
 

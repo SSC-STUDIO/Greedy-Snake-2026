@@ -1,13 +1,21 @@
 class_name GameCamera
 extends Camera2D
-## Smooth follow with a small horizontal look-ahead based on facing / velocity.
+## Smooth follow with a small horizontal look-ahead based on facing / velocity,
+## plus a decaying trauma shake that nudges `offset` (never the limits).
 
 @export var follow_speed: float = 6.5
 @export var look_ahead: float = 48.0
 @export var look_ahead_speed: float = 3.2
 @export var vertical_offset: float = -18.0
 
+@export var max_shake_offset := Vector2(7.0, 5.0)
+@export var max_shake_roll: float = 0.035
+@export var trauma_decay: float = 1.7
+
 var _look: float = 0.0
+var _trauma: float = 0.0
+var _noise := FastNoiseLite.new()
+var _noise_t := 0.0
 
 
 func _ready() -> void:
@@ -17,6 +25,19 @@ func _ready() -> void:
 	limit_top = 0
 	limit_right = 1600
 	limit_bottom = 400
+	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	_noise.frequency = 0.9
+	_noise.seed = randi()
+	add_to_group("game_camera")
+	GameEvents.hit.connect(_on_hit)
+	GameEvents.parried.connect(_on_parried)
+	GameEvents.rusty_gate_melted.connect(func(): add_trauma(0.38))
+	GameEvents.player_died.connect(func(): add_trauma(0.55))
+
+
+## Public juice entry point. Strength is clamped to [0, 1].
+func add_trauma(strength: float) -> void:
+	_trauma = clampf(maxf(_trauma, strength), 0.0, 1.0)
 
 
 func _physics_process(delta: float) -> void:
@@ -29,3 +50,29 @@ func _physics_process(delta: float) -> void:
 	_look = lerpf(_look, desired, 1.0 - exp(-look_ahead_speed * delta))
 	var dest := target.global_position + Vector2(_look, vertical_offset)
 	global_position = global_position.lerp(dest, 1.0 - exp(-follow_speed * delta))
+	_apply_shake(delta)
+
+
+func _apply_shake(delta: float) -> void:
+	if _trauma <= 0.0:
+		offset = Vector2.ZERO
+		rotation = 0.0
+		return
+	_noise_t += delta * 24.0
+	var power := _trauma * _trauma
+	offset = Vector2(
+		_noise.get_noise_2d(_noise_t, 0.0) * max_shake_offset.x * power,
+		_noise.get_noise_2d(_noise_t, 100.0) * max_shake_offset.y * power
+	)
+	rotation = _noise.get_noise_2d(_noise_t, 200.0) * max_shake_roll * power
+	_trauma = maxf(0.0, _trauma - trauma_decay * delta)
+
+
+func _on_hit(attacker: Node, target: Node, _amount: int) -> void:
+	if attacker == null or target == null:
+		return
+	add_trauma(0.34 if target.is_in_group("player") else 0.18)
+
+
+func _on_parried(_projectile: Node, _by_actor: Node) -> void:
+	add_trauma(0.45)

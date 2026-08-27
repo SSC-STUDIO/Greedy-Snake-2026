@@ -23,6 +23,8 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameEvents="*res://scripts/autoload/game_events.gd"
+Juice="*res://scripts/autoload/juice.gd"
+Sfx="*res://scripts/autoload/sfx.gd"
 
 [display]
 

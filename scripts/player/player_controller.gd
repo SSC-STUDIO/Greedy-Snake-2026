@@ -139,6 +139,8 @@ func _do_jump(body: CharacterBody2D, is_extra: bool) -> void:
 		power *= extra_jump_scale
 	body.velocity.y = power
 	jumped.emit(is_extra)
+	GameEvents.jumped.emit(is_extra)
+	Sfx.play(&"jump")
 
 
 func _try_dash(body: CharacterBody2D) -> void:
@@ -162,3 +164,5 @@ func _try_dash(body: CharacterBody2D) -> void:
 	body.velocity.x = _dash_dir * dash_speed
 	body.velocity.y = 0.0
 	dashed.emit()
+	GameEvents.dash_performed.emit()
+	Sfx.play(&"dash")
