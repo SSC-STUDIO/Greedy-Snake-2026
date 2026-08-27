@@ -11,6 +11,12 @@ extends CharacterBody2D
 @onready var visual: Node2D = $Visual
 
 
+const P_STAND_PATH := "res://assets/kenney_clean/player/p1_stand.png"
+const P_JUMP_PATH := "res://assets/kenney_clean/player/p1_jump.png"
+const P_HURT_PATH := "res://assets/kenney_clean/player/p1_hurt.png"
+var _sprites: Dictionary = {}
+var _sprite_root: Sprite2D
+
 func _ready() -> void:
 	add_to_group("player")
 	collision_layer = 2
@@ -20,6 +26,7 @@ func _ready() -> void:
 	toxin.overflow_tick.connect(_on_toxin_overflow)
 	GameEvents.player_health_changed.emit(health.current, health.max_hp)
 	GameEvents.toxin_changed.emit(toxin.toxin, toxin.max_toxin)
+	_setup_kenney_sprite()
 
 
 func _physics_process(delta: float) -> void:
@@ -32,9 +39,52 @@ func _physics_process(delta: float) -> void:
 	var face := float(controller.facing)
 	visual.scale.x = face
 	melee.scale.x = face
+	_update_kenney_sprite()
 	_poll_interact()
 	_poll_sockets()
 	_poll_hookshot()
+
+
+func _setup_kenney_sprite() -> void:
+	if not ResourceLoader.exists(P_STAND_PATH):
+		return
+	# Hide placeholder ColorRects but keep them for headless fallback.
+	for c in visual.get_children():
+		if c is ColorRect or c is Polygon2D:
+			c.visible = false
+	_sprite_root = Sprite2D.new()
+	_sprite_root.name = "KenneySprite"
+	_sprite_root.centered = true
+	_sprite_root.position = Vector2(0, -13)
+	_sprite_root.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	visual.add_child(_sprite_root)
+	_sprites["stand"] = load(P_STAND_PATH) as Texture2D
+	if ResourceLoader.exists(P_JUMP_PATH):
+		_sprites["jump"] = load(P_JUMP_PATH) as Texture2D
+	if ResourceLoader.exists(P_HURT_PATH):
+		_sprites["hurt"] = load(P_HURT_PATH) as Texture2D
+	_sprite_root.texture = _sprites["stand"]
+	_sprite_root.modulate = Color(1, 1, 1, 1)
+
+
+func _update_kenney_sprite() -> void:
+	if _sprite_root == null:
+		return
+	var tex: Texture2D = _sprites.get("stand") as Texture2D
+	if health.current <= 0:
+		tex = _sprites.get("hurt", tex) as Texture2D
+	elif controller.is_dashing():
+		tex = _sprites.get("jump", tex) as Texture2D
+	elif not is_on_floor():
+		tex = _sprites.get("jump", tex) as Texture2D
+	elif absf(velocity.x) > 12.0:
+		# No walk cycle in Kenney base stand only — tint to show motion.
+		_sprite_root.modulate = Color(1.0, 0.95, 0.9, 1.0)
+		tex = _sprites.get("stand") as Texture2D
+	else:
+		_sprite_root.modulate = Color.WHITE
+	if tex != null and _sprite_root.texture != tex:
+		_sprite_root.texture = tex
 
 
 func is_invincible() -> bool:

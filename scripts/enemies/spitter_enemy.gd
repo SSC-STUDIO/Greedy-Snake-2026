@@ -25,8 +25,28 @@ func _ready() -> void:
 	_build_visual()
 
 
+const FLY_TEX_PATH := "res://assets/kenney_clean/enemies/flyFly1.png"
+const SLIME_TEX_PATH := "res://assets/kenney_clean/enemies/slimeWalk1.png"
+
 func _build_visual() -> void:
 	if get_node_or_null("Body") != null:
+		return
+	var tex: Texture2D = null
+	if ResourceLoader.exists(FLY_TEX_PATH):
+		tex = load(FLY_TEX_PATH) as Texture2D
+	if tex != null:
+		var spr := Sprite2D.new()
+		spr.name = "Body"
+		spr.texture = tex
+		spr.position = Vector2(0, -10)
+		spr.modulate = Palette.RUST_MID.lerp(Color.WHITE, 0.25)
+		add_child(spr)
+		var nozzle := ColorRect.new()
+		nozzle.size = Vector2(10, 4)
+		nozzle.position = Vector2(-14, -14)
+		nozzle.color = Palette.TOXIC
+		nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(nozzle)
 		return
 	var body := ColorRect.new()
 	body.name = "Body"
@@ -35,12 +55,12 @@ func _build_visual() -> void:
 	body.color = Palette.RUST_MID
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(body)
-	var nozzle := ColorRect.new()
-	nozzle.size = Vector2(10, 4)
-	nozzle.position = Vector2(-14, -14)
-	nozzle.color = Palette.TOXIC
-	nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(nozzle)
+	var nozzle2 := ColorRect.new()
+	nozzle2.size = Vector2(10, 4)
+	nozzle2.position = Vector2(-14, -14)
+	nozzle2.color = Palette.TOXIC
+	nozzle2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(nozzle2)
 
 
 func _shoot() -> void:

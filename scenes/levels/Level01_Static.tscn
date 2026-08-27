@@ -1,0 +1,303 @@
+[gd_scene load_steps=13 format=3 uid="uid://b8k2r1level01static"]
+
+[ext_resource type="Script" path="res://scripts/levels/level01_static.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/world/Platform.tscn" id="2_plat"]
+[ext_resource type="PackedScene" path="res://scenes/world/GearPlatform.tscn" id="3_gear"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/ToxinPool.tscn" id="4_toxin"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/FilterGear.tscn" id="5_filter"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/PressurePlate.tscn" id="6_plate"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/Door.tscn" id="7_door"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/ScrapPile.tscn" id="8_scrap"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/SocketStation.tscn" id="9_socket"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/RustyGate.tscn" id="10_gate"]
+[ext_resource type="PackedScene" path="res://scenes/interactables/PurificationShrine.tscn" id="11_shrine"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/SpitterEnemy.tscn" id="12_spitter"]
+
+[node name="Level01_Static" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="Backdrop" type="Node2D" parent="."]
+
+[node name="Sky" type="ColorRect" parent="Backdrop"]
+offset_right = 1600
+offset_bottom = 400
+color = Color(0.102, 0.07843, 0.0705882, 1)
+mouse_filter = 2
+z_index = -20
+
+[node name="Girder1" type="ColorRect" parent="Backdrop"]
+offset_left = 80.0
+offset_top = 20.0
+offset_right = 88.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder2" type="ColorRect" parent="Backdrop"]
+offset_left = 270.0
+offset_top = 20.0
+offset_right = 278.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder3" type="ColorRect" parent="Backdrop"]
+offset_left = 460.0
+offset_top = 20.0
+offset_right = 468.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder4" type="ColorRect" parent="Backdrop"]
+offset_left = 650.0
+offset_top = 20.0
+offset_right = 658.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder5" type="ColorRect" parent="Backdrop"]
+offset_left = 840.0
+offset_top = 20.0
+offset_right = 848.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder6" type="ColorRect" parent="Backdrop"]
+offset_left = 1030.0
+offset_top = 20.0
+offset_right = 1038.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder7" type="ColorRect" parent="Backdrop"]
+offset_left = 1220.0
+offset_top = 20.0
+offset_right = 1228.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Girder8" type="ColorRect" parent="Backdrop"]
+offset_left = 1410.0
+offset_top = 20.0
+offset_right = 1418.0
+offset_bottom = 300.0
+color = Color(0.227451, 0.227451, 0.227451, 1)
+mouse_filter = 2
+z_index = -12
+
+[node name="Lamp1" type="ColorRect" parent="Backdrop"]
+offset_left = 140.0
+offset_top = 36.0
+offset_right = 146.0
+offset_bottom = 40.0
+color = Color(1, 0.54902, 0, 1)
+mouse_filter = 2
+z_index = -8
+
+[node name="Lamp2" type="ColorRect" parent="Backdrop"]
+offset_left = 420.0
+offset_top = 36.0
+offset_right = 426.0
+offset_bottom = 40.0
+color = Color(1, 0.54902, 0, 1)
+mouse_filter = 2
+z_index = -8
+
+[node name="Lamp3" type="ColorRect" parent="Backdrop"]
+offset_left = 700.0
+offset_top = 36.0
+offset_right = 706.0
+offset_bottom = 40.0
+color = Color(1, 0.54902, 0, 1)
+mouse_filter = 2
+z_index = -8
+
+[node name="Lamp4" type="ColorRect" parent="Backdrop"]
+offset_left = 980.0
+offset_top = 36.0
+offset_right = 986.0
+offset_bottom = 40.0
+color = Color(1, 0.54902, 0, 1)
+mouse_filter = 2
+z_index = -8
+
+[node name="Lamp5" type="ColorRect" parent="Backdrop"]
+offset_left = 1260.0
+offset_top = 36.0
+offset_right = 1266.0
+offset_bottom = 40.0
+color = Color(1, 0.54902, 0, 1)
+mouse_filter = 2
+z_index = -8
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="GroundLeft" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(0, 320)
+size = Vector2(400, 80)
+fill = Color(0.545098, 0.270588, 0.0745098, 1)
+
+[node name="ToxinPit" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(400, 368)
+size = Vector2(112, 32)
+fill = Color(0.290196, 0.164706, 0.0941176, 1)
+
+[node name="GroundRight" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(512, 320)
+size = Vector2(1088, 80)
+fill = Color(0.545098, 0.270588, 0.0745098, 1)
+
+[node name="WallLeft" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(-16, 0)
+size = Vector2(16, 400)
+fill = Color(0.227451, 0.227451, 0.227451, 1)
+
+[node name="WallRight" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(1600, 0)
+size = Vector2(16, 400)
+fill = Color(0.227451, 0.227451, 0.227451, 1)
+
+[node name="Plat_56_256" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(56, 256)
+size = Vector2(72, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_160_200" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(160, 200)
+size = Vector2(64, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_48_144" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(48, 144)
+size = Vector2(56, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_268_248" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(268, 248)
+size = Vector2(88, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_420_236" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(420, 236)
+size = Vector2(72, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_620_248" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(620, 248)
+size = Vector2(96, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_760_184" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(760, 184)
+size = Vector2(104, 16)
+fill = Color(0.627451, 0.321569, 0.176471, 1)
+
+[node name="Plat_920_248" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(920, 248)
+size = Vector2(72, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_980_180" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(980, 180)
+size = Vector2(72, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Plat_1080_220" parent="Platforms" instance=ExtResource("2_plat")]
+position = Vector2(1080, 220)
+size = Vector2(64, 16)
+fill = Color(0.368627, 0.352941, 0.337255, 1)
+
+[node name="Gear" parent="Platforms" instance=ExtResource("3_gear")]
+position = Vector2(600, 200)
+radius = 22.0
+
+[node name="Props" type="Node2D" parent="."]
+
+[node name="ToxinPool" parent="Props" instance=ExtResource("4_toxin")]
+position = Vector2(400, 336)
+
+[node name="FilterGear" parent="Props" instance=ExtResource("5_filter")]
+position = Vector2(352, 308)
+
+[node name="PressurePlate" parent="Props" instance=ExtResource("6_plate")]
+position = Vector2(1040, 314)
+
+[node name="Door" parent="Props" instance=ExtResource("7_door")]
+position = Vector2(1144, 256)
+
+[node name="ScrapPile" parent="Props" instance=ExtResource("8_scrap")]
+position = Vector2(1220, 302)
+
+[node name="SocketStation" parent="Props" instance=ExtResource("9_socket")]
+position = Vector2(1296, 296)
+
+[node name="RustyGate" parent="Props" instance=ExtResource("10_gate")]
+position = Vector2(1384, 256)
+
+[node name="PurificationShrine" parent="Props" instance=ExtResource("11_shrine")]
+position = Vector2(1488, 288)
+
+[node name="Spitter1" parent="Props" instance=ExtResource("12_spitter")]
+position = Vector2(812, 184)
+
+[node name="Spitter2" parent="Props" instance=ExtResource("12_spitter")]
+position = Vector2(1018, 164)
+
+[node name="Labels" type="Node2D" parent="."]
+
+[node name="Label_余烬骑士" type="Label" parent="Labels"]
+offset_left = 60.0
+offset_top = 300.0
+offset_right = 100.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 8
+theme_override_colors/font_color = Color(0.784314, 0.760784, 0.721569, 1)
+text = "余烬骑士"
+
+[node name="Label_腐液" type="Label" parent="Labels"]
+offset_left = 410.0
+offset_top = 300.0
+offset_right = 450.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 8
+theme_override_colors/font_color = Color(0.784314, 0.760784, 0.721569, 1)
+text = "腐液"
+
+[node name="Label_弹反" type="Label" parent="Labels"]
+offset_left = 760.0
+offset_top = 160.0
+offset_right = 800.0
+offset_bottom = 174.0
+theme_override_font_sizes/font_size = 8
+theme_override_colors/font_color = Color(0.784314, 0.760784, 0.721569, 1)
+text = "弹反练习"
+
+[node name="Label_压力板" type="Label" parent="Labels"]
+offset_left = 1020.0
+offset_top = 292.0
+offset_right = 1060.0
+offset_bottom = 306.0
+theme_override_font_sizes/font_size = 8
+theme_override_colors/font_color = Color(0.784314, 0.760784, 0.721569, 1)
+text = "压力板·双怪"
+
+[node name="Label_锈门" type="Label" parent="Labels"]
+offset_left = 1368.0
+offset_top = 232.0
+offset_right = 1408.0
+offset_bottom = 246.0
+theme_override_font_sizes/font_size = 8
+theme_override_colors/font_color = Color(0.784314, 0.760784, 0.721569, 1)
+text = "锈门"

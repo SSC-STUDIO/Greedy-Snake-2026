@@ -1,0 +1,14 @@
+[gd_resource type="TileSet" format=3 uid="uid://c7k9r3kenneyground"]
+
+[ext_resource type="Texture2D" uid="uid://b2texcastlecenter" path="res://assets/kenney_clean/tiles/castleCenter.png" id="1_tex"]
+[ext_resource type="Texture2D" uid="uid://b2texcastlemid" path="res://assets/kenney_clean/tiles/castleMid.png" id="2_tex"]
+[ext_resource type="Texture2D" uid="uid://b2texgrassmid" path="res://assets/kenney_clean/tiles/grassMid.png" id="3_tex"]
+
+[resource]
+tile_size = Vector2i(70, 70)
+# Atlas 0 — castleCenter (solid fill), Atlas 1 — castleMid (bridge), Atlas 2 — grassMid (deco)
+# To paint a level: create a TileMapLayer, assign this TileSet, pick the atlas, paint.
+# Collision for atlas 0 is pre-baked as full 70×70 square. For precise platform
+# collision keep using SolidPlatform.tscn instances; TileMap is for visual fill only.
+# Example GDScript to add atlas at runtime (editor will auto-serialize):
+#   var src := TileSetAtlasSource.new(); src.texture = load("res://assets/kenney_clean/tiles/castleCenter.png")
