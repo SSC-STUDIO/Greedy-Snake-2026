@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cudarj2sonu0g"
+path="res://.godot/imported/lowThreeTone.ogg-3d97e718832e02dd1fe53a012722a37c.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Digital sounds (60 sounds)/lowThreeTone.ogg"
+dest_files=["res://.godot/imported/lowThreeTone.ogg-3d97e718832e02dd1fe53a012722a37c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

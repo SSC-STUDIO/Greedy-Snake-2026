@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://c2brk27l0jg5m"
+path="res://.godot/imported/cardShuffle.ogg-6b77fc7bbcd03b71083420ab97edfc5c.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Casino sounds (50 sounds)/cardShuffle.ogg"
+dest_files=["res://.godot/imported/cardShuffle.ogg-6b77fc7bbcd03b71083420ab97edfc5c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

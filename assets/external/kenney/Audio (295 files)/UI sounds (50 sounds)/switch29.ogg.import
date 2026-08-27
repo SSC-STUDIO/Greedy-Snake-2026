@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://c1ak3u3yupsd6"
+path="res://.godot/imported/switch29.ogg-e6be343671735f085e48553f910522de.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/UI sounds (50 sounds)/switch29.ogg"
+dest_files=["res://.godot/imported/switch29.ogg-e6be343671735f085e48553f910522de.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

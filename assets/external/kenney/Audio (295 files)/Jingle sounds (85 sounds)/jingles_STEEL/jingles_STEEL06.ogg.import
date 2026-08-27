@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bolchn1g31m3n"
+path="res://.godot/imported/jingles_STEEL06.ogg-76bb2e9ab42d92b09cf294fc4ea8a9e4.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Jingle sounds (85 sounds)/jingles_STEEL/jingles_STEEL06.ogg"
+dest_files=["res://.godot/imported/jingles_STEEL06.ogg-76bb2e9ab42d92b09cf294fc4ea8a9e4.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://1aoflls2vjme"
+path="res://.godot/imported/zapThreeToneDown.ogg-36c74e3a6b4064145b4816679e1fa6ea.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Digital sounds (60 sounds)/zapThreeToneDown.ogg"
+dest_files=["res://.godot/imported/zapThreeToneDown.ogg-36c74e3a6b4064145b4816679e1fa6ea.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://ba3w6x0ryl5p5"
+path="res://.godot/imported/cloth3.ogg-214ed27e35bdb6f0dc9e716d819d2361.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/RPG sounds (50 sounds)/cloth3.ogg"
+dest_files=["res://.godot/imported/cloth3.ogg-214ed27e35bdb6f0dc9e716d819d2361.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

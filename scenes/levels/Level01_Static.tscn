@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://b8k2r1level01static"]
+[gd_scene format=3 uid="uid://c02h087f3omgc"]
 
 [ext_resource type="Script" path="res://scripts/levels/level01_static.gd" id="1_level"]
 [ext_resource type="PackedScene" path="res://scenes/world/Platform.tscn" id="2_plat"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/RustyGate.tscn" id="10_gate"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/PurificationShrine.tscn" id="11_shrine"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/SpitterEnemy.tscn" id="12_spitter"]
+[ext_resource type="TileSet" path="res://assets/tilesets/kenney_ground.tres" id="13_tileset"]
 
 [node name="Level01_Static" type="Node2D"]
 script = ExtResource("1_level")
@@ -254,6 +255,10 @@ position = Vector2(812, 184)
 
 [node name="Spitter2" parent="Props" instance=ExtResource("12_spitter")]
 position = Vector2(1018, 164)
+
+[node name="DecorTiles" type="TileMapLayer" parent="."]
+tile_set = ExtResource("13_tileset")
+z_index = -5
 
 [node name="Labels" type="Node2D" parent="."]
 

@@ -11,9 +11,17 @@ enum State { IDLE, WINDUP, ACTIVE, RECOVERY }
 @export var cooldown: float = 0.40
 @export var damage: int = 1
 
+## Three-hit chain: index 0..2. Finishing blow (2) hits harder and lingers.
+const COMBO_WINDUP := [0.18, 0.14, 0.30]
+const COMBO_ACTIVE := [0.12, 0.12, 0.17]
+const COMBO_RECOVERY := [0.26, 0.20, 0.46]
+const COMBO_DAMAGE := [1, 1, 2]
+
 var _state: State = State.IDLE
 var _timer: float = 0.0
 var _cooldown: float = 0.0
+var _combo_index: int = 0
+var _link_buffered: bool = false
 
 @onready var hitbox: Hitbox = $Hitbox
 @onready var sword: ColorRect = get_node_or_null("../Visual/Sword") as ColorRect
@@ -69,20 +77,29 @@ func tick(delta: float) -> void:
 				start_swing()
 		State.WINDUP:
 			_timer -= delta
-			_tween_sword(-0.9, delta, 14.0)
+			_tween_sword(-1.35 if _combo_index >= 2 else -0.9, delta, 14.0)
 			if _timer <= 0.0:
 				_begin_active()
 		State.ACTIVE:
 			_timer -= delta
-			_tween_sword(1.2, delta, 22.0)
+			_tween_sword(1.5 if _combo_index >= 2 else 1.2, delta, 24.0)
 			if _timer <= 0.0:
 				_begin_recovery()
 		State.RECOVERY:
 			_timer -= delta
+			# Chain window: another press during recovery queues the next hit.
+			if _combo_index < 2 and Input.is_action_just_pressed("attack"):
+				_link_buffered = true
 			_tween_sword(0.38, delta, 8.0)
 			if _timer <= 0.0:
-				_state = State.IDLE
-				_set_lock(false)
+				if _link_buffered and _combo_index < 2:
+					_link_buffered = false
+					_combo_index += 1
+					_begin_windup()
+				else:
+					_combo_index = 0
+					_state = State.IDLE
+					_set_lock(false)
 
 
 ## Parry acknowledgement sampled during idle-phase processing: area-pair data
@@ -116,24 +133,26 @@ func phase_name() -> String:
 
 func _begin_windup() -> void:
 	_state = State.WINDUP
-	_timer = windup_time
+	_timer = float(COMBO_WINDUP[_combo_index])
 	_set_lock(true)
-	GameEvents.swing_started.emit()
+	GameEvents.swing_started.emit(_combo_index)
 	Sfx.play(&"swing")
 
 
 func _begin_active() -> void:
 	_state = State.ACTIVE
-	_timer = active_time
+	_timer = float(COMBO_ACTIVE[_combo_index])
 	if hitbox:
+		hitbox.damage = int(COMBO_DAMAGE[_combo_index])
 		hitbox.already_hit.clear()
 		hitbox.monitoring = true
 
 
 func _begin_recovery() -> void:
 	_state = State.RECOVERY
-	_timer = recovery_time
+	_timer = float(COMBO_RECOVERY[_combo_index])
 	_cooldown = cooldown
+	_link_buffered = false
 	if hitbox:
 		hitbox.monitoring = false
 

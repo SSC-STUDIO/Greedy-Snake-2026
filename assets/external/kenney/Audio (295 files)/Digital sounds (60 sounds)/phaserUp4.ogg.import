@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://gdcv3hn8id4x"
+path="res://.godot/imported/phaserUp4.ogg-3e2ea8c4de8ac5e61767ba1282717ade.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Digital sounds (60 sounds)/phaserUp4.ogg"
+dest_files=["res://.godot/imported/phaserUp4.ogg-3e2ea8c4de8ac5e61767ba1282717ade.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

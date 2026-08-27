@@ -7,6 +7,8 @@ extends Area2D
 var _bodies: Array = []
 
 
+const TOXIN_TEX_PATH := "res://assets/kenney_clean/enemies/slimeWalk1.png"
+
 func _ready() -> void:
 	collision_layer = 128
 	collision_mask = 2
@@ -15,12 +17,34 @@ func _ready() -> void:
 	body_entered.connect(func(b: Node2D) -> void: _bodies.append(b))
 	body_exited.connect(func(b: Node2D) -> void: _bodies.erase(b))
 	if get_node_or_null("Fill") == null:
-		var fill := ColorRect.new()
-		fill.name = "Fill"
-		fill.size = Vector2(112, 48)
-		fill.color = Color(Palette.TOXIC.r, Palette.TOXIC.g, Palette.TOXIC.b, 0.78)
-		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(fill)
+		if ResourceLoader.exists(TOXIN_TEX_PATH):
+			var tex: Texture2D = load(TOXIN_TEX_PATH) as Texture2D
+			var spr := Sprite2D.new()
+			spr.name = "Fill"
+			spr.texture = tex
+			spr.centered = false
+			spr.position = Vector2(0, 0)
+			spr.modulate = Palette.TOXIC
+			spr.modulate.a = 0.9
+			# Stretch to default pool size via scale.
+			spr.scale = Vector2(112.0 / tex.get_width(), 48.0 / tex.get_height())
+			add_child(spr)
+			# Keep a subtle ColorRect underneath for rust tint.
+			var under := ColorRect.new()
+			under.name = "UnderTint"
+			under.size = Vector2(112, 48)
+			under.color = Palette.TOXIC
+			under.color.a = 0.25
+			under.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			under.z_index = -1
+			add_child(under)
+		else:
+			var fill := ColorRect.new()
+			fill.name = "Fill"
+			fill.size = Vector2(112, 48)
+			fill.color = Color(Palette.TOXIC.r, Palette.TOXIC.g, Palette.TOXIC.b, 0.78)
+			fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(fill)
 	if get_node_or_null("CollisionShape2D") == null:
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()

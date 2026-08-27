@@ -5,6 +5,8 @@ extends Interactable
 var _melted: bool = false
 
 
+const GATE_TEX_PATH := "res://assets/kenney_clean/tiles/castleCenter.png"
+
 func _ready() -> void:
 	super._ready()
 	prompt = "需要熔热锻"
@@ -21,6 +23,28 @@ func _ready() -> void:
 		col.position = Vector2(8, 32)
 		solid.add_child(col)
 		add_child(solid)
+	_try_gate_sprite()
+
+
+func _try_gate_sprite() -> void:
+	if not ResourceLoader.exists(GATE_TEX_PATH):
+		return
+	var fill := get_node_or_null("Fill") as ColorRect
+	if fill == null:
+		return
+	var tex: Texture2D = load(GATE_TEX_PATH) as Texture2D
+	if tex == null:
+		return
+	fill.visible = false
+	var spr := Sprite2D.new()
+	spr.name = "KenneyGate"
+	spr.texture = tex
+	spr.centered = false
+	spr.position = Vector2(0, 0)
+	spr.modulate = Palette.RUST_LIGHT.lerp(Color.WHITE, 0.2)
+	# Tile vertically: 64px gate from 70px tile, scale slightly.
+	spr.scale = Vector2(16.0 / tex.get_width(), 64.0 / tex.get_height())
+	add_child(spr)
 
 
 func can_interact(actor: Node) -> bool:

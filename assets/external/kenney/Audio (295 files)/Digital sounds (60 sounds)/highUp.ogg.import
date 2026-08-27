@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://d1mvnaha0wn2g"
+path="res://.godot/imported/highUp.ogg-8ba3d8bddd9bb391b39ad12beb1f4ee1.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Digital sounds (60 sounds)/highUp.ogg"
+dest_files=["res://.godot/imported/highUp.ogg-8ba3d8bddd9bb391b39ad12beb1f4ee1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

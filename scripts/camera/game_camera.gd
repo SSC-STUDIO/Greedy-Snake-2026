@@ -31,6 +31,11 @@ func _ready() -> void:
 	add_to_group("game_camera")
 	GameEvents.hit.connect(_on_hit)
 	GameEvents.parried.connect(_on_parried)
+	# The chain finisher is a big committed swing — sell it with a shake.
+	GameEvents.swing_started.connect(func(combo_index: int) -> void:
+		if combo_index >= 2:
+			add_trauma(0.30)
+	)
 	GameEvents.rusty_gate_melted.connect(func(): add_trauma(0.38))
 	GameEvents.player_died.connect(func(): add_trauma(0.55))
 

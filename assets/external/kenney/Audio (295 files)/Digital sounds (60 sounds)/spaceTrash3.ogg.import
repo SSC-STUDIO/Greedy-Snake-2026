@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://dkdaa1etyvwl5"
+path="res://.godot/imported/spaceTrash3.ogg-530053e33065513038a795bbc18dd522.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Digital sounds (60 sounds)/spaceTrash3.ogg"
+dest_files=["res://.godot/imported/spaceTrash3.ogg-530053e33065513038a795bbc18dd522.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://cwwp8f8igkg6n"
+path="res://.godot/imported/jingles_NES16.ogg-ef84756fbcdc6b638ca585147ffbdd92.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Jingle sounds (85 sounds)/jingles_NES/jingles_NES16.ogg"
+dest_files=["res://.godot/imported/jingles_NES16.ogg-ef84756fbcdc6b638ca585147ffbdd92.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

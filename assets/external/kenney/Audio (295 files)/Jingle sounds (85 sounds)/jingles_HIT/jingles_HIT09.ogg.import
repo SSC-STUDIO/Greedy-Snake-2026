@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://ru4x3vduw2w4"
+path="res://.godot/imported/jingles_HIT09.ogg-eb42dc887878d58bfa5accd7a51a56f1.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Jingle sounds (85 sounds)/jingles_HIT/jingles_HIT09.ogg"
+dest_files=["res://.godot/imported/jingles_HIT09.ogg-eb42dc887878d58bfa5accd7a51a56f1.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

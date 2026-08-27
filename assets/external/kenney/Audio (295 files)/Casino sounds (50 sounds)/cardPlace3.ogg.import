@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bhnnkikblywis"
+path="res://.godot/imported/cardPlace3.ogg-fd4d284b7d296891f50842cfec236dfe.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Casino sounds (50 sounds)/cardPlace3.ogg"
+dest_files=["res://.godot/imported/cardPlace3.ogg-fd4d284b7d296891f50842cfec236dfe.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

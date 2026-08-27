@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://v4jcgiyqvvt3"
+path="res://.godot/imported/jingles_PIZZA10.ogg-196410e3203043d635b062e38b44c12c.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/Jingle sounds (85 sounds)/jingles_PIZZA/jingles_PIZZA10.ogg"
+dest_files=["res://.godot/imported/jingles_PIZZA10.ogg-196410e3203043d635b062e38b44c12c.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

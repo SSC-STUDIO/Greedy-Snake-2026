@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bskiurarffxe4"
+path="res://.godot/imported/doorOpen_1.ogg-bb8ac084175fcb23162f916c0eb8f24e.oggvorbisstr"
+
+[deps]
+
+source_file="res://assets/external/kenney/Audio (295 files)/RPG sounds (50 sounds)/doorOpen_1.ogg"
+dest_files=["res://.godot/imported/doorOpen_1.ogg-bb8ac084175fcb23162f916c0eb8f24e.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

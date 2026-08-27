@@ -1,14 +1,33 @@
-[gd_resource type="TileSet" format=3 uid="uid://c7k9r3kenneyground"]
+[gd_resource type="TileSet" format=3]
 
-[ext_resource type="Texture2D" uid="uid://b2texcastlecenter" path="res://assets/kenney_clean/tiles/castleCenter.png" id="1_tex"]
-[ext_resource type="Texture2D" uid="uid://b2texcastlemid" path="res://assets/kenney_clean/tiles/castleMid.png" id="2_tex"]
-[ext_resource type="Texture2D" uid="uid://b2texgrassmid" path="res://assets/kenney_clean/tiles/grassMid.png" id="3_tex"]
+[ext_resource type="Texture2D" path="res://assets/kenney_clean/tiles/castleCenter.png" id="1_0533j"]
+[ext_resource type="Texture2D" path="res://assets/kenney_clean/tiles/castleMid.png" id="2_vhj7v"]
+[ext_resource type="Texture2D" path="res://assets/kenney_clean/tiles/grassMid.png" id="3_sn6t4"]
+[ext_resource type="Texture2D" path="res://assets/kenney_clean/tiles/box.png" id="4_ysyab"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0blf2"]
+texture = ExtResource("1_0533j")
+texture_region_size = Vector2i(70, 70)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7sy5h"]
+texture = ExtResource("2_vhj7v")
+texture_region_size = Vector2i(70, 70)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_g1co5"]
+texture = ExtResource("3_sn6t4")
+texture_region_size = Vector2i(70, 70)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_2x57y"]
+texture = ExtResource("4_ysyab")
+texture_region_size = Vector2i(70, 70)
+0:0/0 = 0
 
 [resource]
 tile_size = Vector2i(70, 70)
-# Atlas 0 — castleCenter (solid fill), Atlas 1 — castleMid (bridge), Atlas 2 — grassMid (deco)
-# To paint a level: create a TileMapLayer, assign this TileSet, pick the atlas, paint.
-# Collision for atlas 0 is pre-baked as full 70×70 square. For precise platform
-# collision keep using SolidPlatform.tscn instances; TileMap is for visual fill only.
-# Example GDScript to add atlas at runtime (editor will auto-serialize):
-#   var src := TileSetAtlasSource.new(); src.texture = load("res://assets/kenney_clean/tiles/castleCenter.png")
+sources/0 = SubResource("TileSetAtlasSource_0blf2")
+sources/1 = SubResource("TileSetAtlasSource_7sy5h")
+sources/2 = SubResource("TileSetAtlasSource_g1co5")
+sources/3 = SubResource("TileSetAtlasSource_2x57y")
