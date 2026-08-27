@@ -1,0 +1,152 @@
+class_name MeleeCombat
+extends Node2D
+## Heavy slash with wind-up, active (parry) frames, and recovery.
+## Parry is not a separate button — it is the active window of this swing.
+
+enum State { IDLE, WINDUP, ACTIVE, RECOVERY }
+
+@export var windup_time: float = 0.18
+@export var active_time: float = 0.12
+@export var recovery_time: float = 0.26
+@export var cooldown: float = 0.40
+@export var damage: int = 1
+
+var _state: State = State.IDLE
+var _timer: float = 0.0
+var _cooldown: float = 0.0
+
+@onready var hitbox: Hitbox = $Hitbox
+@onready var sword: ColorRect = get_node_or_null("../Visual/Sword") as ColorRect
+
+
+func _ready() -> void:
+	if sword == null and has_node("Sword"):
+		sword = get_node("Sword")
+	if hitbox == null and has_node("Hitbox"):
+		hitbox = get_node("Hitbox")
+	# Canonical deflection path: the swing's active frames acknowledge incoming
+	# projectiles through the hitbox signal (projectile-side polling is kept
+	# as a fallback in projectile.gd).
+	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	if hitbox:
+		hitbox.damage = damage
+		hitbox.team = &"player"
+		hitbox.monitoring = false
+
+
+func _on_hitbox_area_entered(area: Area2D) -> void:
+	if _state != State.ACTIVE or not is_parry_window():
+		return
+	if area is Projectile:
+		var bolt := area as Projectile
+		if bolt.can_deflect():
+			var host := get_parent()
+			bolt.deflect(host if host != null else self)
+
+
+func is_busy() -> bool:
+	return _state != State.IDLE
+
+
+func is_parry_window() -> bool:
+	return _state == State.ACTIVE
+
+
+func _physics_process(delta: float) -> void:
+	tick(delta)
+
+
+## Advance the swing state machine by one frame.
+## Public so tests (and future AI/input shims) can drive it without Input.
+func tick(delta: float) -> void:
+	if _cooldown > 0.0:
+		_cooldown = maxf(0.0, _cooldown - delta)
+
+	match _state:
+		State.IDLE:
+			_rest_sword(delta)
+			if Input.is_action_just_pressed("attack"):
+				start_swing()
+		State.WINDUP:
+			_timer -= delta
+			_tween_sword(-0.9, delta, 14.0)
+			if _timer <= 0.0:
+				_begin_active()
+		State.ACTIVE:
+			_timer -= delta
+			_tween_sword(1.2, delta, 22.0)
+			if _timer <= 0.0:
+				_begin_recovery()
+		State.RECOVERY:
+			_timer -= delta
+			_tween_sword(0.38, delta, 8.0)
+			if _timer <= 0.0:
+				_state = State.IDLE
+				_set_lock(false)
+
+
+## Parry acknowledgement sampled during idle-phase processing: area-pair data
+## and space queries are reliable outside the physics callback stack.
+func _process(_delta: float) -> void:
+	if hitbox == null or not is_parry_window():
+		return
+	for area in hitbox.get_overlapping_areas():
+		_on_hitbox_area_entered(area)
+
+
+## Attempt a slash bypassing the input layer. Returns false while busy/cooldown.
+func start_swing() -> bool:
+	if _state != State.IDLE or _cooldown > 0.0:
+		return false
+	_begin_windup()
+	return true
+
+
+## Report which phase the swing is in ("idle"/"windup"/"active"/"recovery").
+func phase_name() -> String:
+	match _state:
+		State.WINDUP:
+			return "windup"
+		State.ACTIVE:
+			return "active"
+		State.RECOVERY:
+			return "recovery"
+	return "idle"
+
+
+func _begin_windup() -> void:
+	_state = State.WINDUP
+	_timer = windup_time
+	_set_lock(true)
+
+
+func _begin_active() -> void:
+	_state = State.ACTIVE
+	_timer = active_time
+	if hitbox:
+		hitbox.already_hit.clear()
+		hitbox.monitoring = true
+
+
+func _begin_recovery() -> void:
+	_state = State.RECOVERY
+	_timer = recovery_time
+	_cooldown = cooldown
+	if hitbox:
+		hitbox.monitoring = false
+
+
+func _set_lock(locked: bool) -> void:
+	var host := get_parent()
+	if host is Player:
+		(host as Player).controller.set_commit_lock(locked)
+
+
+func _tween_sword(target: float, delta: float, rate: float) -> void:
+	if sword == null:
+		return
+	sword.rotation = lerp_angle(sword.rotation, target, 1.0 - exp(-rate * delta))
+
+
+func _rest_sword(delta: float) -> void:
+	_tween_sword(0.35, delta, 6.0)

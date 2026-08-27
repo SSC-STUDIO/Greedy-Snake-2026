@@ -1,0 +1,116 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="2_ctrl"]
+[ext_resource type="Script" path="res://scripts/player/health.gd" id="3_hp"]
+[ext_resource type="Script" path="res://scripts/player/toxin_meter.gd" id="4_tox"]
+[ext_resource type="Script" path="res://scripts/player/rust_core_inventory.gd" id="5_inv"]
+[ext_resource type="Script" path="res://scripts/combat/melee_combat.gd" id="6_melee"]
+[ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="7_hit"]
+[ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="8_hurt"]
+[ext_resource type="Script" path="res://scripts/player/interaction_sensor.gd" id="9_sense"]
+
+[sub_resource type="RectangleShape2D" id="body"]
+size = Vector2(14, 26)
+
+[sub_resource type="RectangleShape2D" id="hit"]
+size = Vector2(22, 16)
+
+[sub_resource type="RectangleShape2D" id="hurt"]
+size = Vector2(16, 24)
+
+[sub_resource type="RectangleShape2D" id="sense"]
+size = Vector2(32, 32)
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 1
+floor_stop_on_slope = true
+floor_snap_length = 4.0
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -13)
+shape = SubResource("body")
+
+[node name="Visual" type="Node2D" parent="."]
+
+[node name="Cloak" type="Polygon2D" parent="Visual"]
+color = Color(0.227, 0.227, 0.227, 1)
+polygon = PackedVector2Array(-4, -20, -13, -4, -12, 4, -2, 6, 3, -8, 2, -18)
+
+[node name="Body" type="ColorRect" parent="Visual"]
+offset_left = -6.0
+offset_top = -22.0
+offset_right = 6.0
+offset_bottom = -6.0
+mouse_filter = 2
+color = Color(0.804, 0.361, 0.361, 1)
+
+[node name="Head" type="ColorRect" parent="Visual"]
+offset_left = -5.0
+offset_top = -30.0
+offset_right = 5.0
+offset_bottom = -22.0
+mouse_filter = 2
+color = Color(0.227, 0.227, 0.227, 1)
+
+[node name="Visor" type="ColorRect" parent="Visual"]
+offset_left = -4.0
+offset_top = -27.0
+offset_right = 4.0
+offset_bottom = -25.0
+mouse_filter = 2
+color = Color(0.29, 0.42, 0.42, 1)
+
+[node name="Sword" type="ColorRect" parent="Visual"]
+offset_left = 4.0
+offset_top = -20.0
+offset_right = 26.0
+offset_bottom = -15.0
+pivot_offset = Vector2(0, 2.5)
+mouse_filter = 2
+color = Color(0.784, 0.694, 0.557, 1)
+
+[node name="PlayerController" type="Node" parent="."]
+script = ExtResource("2_ctrl")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("3_hp")
+
+[node name="ToxinMeter" type="Node" parent="."]
+script = ExtResource("4_tox")
+
+[node name="RustCoreInventory" type="Node" parent="."]
+script = ExtResource("5_inv")
+
+[node name="MeleeCombat" type="Node2D" parent="."]
+script = ExtResource("6_melee")
+
+[node name="Hitbox" type="Area2D" parent="MeleeCombat"]
+position = Vector2(18, -14)
+collision_layer = 8
+collision_mask = 48
+monitoring = false
+script = ExtResource("7_hit")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MeleeCombat/Hitbox"]
+shape = SubResource("hit")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 32
+collision_mask = 24
+script = ExtResource("8_hurt")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -13)
+shape = SubResource("hurt")
+
+[node name="InteractionSensor" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 64
+script = ExtResource("9_sense")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionSensor"]
+position = Vector2(0, -14)
+shape = SubResource("sense")
