@@ -35,7 +35,20 @@ func _process(delta: float) -> void:
 	_refresh_cores()
 
 
+const HEART_FULL_PATH := "res://assets/kenney_clean/hud/heartFull.png"
+const HEART_EMPTY_PATH := "res://assets/kenney_clean/hud/heartEmpty.png"
+const HEART_HALF_PATH := "res://assets/kenney_clean/hud/heartHalf.png"
+var _heart_full: Texture2D
+var _heart_empty: Texture2D
+var _heart_half: Texture2D
+var _use_sprite_hearts: bool = false
+
 func _build() -> void:
+	_heart_full = _load_tex(HEART_FULL_PATH)
+	_heart_empty = _load_tex(HEART_EMPTY_PATH)
+	_heart_half = _load_tex(HEART_HALF_PATH)
+	_use_sprite_hearts = _heart_full != null and _heart_empty != null
+
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -43,13 +56,24 @@ func _build() -> void:
 
 	_hp_bar = HBoxContainer.new()
 	_hp_bar.position = Vector2(8, 8)
-	_hp_bar.add_theme_constant_override("separation", 3)
+	_hp_bar.add_theme_constant_override("separation", 2)
 	root.add_child(_hp_bar)
 	for i in 5:
-		var pip := ColorRect.new()
-		pip.custom_minimum_size = Vector2(10, 8)
-		pip.color = Palette.RUST_LIGHT
-		_hp_bar.add_child(pip)
+		if _use_sprite_hearts:
+			var tr := TextureRect.new()
+			tr.texture = _heart_full
+			tr.expand_mode = TextureRect.EXPAND_KEEP_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.custom_minimum_size = Vector2(14, 12)
+			# Tiny Kenney hearts are bright red; tint slightly toward rust palette.
+			tr.modulate = Color(1, 1, 1, 1)
+			tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_hp_bar.add_child(tr)
+		else:
+			var pip := ColorRect.new()
+			pip.custom_minimum_size = Vector2(10, 8)
+			pip.color = Palette.RUST_LIGHT
+			_hp_bar.add_child(pip)
 
 	var toxin_back := ColorRect.new()
 	toxin_back.position = Vector2(8, 20)
@@ -99,12 +123,43 @@ func _build() -> void:
 	root.add_child(hint)
 
 
+func _load_tex(path: String) -> Texture2D:
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path) as Texture2D
+
+
 func _on_hp(current: int, maximum: int) -> void:
+	# Ensure bar size matches max (supports 3-8 hearts).
+	while _hp_bar.get_child_count() < maximum:
+		if _use_sprite_hearts:
+			var tr := TextureRect.new()
+			tr.texture = _heart_full
+			tr.expand_mode = TextureRect.EXPAND_KEEP_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.custom_minimum_size = Vector2(14, 12)
+			tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_hp_bar.add_child(tr)
+		else:
+			var pip := ColorRect.new()
+			pip.custom_minimum_size = Vector2(10, 8)
+			pip.color = Palette.RUST_LIGHT
+			_hp_bar.add_child(pip)
+	while _hp_bar.get_child_count() > maximum:
+		_hp_bar.get_child(_hp_bar.get_child_count() - 1).queue_free()
 	for i in _hp_bar.get_child_count():
-		var pip := _hp_bar.get_child(i) as ColorRect
-		pip.color = Palette.RUST_LIGHT if i < current else Palette.SHADOW
-	if maximum > _hp_bar.get_child_count():
-		pass
+		var child := _hp_bar.get_child(i)
+		if _use_sprite_hearts and child is TextureRect:
+			var tr := child as TextureRect
+			if i < current:
+				tr.texture = _heart_full
+				tr.modulate = Color(1, 1, 1, 1)
+			else:
+				tr.texture = _heart_empty
+				tr.modulate = Color(1, 1, 1, 0.55)
+		elif child is ColorRect:
+			var pip := child as ColorRect
+			pip.color = Palette.RUST_LIGHT if i < current else Palette.SHADOW
 
 
 func _on_toxin(current: float, maximum: float) -> void:
