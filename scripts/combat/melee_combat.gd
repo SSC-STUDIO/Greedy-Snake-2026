@@ -146,6 +146,13 @@ func _begin_active() -> void:
 		hitbox.damage = int(COMBO_DAMAGE[_combo_index])
 		hitbox.already_hit.clear()
 		hitbox.monitoring = true
+		# Finisher is a heavy committed swing — the enemy gets shoved harder.
+		var face := 1.0
+		var host := get_parent()
+		if host is Player:
+			face = float((host as Player).controller.facing)
+		var power := 150.0 if _combo_index >= 2 else 90.0
+		hitbox.knockback = Vector2(face * power, -40.0 if _combo_index >= 2 else -24.0)
 
 
 func _begin_recovery() -> void:
