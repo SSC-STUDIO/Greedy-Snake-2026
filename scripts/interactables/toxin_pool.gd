@@ -6,6 +6,9 @@ extends Area2D
 
 var _bodies: Array = []
 
+## Ambient bubble cadence; Fx no-ops under headless, so this stays test-safe.
+const BUBBLE_INTERVAL := 0.4
+var _bubble_accum := 0.0
 
 const TOXIN_TEX_PATH := "res://assets/kenney_clean/enemies/slimeWalk1.png"
 
@@ -68,3 +71,25 @@ func _physics_process(delta: float) -> void:
 	for body in _bodies:
 		if body is Player:
 			(body as Player).toxin.expose(toxin_per_second * delta)
+	_bubble_accum += delta
+	if _bubble_accum >= BUBBLE_INTERVAL:
+		_bubble_accum -= BUBBLE_INTERVAL
+		Fx.toxin_bubbles(self, _bubble_rect())
+
+
+## Local-space sludge region bubbles rise out of; reads the live collision
+## shape so `configure()` sizes stay in sync. Biased low so bubbles visibly
+## rise through the fill.
+func _bubble_rect() -> Rect2:
+	var pool_size := Vector2(112, 48)
+	var origin := Vector2.ZERO
+	var col := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if col != null and col.shape is RectangleShape2D:
+		var shape_size := (col.shape as RectangleShape2D).size
+		if shape_size.x > 1.0 and shape_size.y > 1.0:
+			pool_size = shape_size
+			origin = col.position - pool_size * 0.5
+	return Rect2(
+		origin + Vector2(4.0, pool_size.y * 0.35),
+		Vector2(pool_size.x - 8.0, pool_size.y * 0.6)
+	)

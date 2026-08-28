@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/interactables/hook_anchor.gd" id="1_anchor"]
+
+[node name="HookAnchor" type="Area2D"]
+script = ExtResource("1_anchor")
+
+[node name="Ring" type="Polygon2D" parent="."]
+color = Color(0.290196, 0.419608, 0.419608, 1)
+polygon = PackedVector2Array(8, 0, 5.66, 5.66, 0, 8, -5.66, 5.66, -8, 0, -5.66, -5.66, 0, -8, 5.66, -5.66)
+
+[node name="Core" type="Polygon2D" parent="."]
+color = Color(1, 0.757, 0.29, 1)
+polygon = PackedVector2Array(2.76, 1.18, 1.18, 2.76, -1.18, 2.76, -2.76, 1.18, -2.77, -1.16, -1.18, -2.76, 1.18, -2.76, 2.77, -1.16)

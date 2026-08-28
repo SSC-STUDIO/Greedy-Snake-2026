@@ -1,7 +1,8 @@
 class_name GameCamera
 extends Camera2D
 ## Smooth follow with a small horizontal look-ahead based on facing / velocity,
-## plus a decaying trauma shake that nudges `offset` (never the limits).
+## plus a decaying trauma shake that nudges `offset` (never the limits), and an
+## external decaying jolt written by the Juice autoload via `shake_offset`.
 
 @export var follow_speed: float = 6.5
 @export var look_ahead: float = 48.0
@@ -16,6 +17,11 @@ var _look: float = 0.0
 var _trauma: float = 0.0
 var _noise := FastNoiseLite.new()
 var _noise_t := 0.0
+
+## External decaying shake, written by Juice every frame while a jolt is
+## active (Vector2.ZERO otherwise). Folded into `offset` in _apply_shake so
+## it stacks with the trauma shake instead of stomping it.
+var shake_offset := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -60,12 +66,12 @@ func _physics_process(delta: float) -> void:
 
 func _apply_shake(delta: float) -> void:
 	if _trauma <= 0.0:
-		offset = Vector2.ZERO
+		offset = shake_offset
 		rotation = 0.0
 		return
 	_noise_t += delta * 24.0
 	var power := _trauma * _trauma
-	offset = Vector2(
+	offset = shake_offset + Vector2(
 		_noise.get_noise_2d(_noise_t, 0.0) * max_shake_offset.x * power,
 		_noise.get_noise_2d(_noise_t, 100.0) * max_shake_offset.y * power
 	)

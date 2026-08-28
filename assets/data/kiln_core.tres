@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RustCore" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/rust_core.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"kiln_core"
+display_name = "Kiln Core"
+description = "Heat Forge — melt rusted gates with the blade's heat."
+ability_id = &"heat_forge"
+tint = Color(1, 0.54902, 0, 1)

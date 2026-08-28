@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="2_ctrl"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="7_hit"]
 [ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="8_hurt"]
 [ext_resource type="Script" path="res://scripts/player/interaction_sensor.gd" id="9_sense"]
+[ext_resource type="Script" path="res://scripts/player/sword_visual.gd" id="10_sword"]
+[ext_resource type="Script" path="res://scripts/player/hookshot_tether.gd" id="11_hook"]
 
 [sub_resource type="RectangleShape2D" id="body"]
 size = Vector2(14, 26)
@@ -63,14 +65,9 @@ offset_bottom = -25.0
 mouse_filter = 2
 color = Color(0.29, 0.42, 0.42, 1)
 
-[node name="Sword" type="ColorRect" parent="Visual"]
-offset_left = 4.0
-offset_top = -20.0
-offset_right = 26.0
-offset_bottom = -15.0
-pivot_offset = Vector2(0, 2.5)
-mouse_filter = 2
-color = Color(0.784, 0.694, 0.557, 1)
+[node name="Sword" type="Polygon2D" parent="Visual"]
+position = Vector2(4, -16)
+script = ExtResource("10_sword")
 
 [node name="PlayerController" type="Node" parent="."]
 script = ExtResource("2_ctrl")
@@ -114,3 +111,6 @@ script = ExtResource("9_sense")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionSensor"]
 position = Vector2(0, -14)
 shape = SubResource("sense")
+
+[node name="HookshotTether" type="Node2D" parent="."]
+script = ExtResource("11_hook")

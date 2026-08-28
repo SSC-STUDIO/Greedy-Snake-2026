@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Rustgrave"
 config/description="A 2D pixel-art Metroidvania of rust, weight, and ember."
-run/main_scene="res://scenes/levels/Level01_Static.tscn"
+run/main_scene="res://scenes/ui/TitleScreen.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -25,6 +25,8 @@ config/icon="res://icon.svg"
 GameEvents="*res://scripts/autoload/game_events.gd"
 Juice="*res://scripts/autoload/juice.gd"
 Sfx="*res://scripts/autoload/sfx.gd"
+Fx="*res://scripts/autoload/fx.gd"
+SaveData="*res://scripts/autoload/save_data.gd"
 
 [display]
 

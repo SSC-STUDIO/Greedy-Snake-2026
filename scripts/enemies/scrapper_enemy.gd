@@ -7,6 +7,11 @@ enum State { PATROL, WINDUP, CHARGE, STUN }
 
 const GRAVITY := 980.0
 
+## Overbright modulate clamps to a white silhouette in the LDR framebuffer —
+## reads as a hit flash across every ColorRect under $Visual at once, and the
+## eye tint keeps following the state machine untouched.
+const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
+
 @export var patrol_range: float = 64.0
 @export var patrol_speed: float = 40.0
 @export var charge_speed: float = 235.0
@@ -22,11 +27,15 @@ var _dir: float = -1.0
 var _timer: float = 0.0
 var _cooldown: float = 0.0
 var _anchor_x: float = 0.0
+var _flash_tween: Tween
 
 @onready var health: Health = $Health
 @onready var charge_box: Hitbox = $ChargeBox
 @onready var visual: Node2D = $Visual
 @onready var eye: ColorRect = $Visual/Eye
+
+## AI 生成的碎甲者（56px 高，面朝左，紧裁切）。
+const AI_TEX_PATH := "res://assets/kenney_clean/enemies_ai/scrapper.png"
 
 
 func _ready() -> void:
@@ -38,6 +47,25 @@ func _ready() -> void:
 	charge_box.team = &"enemy"
 	charge_box.damage = contact_damage
 	charge_box.monitoring = false
+	GameEvents.hit.connect(_on_hit)
+	_build_visual()
+
+
+func _build_visual() -> void:
+	if not ResourceLoader.exists(AI_TEX_PATH):
+		return
+	var spr := Sprite2D.new()
+	spr.name = "BodySprite"
+	spr.texture = load(AI_TEX_PATH) as Texture2D
+	spr.centered = true
+	# 紧裁切：底边是脚，56 高 → 中心在 -28。
+	spr.position = Vector2(0, -28)
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	visual.add_child(spr)
+	# AI 贴图自带造型与橙色独眼：隐藏占位色块（含 Eye，状态由行为/冲锋预告表达）。
+	for c in visual.get_children():
+		if c is ColorRect:
+			c.visible = false
 
 
 func _physics_process(delta: float) -> void:
@@ -117,6 +145,23 @@ func _update_facing() -> void:
 	visual.scale.x = -_dir if _dir > 0.0 else 1.0
 
 
+func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:
+	if target != self:
+		return
+	_flash_white()
+
+
+func _flash_white() -> void:
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	_flash_tween = create_tween()
+	_flash_tween.tween_property(visual, "modulate", FLASH_MODULATE, 0.03)
+	_flash_tween.tween_interval(0.05)
+	_flash_tween.tween_property(visual, "modulate", Color.WHITE, 0.12)
+
+
 func _on_died() -> void:
+	Fx.rust_debris(global_position)
+	Fx.hit_sparks(global_position)
 	GameEvents.announcement.emit("碎甲者崩塌成一堆废铁")
 	queue_free()

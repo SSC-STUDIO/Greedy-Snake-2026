@@ -9,6 +9,7 @@ const SCRAP_TEX_PATH := "res://assets/kenney_clean/interactables/boxItem.png"
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("persistent")
 	prompt = "E 搜刮废料堆"
 	ensure_rect(Vector2(22, 18), Palette.RUST_DARK)
 	var cap := ColorRect.new()
@@ -57,3 +58,15 @@ func interact(actor: Node) -> void:
 		(actor as Player).collect_core(AbilityCatalog.kiln_core())
 		modulate.a = 0.4
 		GameEvents.announcement.emit("废料堆里摸到窑核")
+
+
+## --- persistence ---------------------------------------------------------
+func get_persistent_state() -> Dictionary:
+	return {"looted": _looted}
+
+
+func apply_persistent_state(state: Dictionary) -> void:
+	if bool(state.get("looted", false)):
+		_looted = true
+		prompt = ""
+		modulate.a = 0.4

@@ -1,22 +1,24 @@
 extends Node2D
-## Level01 — static hand-editable chamber (TileMap-ready).
-## All collision geometry is placed in the .tscn; this script only spawns actors and wires signals.
+## Level01 — 静态手摆关卡。
+## 锚点、拾取物、视差背景等全部固化在 .tscn 里，可直接在 Godot 编辑器中
+## 可视化编辑；本脚本只负责生成玩家/相机/HUD 三件套并接线机关信号。
 
 const PLAYER := preload("res://scenes/player/Player.tscn")
 const CAMERA := preload("res://scenes/camera/GameCamera.tscn")
 const HUD := preload("res://scenes/ui/HUD.tscn")
-const PICKUP := preload("res://scenes/interactables/CorePickup.tscn")
 
 # Interactables are already placed in the .tscn under $Props; we only wire them here.
 @onready var plate: PressurePlate = $Props/PressurePlate
 @onready var door: ArenaDoor = $Props/Door
 
 
+const DEFAULT_SPAWN := Vector2(96, 290)
+
+
 func _ready() -> void:
 	_spawn_actors()
 	_wire_props()
-	_spawn_bonus_pickups()
-	GameEvents.announcement.emit("锈墓・壹 — 静态手摆关卡 (640×360, Kenney 贴图已接入，双怪+双核)")
+	GameEvents.announcement.emit("锈墓・壹 — 腐液回廊")
 
 
 func _wire_props() -> void:
@@ -28,29 +30,21 @@ func _wire_props() -> void:
 		toxin.configure(Vector2(112, 32))
 
 
-func _spawn_bonus_pickups() -> void:
-	# Reward precise platforming: extra cores floating over the left tower.
-	var bonus := [
-		[Vector2(60, 120), AbilityCatalog.kiln_core()],
-		[Vector2(495, 210), AbilityCatalog.kiln_core()],
-	]
-	for entry in bonus:
-		var pos: Vector2 = entry[0]
-		var core: RustCore = entry[1]
-		var p: CorePickup = PICKUP.instantiate()
-		p.core = core
-		add_child(p)
-		p.global_position = pos
-		# Gentle bob to telegraph collectible.
-		var tween := create_tween().set_loops()
-		tween.tween_property(p, "position:y", pos.y - 6.0, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.tween_property(p, "position:y", pos.y, 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
-
 func _spawn_actors() -> void:
 	var player: Player = PLAYER.instantiate()
-	player.position = Vector2(96, 290)
+	player.position = DEFAULT_SPAWN
 	add_child(player)
+
+	# Restore a save if we're continuing or respawning from a dead knight.
+	if SaveData.has_save():
+		SaveData.load_game()
+		if SaveData.pending_spawn != Vector2.INF:
+			player.position = SaveData.consume_pending_spawn()
+		elif SaveData.data.has("player") and (SaveData.data["player"] as Dictionary).has("pos"):
+			player.position = SaveData.data["player"]["pos"]
+		SaveData.apply_player(player)
+		SaveData.apply_world(self)
+		SaveData.apply_consumed(self)
 
 	var cam: GameCamera = CAMERA.instantiate()
 	add_child(cam)

@@ -21,3 +21,15 @@ static func tether_core() -> RustCore:
 	core.ability_id = AbilityIds.HOOKSHOT_TETHER
 	core.tint = Palette.TEAL
 	return core
+
+
+## Rehydrate a core from its id (used by SaveData load). Returns null for
+## ids this catalog doesn't know about so old/new saves degrade gracefully.
+static func for_id(id: StringName) -> RustCore:
+	match id:
+		&"kiln_core":
+			return kiln_core()
+		&"tether_core":
+			return tether_core()
+	return null
+

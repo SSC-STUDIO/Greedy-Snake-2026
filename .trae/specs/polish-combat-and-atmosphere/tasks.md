@@ -1,0 +1,49 @@
+# Tasks
+
+- [x] Task 1: 网络素材大检索与接入 — 下载、筛选、落位（首个任务，产出决定后续任务用贴图还是程序化绘制）
+  - [x] 1.1 下载已锁定候选包并解压到 `assets/external/`（保持第三方素材原目录结构）：
+    - ansimuz Industrial Parallax Background（CC0，OGA 直链）→ 4 层工业夜景视差：https://opengameart.org/content/industrial-parallax-background
+    - Pixel art sword slash effect（tbbk, CC0）→ 挥砍精灵表：https://opengameart.org/content/pixel-art-sword-slash-effect
+    - Free Pixel Effects Pack（CodeManu, CC0）→ 火花/气泡/火 VFX：https://opengameart.org/content/free-pixel-effects-pack
+    - （itch.io 候选 VISTA/PVFX/Alenia/Greatsword Knight 需登录下载，无法脚本化获取；已用 OGA 等价 CC0 包替代）
+  - [x] 1.2 继续补充检索（rust / scrapyard / underground tomb / metroidvania 关键词，限 CC0 或免版税），有更贴合的包则替换候选
+  - [x] 1.3 在 `assets/external/CREDITS.md` 记录每个新包的来源 URL + 许可证
+  - [x] 1.4 从本地 Kenney 包拷贝 p1_walk01-11 到 `assets/kenney_clean/player/`；选定素材裁剪版放入 `assets/kenney_clean/`（backgrounds/ vfx/）
+  - [x] 1.5 尺寸/风格校验：视差层 272 宽镜像平铺；VFX 100×100 帧；挥砍表 3×3×(64×47)；.import 由验证阶段统一 `godot --import` 生成
+- [ ] Task 2: 玩家动画状态机 — `player.gd`
+  - [ ] 2.1 载入 walk1/walk2 帧，实现 idle/walk/air/hurt 状态选择与 ~8fps 行走循环
+  - [ ] 2.2 受击时 sprite 短暂红闪（复用现有 hit 信号）
+- [ ] Task 3: 锯齿巨剑可视化 — 新增 `scripts/player/sword_visual.gd` + 挂到 Player.tscn
+  - [ ] 3.1 优先从 Greatsword Knight / CC0 Sword Icons 素材裁剪巨剑贴图；不合用则程序化绘制（Polygon2D，锈色 + 高光边）；随 facing 翻转
+  - [ ] 3.2 订阅 MeleeCombat 挥砍阶段（wind-up/active/recovery），按阶段旋转剑身；不改任何碰撞逻辑
+- [ ] Task 4: 挥砍弧光 — 新增 `scripts/combat/slash_arc.gd`
+  - [ ] 4.1 优先用 tbbk 挥砍精灵表（Sprite2D 帧动画，约 3-4 帧渐隐）；素材不合用则回退 Polygon2D 弧形渐隐
+  - [ ] 4.2 弹反成功时弧光变亮白并延长（监听 GameEvents.parried）
+- [ ] Task 5: Juice 扩展 — screen shake
+  - [ ] 5.1 `juice.gd` 增加 shake(intensity_ms) API：查找当前活动 Camera2D，施加衰减随机偏移（headless 跳过）
+  - [ ] 5.2 接线：命中敌人轻震、玩家受击/弹反中震、死亡重震
+- [ ] Task 6: 粒子系统 — 新增 `scripts/autoload/fx.gd`（或 juice 内扩展）
+  - [ ] 6.1 余烬粒子：玩家周身 ≤6 粒橙色漂浮粒子（优先 Alenia 余烬/光尘帧动画，回退 CPUParticles2D）
+  - [ ] 6.2 落地扬尘 / 冲刺残尘（PVFX Foundry 尘土帧或程序化粒子；监听落地与 dash 信号）
+  - [ ] 6.3 腐液坑气泡、受击火花、敌人死亡锈屑（PVFX Foundry 火花/碎屑帧）
+  - [ ] 6.4 全部效果 headless 守卫，不创建节点
+- [ ] Task 7: 敌人反馈 — `spitter_enemy.gd` / `scrapper_enemy.gd`
+  - [ ] 7.1 受击白闪 ~80ms（modulate tween）
+  - [ ] 7.2 Spitter 蓄力阶段变色/张口预告
+- [ ] Task 8: 视差背景 — `scripts/world/parallax_background.gd` + 挂到 Level01_Static
+  - [ ] 8.1 用 VISTA `flue` 场景的 sky/far/mid/near 4 层搭 ParallaxBackground（motion_mirroring 横向平铺，滚动系数取包内 JSON；near 层可再叠应急橙灯光晕）
+  - [ ] 8.2 不参与碰撞，置于玩家与瓦片图层之后；若色调与锈墓调色冲突，用 modulate 统一向锈红压暗
+- [ ] Task 9: HUD 危险反馈 — `hud.gd`
+  - [ ] 9.1 毒素 ≥80%：毒素条+标签正弦脉冲
+  - [ ] 9.2 生命 ≤1：屏幕红色暗角（CanvasLayer 渐入），恢复后淡出
+- [ ] Task 10: 验证与回归
+  - [ ] 10.1 headless 跑 `tests/run_tests.tscn` 全绿（exit code 0）
+  - [ ] 10.2 真机（Godot 编辑器 F5）肉眼检查：剑摆动、弧光、粒子、震动、视差、HUD 反馈
+  - [ ] 10.3 确认游戏数值与判定逻辑零改动（diff 审查 melee_combat/health 等逻辑路径）
+
+# Task Dependencies
+- Task 2、3 依赖 Task 1（素材）
+- Task 4 依赖 Task 3（弧光挂在剑/挥砍阶段上）
+- Task 5、6、9 相互独立，可并行
+- Task 7、8 独立，可并行
+- Task 10 依赖全部

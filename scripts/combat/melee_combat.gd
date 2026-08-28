@@ -24,7 +24,7 @@ var _combo_index: int = 0
 var _link_buffered: bool = false
 
 @onready var hitbox: Hitbox = $Hitbox
-@onready var sword: ColorRect = get_node_or_null("../Visual/Sword") as ColorRect
+@onready var sword: Node2D = get_node_or_null("../Visual/Sword") as Node2D
 
 
 func _ready() -> void:

@@ -66,6 +66,7 @@ func interact(actor: Node) -> void:
 		GameEvents.announcement.emit("锈门太厚。把窑核嵌进剑里。")
 		return
 	_melted = true
+	SaveData.mark_consumed(String(get_path()))
 	var solid := get_node_or_null("Solid") as StaticBody2D
 	if solid:
 		solid.collision_layer = 0
