@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://brfyrhsh6jhym"
-path="res://.godot/imported/knight_walk_d.png-706c5e31ec1c45fc624d57a705d1d2f5.ctex"
+uid="uid://cxrky0sojvlxg"
+path="res://.godot/imported/knight_pose_fall.png-bcd761b589a0fa81f977d8aa2b13734e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/kenney_clean/player_ai/knight_walk_d.png"
-dest_files=["res://.godot/imported/knight_walk_d.png-706c5e31ec1c45fc624d57a705d1d2f5.ctex"]
+source_file="res://assets/kenney_clean/player_ai/knight_pose_fall.png"
+dest_files=["res://.godot/imported/knight_pose_fall.png-bcd761b589a0fa81f977d8aa2b13734e.ctex"]
 
 [params]
 

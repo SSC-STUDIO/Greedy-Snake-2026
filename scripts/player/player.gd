@@ -20,33 +20,38 @@ const WALK_FRAME_COUNT := 11
 const WALK_FPS := 8.0
 
 ## AI 生成的余烬骑士贴图（紧贴内容裁切，96px 高，脚底在图片底边）。
+## 厚涂风：idle + jump + fall + hurt + 三段斩击（windup/active/parry/recovery）。
+## 行走的逐帧轮换被砍掉，运行时复用 idle；视觉差异用一个简单的代码 bob 补回。
 const AI_DIR := "res://assets/kenney_clean/player_ai/"
 const AI_IDLE_PATH := AI_DIR + "knight_pose_idle.png"
 const AI_JUMP_PATH := AI_DIR + "knight_pose_jump.png"
+const AI_FALL_PATH := AI_DIR + "knight_pose_fall.png"
 const AI_HURT_PATH := AI_DIR + "knight_pose_hurt.png"
-const AI_WALK_PATHS := [
-	AI_DIR + "knight_walk_a.png",
-	AI_DIR + "knight_walk_b.png",
-	AI_DIR + "knight_walk_c.png",
-	AI_DIR + "knight_walk_d.png",
+const AI_SLASH_PATHS := [
+	AI_DIR + "knight_pose_slash_a.png",  # windup
+	AI_DIR + "knight_pose_slash_b.png",  # active (parry)
+	AI_DIR + "knight_pose_slash_c.png",  # recovery
 ]
 ## AI 帧是紧裁切的：精灵中心在半高处（Kenney 图带留白，中心偏移不同）。
 const AI_SPRITE_OFFSET := Vector2(0.0, -48.0)
 const KENNEY_SPRITE_OFFSET := Vector2(0.0, -13.0)
 ## 巨剑在手部的挂点（AI 骑士 96 高，手约在 -52）。
 const AI_SWORD_ANCHOR := Vector2(10.0, -52.0)
+## 行走的代码 bob：在地面移动时给精灵一个 ~2px 的 Y 方向 sin 摆动。
+const WALK_BOB_AMPLITUDE := 1.5
+const WALK_BOB_FREQ := 7.0
 ## 受击红闪（纯表现）：染红后 tween 回白，~120ms。
 const HIT_FLASH_COLOR := Color(1.9, 0.35, 0.35)
 const HIT_FLASH_SECONDS := 0.12
 
 var _sprites: Dictionary = {}
 var _sprite_root: Sprite2D
-var _walk_textures: Array[Texture2D] = []
-var _walk_index := 0
-var _walk_accum := 0.0
-var _melee_active_prev := false
+var _slash_textures: Array[Texture2D] = []
 var _hit_flash_tween: Tween
 var _was_on_floor := true
+var _melee_active_prev := false
+var _bob_t: float = 0.0
+var _moving_prev := false
 
 func _ready() -> void:
 	add_to_group("player")
@@ -113,28 +118,26 @@ func _setup_kenney_sprite() -> void:
 		_sprites["jump"] = load(P_JUMP_PATH) as Texture2D
 	if ResourceLoader.exists(P_HURT_PATH):
 		_sprites["hurt"] = load(P_HURT_PATH) as Texture2D
-	for i in range(1, WALK_FRAME_COUNT + 1):
-		var walk_path := P_WALK_FMT % i
-		if ResourceLoader.exists(walk_path):
-			_walk_textures.append(load(walk_path) as Texture2D)
-	# AI 余烬骑士贴图优先（紧裁切 96px 高）；缺帧则保持 Kenney 回退。
+	# AI 厚涂帧优先（覆盖 Kenney）；缺哪张就 fall-back 到 stand。
 	if ResourceLoader.exists(AI_IDLE_PATH):
 		_sprite_root.position = AI_SPRITE_OFFSET
 		_sprites["stand"] = load(AI_IDLE_PATH) as Texture2D
 		if ResourceLoader.exists(AI_JUMP_PATH):
 			_sprites["jump"] = load(AI_JUMP_PATH) as Texture2D
+		if ResourceLoader.exists(AI_FALL_PATH):
+			_sprites["fall"] = load(AI_FALL_PATH) as Texture2D
 		if ResourceLoader.exists(AI_HURT_PATH):
 			_sprites["hurt"] = load(AI_HURT_PATH) as Texture2D
-		var ai_walk: Array[Texture2D] = []
-		for p in AI_WALK_PATHS:
+		_slash_textures.clear()
+		for p in AI_SLASH_PATHS:
 			if ResourceLoader.exists(p):
-				ai_walk.append(load(p) as Texture2D)
-		if ai_walk.size() >= 2:
-			_walk_textures = ai_walk
+				_slash_textures.append(load(p) as Texture2D)
 		# 巨剑挂点移到 AI 骑士的手部高度。
 		var sword := visual.get_node_or_null("Sword") as Node2D
 		if sword != null:
 			sword.position = AI_SWORD_ANCHOR
+	# FILTER：厚涂的 192px 渲染尺寸在 mipmap 关闭时会闪烁；切到 LINEAR_MIPMAP。
+	_sprite_root.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_sprite_root.texture = _sprites["stand"]
 	_sprite_root.modulate = Color(1, 1, 1, 1)
 
@@ -143,20 +146,34 @@ func _update_kenney_sprite(delta: float) -> void:
 	if _sprite_root == null:
 		return
 	var tex: Texture2D = _sprites.get("stand") as Texture2D
+	var phase := melee.phase_name()
+	var is_slashing := phase != "idle"
+	var slash_idx := 0
+	match phase:
+		"windup": slash_idx = 0
+		"active": slash_idx = 1
+		"recovery": slash_idx = 2
 	if health.current <= 0:
 		tex = _sprites.get("hurt", tex) as Texture2D
+	elif is_slashing and slash_idx < _slash_textures.size():
+		tex = _slash_textures[slash_idx]
 	elif controller.is_dashing() or not is_on_floor():
-		tex = _sprites.get("jump", tex) as Texture2D
-	elif absf(velocity.x) > 12.0 and not _walk_textures.is_empty():
-		# 行走循环：约 8fps；缺帧时回退 stand（modulate 不再参与，保持白色）。
-		var step := 1.0 / WALK_FPS
-		_walk_accum += delta
-		if _walk_accum >= step:
-			_walk_accum = fmod(_walk_accum, step)
-			_walk_index = (_walk_index + 1) % _walk_textures.size()
-		tex = _walk_textures[_walk_index]
+		# 上升/冲刺用 jump，下落用 fall。
+		var key := "fall" if velocity.y > 30.0 and not is_on_floor() else "jump"
+		tex = _sprites.get(key, _sprites.get("jump", tex)) as Texture2D
+	# else: on floor, not slashing, not dashing — show idle (with walk-bob below).
 	if tex != null and _sprite_root.texture != tex:
 		_sprite_root.texture = tex
+	# 行走 bob：地面移动时给精灵 Y 方向 sin 摆动，恢复到 stand 时直接归零。
+	var moving := is_on_floor() and not is_slashing and absf(velocity.x) > 12.0
+	if moving:
+		_bob_t += delta
+		var base_y := AI_SPRITE_OFFSET.y
+		_sprite_root.position.y = base_y + sin(_bob_t * WALK_BOB_FREQ * TAU) * WALK_BOB_AMPLITUDE
+		_moving_prev = true
+	elif _moving_prev:
+		_sprite_root.position.y = AI_SPRITE_OFFSET.y
+		_moving_prev = false
 
 
 ## 检测 MeleeCombat 进入 ACTIVE 的上升沿，生成一次性挥砍弧光（纯视觉）。
