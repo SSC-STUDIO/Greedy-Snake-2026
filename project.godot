@@ -30,12 +30,14 @@ SaveData="*res://scripts/autoload/save_data.gd"
 
 [display]
 
-window/size/viewport_width=640
-window/size/viewport_height=360
+; 1280x720 渲染视口 + GameCamera.zoom=2.0，可视范围仍是 640x360 世界单位。
+; 世界坐标/速度/碰撞盒/关卡布局全部不变，只提升渲染像素密度（厚涂笔触需要）。
+window/size/viewport_width=1280
+window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="viewport"
-window/stretch/scale_mode="integer"
+window/stretch/scale_mode="fractional"
 
 [input]
 
@@ -103,9 +105,12 @@ hookshot={
 
 [rendering]
 
-textures/canvas_textures/default_texture_filter=0
+; 3 = LINEAR_WITH_MIPMAPS。厚涂素材源图 1024^2，实际显示约 192px（约 5x 缩减），
+; 没有 mipmap 会在运动时闪烁；线性过滤也避免 Nearest 把厚涂笔触打成马赛克。
+textures/canvas_textures/default_texture_filter=3
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.102, 0.078, 0.071, 1)
-2d/snap/snap_2d_transforms_to_pixel=true
-2d/snap/snap_2d_vertices_to_pixel=true
+; 像素吸附关闭：厚涂风依赖平滑的亚像素运动与呼吸感运镜
+2d/snap/snap_2d_transforms_to_pixel=false
+2d/snap/snap_2d_vertices_to_pixel=false

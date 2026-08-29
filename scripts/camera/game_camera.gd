@@ -4,6 +4,11 @@ extends Camera2D
 ## plus a decaying trauma shake that nudges `offset` (never the limits), and an
 ## external decaying jolt written by the Juice autoload via `shake_offset`.
 
+## 视口已是 1280x720；zoom=2.0 让可视范围回到 640x360 世界单位，
+## 因此速度/碰撞盒/关卡坐标无需改动，只是每个世界单位渲染成 2x2 像素。
+## 改这个值等于改画面取景（WorldScale 不变，看得更多或更少）。
+const ZOOM := 2.0
+
 @export var follow_speed: float = 6.5
 @export var look_ahead: float = 48.0
 @export var look_ahead_speed: float = 3.2
@@ -26,6 +31,9 @@ var shake_offset := Vector2.ZERO
 
 func _ready() -> void:
 	make_current()
+	# Camera2D.offset 与世界坐标同空间，会随 zoom 线性放大；但世界内容也同比例放大，
+	# 震屏的“相对幅度”不变，所以 max_shake_offset 无需按 ZOOM 补偿。
+	zoom = Vector2(ZOOM, ZOOM)
 	position_smoothing_enabled = false
 	limit_left = 0
 	limit_top = 0

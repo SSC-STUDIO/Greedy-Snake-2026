@@ -3,6 +3,9 @@
 *.translation
 .import/
 
+# AI generation staging (raw 1024^2 outputs, not part of the game)
+.ai_gen/
+
 # OS
 Thumbs.db
 Desktop.ini
