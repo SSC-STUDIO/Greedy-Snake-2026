@@ -14,7 +14,7 @@ Do not give autoload scripts a `class_name` — the autoload name is the API.
 | `Fx` | `scripts/autoload/fx.gd` | Particles, ember attach, death puffs. |
 | `SaveData` | `scripts/autoload/save_data.gd` | `user://` save: player, inventory, persistent world, consumed paths, story `flags`, ending. |
 | `Director` | `scripts/autoload/director.gd` | Fade, sequenced cutscenes, cinematic letterbox. Never touches `Engine.time_scale`. |
-| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_heading` / `wind_speed` / `gust`。API：`wind_vector()` `sway_radians()` `mood_tint()`。不创建 Sprite。演出层是 `WindSway` / `CineFx` / `WeatherFx`。 |
+| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `nest_light_*()` `moon_fill_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
 
 ## Level01 (`scenes/levels/Level01_Static.tscn`)
 
@@ -23,11 +23,25 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 | Script | Role |
 |---|---|
 | `scripts/levels/level01_env.gd` | Shared `plant()` — foliage sits on a foot pivot with `WindSway`. |
-| `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx`. Drift follows `wind_vector()`. |
+| `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx` / `MoonFill`. Drift follows `wind_vector()`. |
 | `scripts/levels/level01_east_wing.gd` | Pit beams, east floor, ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
 | `scripts/levels/level01_story_beats.gd` | One-shot Director scripts from `GameEvents` + east-wing signals. |
 
 East wing is a helper node, not a PackedScene: instancing a sub-scene would reparent those nodes and break save / story lookups.
+
+## Lighting
+
+Night is a cold corridor (`mood_tint` ≈ 30–40% luminance). Lights carve warm pools; HUD / pause / Director stay on isolated canvases.
+
+| Node | Script | Role |
+|---|---|---|
+| `WorldLight` | `scripts/world/world_light.gd` | PointLight2D wrapper. `follow` is `nest` / `indoor` / `heart`. Shadows on. |
+| `EmberNest/NestLight` | planted by the nest | Lit fire only. Flicker follows the flame frame. Unlit = energy 0. |
+| `MoonFill` | `Level01Parallax` | Weak cool `DirectionalLight2D`. Off indoors and on the title. |
+| `ForgeShelter/WarmPool` | `Level01EastWing.place_forge_shelter` | Large dim indoor fill. |
+| `ForgeHeart/HeartLight` | `forge_heart.gd` | Residual heat after `unlock()`. |
+
+`SolidPlatform` / `GearPlatform` already carry `LightOccluder2D`. Purification shrine does not emit. No eighth Autoload.
 
 ## Player (`scenes/player/Player.tscn`)
 
