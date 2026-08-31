@@ -14,6 +14,9 @@ const GRAVITY := 980.0
 const PROJECTILE_SCENE := preload("res://scenes/combat/Projectile.tscn")
 const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
 
+## AI 生成的齿轮盾卫（64px 高，面朝左，紧裁切，脚底在图片底边）。
+const AI_TEX_PATH := "res://assets/kenney_clean/enemies_ai/gear_shield.png"
+
 @export var patrol_range: float = 64.0
 @export var patrol_speed: float = 26.0
 @export var aggro_range: float = 300.0
@@ -47,6 +50,29 @@ func _ready() -> void:
 	GameEvents.hit.connect(_on_hit)
 	_shoot_timer = shoot_interval * 0.6
 	hurtbox.block_check = _shield_block_check
+	_build_visual()
+
+
+## 三级回退：AI 厚涂贴图 → 场景内 ColorRect 占位（Kenney 无对应素材）。
+## 贴图自带机体与齿轮盾；Shield 多边形保留为格挡/蓄力指示层。
+func _build_visual() -> void:
+	if not ResourceLoader.exists(AI_TEX_PATH):
+		return
+	var spr := Sprite2D.new()
+	spr.name = "BodySprite"
+	spr.texture = load(AI_TEX_PATH) as Texture2D
+	spr.centered = true
+	# 紧裁切：底边是脚，64 高 → 中心在 -32。
+	spr.position = Vector2(0, -32)
+	# 原图面朝左；Visual 的 scale.x=1 约定为面朝右（盾在 +x 侧），先水平翻转。
+	spr.flip_h = true
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	visual.add_child(spr)
+	# 排到最前，让 Shield 指示层画在贴图上方。
+	visual.move_child(spr, 0)
+	for c in visual.get_children():
+		if c is ColorRect:
+			c.visible = false
 
 
 func _physics_process(delta: float) -> void:
