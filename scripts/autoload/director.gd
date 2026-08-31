@@ -33,6 +33,13 @@ var _fade: ColorRect
 var _caption_layer: CanvasLayer
 var _caption: Caption
 var _fade_tween: Tween
+var _letter_layer: CanvasLayer
+var _letter_top: ColorRect
+var _letter_bot: ColorRect
+var _letter_amount: float = 0.0
+var _letter_target: float = 0.0
+const LETTER_BAR := 32.0
+const LETTER_SPEED := 3.4
 
 
 func _ready() -> void:
@@ -60,8 +67,60 @@ func _build_overlay() -> void:
 	_caption = Caption.new()
 	_caption.name = "Caption"
 	_caption_layer.add_child(_caption)
+	_letter_layer = CanvasLayer.new()
+	_letter_layer.name = "DirectorLetterbox"
+	_letter_layer.layer = 11
+	_letter_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_letter_layer)
+	_letter_top = _make_bar(true)
+	_letter_bot = _make_bar(false)
+	_letter_layer.add_child(_letter_top)
+	_letter_layer.add_child(_letter_bot)
 	WorldClock.isolate_ui_layer(_fade_layer)
 	WorldClock.isolate_ui_layer(_caption_layer)
+	WorldClock.isolate_ui_layer(_letter_layer)
+
+
+func _make_bar(top: bool) -> ColorRect:
+	var bar := ColorRect.new()
+	bar.color = Color(0, 0, 0, 1)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.set_anchors_preset(Control.PRESET_TOP_WIDE if top else Control.PRESET_BOTTOM_WIDE)
+	bar.offset_left = 0.0
+	bar.offset_right = 0.0
+	if top:
+		bar.offset_top = 0.0
+		bar.offset_bottom = 0.0
+	else:
+		bar.offset_top = 0.0
+		bar.offset_bottom = 0.0
+	return bar
+
+
+func set_letterbox(on: bool, instant: bool = false) -> void:
+	_letter_target = 1.0 if on else 0.0
+	if instant:
+		_letter_amount = _letter_target
+		_apply_letterbox()
+
+
+func letterbox_amount() -> float:
+	return _letter_amount
+
+
+func _tick_letterbox(delta: float) -> void:
+	_letter_amount = move_toward(_letter_amount, _letter_target, delta * LETTER_SPEED)
+	_apply_letterbox()
+
+
+func _apply_letterbox() -> void:
+	if _letter_top == null or _letter_bot == null:
+		return
+	var h := LETTER_BAR * _letter_amount
+	_letter_top.offset_bottom = h
+	_letter_bot.offset_top = -h
+	_letter_top.visible = h > 0.2
+	_letter_bot.visible = h > 0.2
 
 
 func caption() -> Caption:
@@ -139,6 +198,7 @@ func play(script: Array) -> void:
 	playing = true
 	_waiting = false
 	_wait_kind = ""
+	set_letterbox(true)
 	_advance()
 
 
@@ -167,6 +227,7 @@ func abort() -> void:
 	_index = -1
 	_waiting = false
 	_wait_kind = ""
+	set_letterbox(false)
 	var was := playing
 	playing = false
 	if was:
@@ -182,6 +243,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _process(delta: float) -> void:
+	_tick_letterbox(delta)
 	if _suspended or get_tree().paused:
 		return
 	if not playing or not _waiting:
@@ -249,6 +311,9 @@ func _run_step(step: Dictionary) -> void:
 			if cam != null:
 				cam.release()
 			_begin_wait(dur, "cam")
+		"letterbox":
+			set_letterbox(bool(step.get("on", true)), bool(step.get("instant", false)))
+			_begin_wait(float(step.get("duration", 0.28)), "letterbox")
 		"sfx":
 			Sfx.play(StringName(step.get("id", "ui_select")))
 			_finish_step(step)
@@ -291,6 +356,7 @@ func _finish_play() -> void:
 		play(next)
 		return
 	_set_lock(false)
+	set_letterbox(false)
 	finished.emit()
 
 

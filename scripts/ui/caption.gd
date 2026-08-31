@@ -29,8 +29,9 @@ func _ready() -> void:
 	_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_panel.offset_left = -320.0
 	_panel.offset_right = 320.0
-	_panel.offset_top = -86.0
-	_panel.offset_bottom = -28.0
+	# Sit on the Director letterbox (32px), not in the playfield.
+	_panel.offset_top = -52.0
+	_panel.offset_bottom = -6.0
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.visible = false
 	add_child(_panel)

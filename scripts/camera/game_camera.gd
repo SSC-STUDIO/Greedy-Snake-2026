@@ -19,6 +19,9 @@ const ZOOM := 2.0
 @export var trauma_decay: float = 1.7
 
 var _look: float = 0.0
+var _vert_look: float = 0.0
+var _land_punch: float = 0.0
+var _was_air: bool = false
 var _trauma: float = 0.0
 var _noise := FastNoiseLite.new()
 var _noise_t := 0.0
@@ -95,16 +98,36 @@ func _physics_process(delta: float) -> void:
 		zoom = Vector2(z, z)
 		_apply_shake(delta)
 		return
+	_land_punch = move_toward(_land_punch, 0.0, delta / 0.22)
 	var target := get_tree().get_first_node_in_group("player") as Player
 	if target == null:
+		_apply_shake(delta)
 		return
+	var airborne := not target.is_on_floor()
+	if _was_air and not airborne:
+		notify_landed()
+	_was_air = airborne
 	var desired := float(target.controller.facing) * look_ahead * 0.45
 	if absf(target.velocity.x) > 18.0:
 		desired = signf(target.velocity.x) * look_ahead
+	var climb := 0.0
+	if target.global_position.y < 200.0:
+		var k := clampf((200.0 - target.global_position.y) / 88.0, 0.0, 1.0)
+		desired *= lerpf(1.0, 0.52, k)
+		climb = -22.0 * k
 	_look = lerpf(_look, desired, 1.0 - exp(-look_ahead_speed * delta))
-	var dest := target.global_position + Vector2(_look, vertical_offset)
+	_vert_look = lerpf(_vert_look, climb, 1.0 - exp(-4.0 * delta))
+	var dest := target.global_position + Vector2(_look, vertical_offset + _vert_look + 7.0 * _land_punch)
 	global_position = global_position.lerp(dest, 1.0 - exp(-follow_speed * delta))
 	_apply_shake(delta)
+
+
+func notify_landed() -> void:
+	_land_punch = 1.0
+
+
+func land_punch() -> float:
+	return _land_punch
 
 
 func _apply_shake(delta: float) -> void:

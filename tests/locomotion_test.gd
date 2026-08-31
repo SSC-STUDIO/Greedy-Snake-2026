@@ -104,3 +104,12 @@ func test_extra_jump_requires_unlock() -> void:
 	ctrl._buffer = 1.0
 	ctrl._try_jump(body)
 	ok(body.velocity.y < -100.0, "grant_air_jump can still give one extra")
+
+
+func test_camera_land_punch_decays() -> void:
+	var cam := GameCamera.new()
+	add_child(cam)
+	cam.notify_landed()
+	almost(cam.land_punch(), 1.0, 0.01)
+	cam._physics_process(0.12)
+	ok(cam.land_punch() < 0.7, "landing settle fades")

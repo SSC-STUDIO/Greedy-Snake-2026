@@ -95,6 +95,7 @@ func _build_flash_layer() -> void:
 	_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_flash_rect.modulate.a = 0.0
 	_flash_layer.add_child(_flash_rect)
+	WorldClock.isolate_ui_layer(_flash_layer)
 
 
 func _update_shake_offset() -> void:
@@ -136,10 +137,12 @@ func _on_hit(attacker: Node, target: Node, amount: int) -> void:
 	if attacker == null or target == null:
 		return
 	if target.is_in_group("player"):
+		Sfx.play(&"hurt")
 		flash(Color(0.72, 0.22, 0.14, 0.5), 90)
 		hit_stop(60, 0.08)
 		shake(4.0, 160)
 	else:
+		Sfx.play(&"hit_flesh")
 		# Landing a blow still deserves a beat — shorter and punchier.
 		hit_stop(40, 0.12)
 		shake(2.0, 90)

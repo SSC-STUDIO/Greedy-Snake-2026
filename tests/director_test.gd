@@ -139,3 +139,14 @@ func test_play_overflow_drops_oldest_queued() -> void:
 	ok(kinds.has("newest"), "newest script still ran")
 	ok(kinds.has("keep_%d" % (Director.PLAY_QUEUE_MAX - 1)), "later queued scripts kept")
 	Director.step_started.disconnect(on_step)
+
+
+func test_letterbox_opens_during_play_and_closes() -> void:
+	Director.set_letterbox(false, true)
+	almost(Director.letterbox_amount(), 0.0, 0.01)
+	Director.play([{"kind": "wait", "seconds": 2.0}])
+	Director._tick_letterbox(0.4)
+	ok(Director.letterbox_amount() > 0.4, "play opens the bars")
+	Director.abort()
+	Director.set_letterbox(false, true)
+	almost(Director.letterbox_amount(), 0.0, 0.01, "abort clears the bars")
