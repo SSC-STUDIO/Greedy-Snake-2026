@@ -4,8 +4,9 @@ extends StaticBody2D
 ## - "ground": grass top + cemetery dirt that fades to near-black — for
 ##   terrain rooted in the earth (bottoms may run off-screen unfinished).
 ## - "floating": church hovering-slab stones — finished top face, closed
-##   left/right ends, ragged hanging underside. For airborne steps, which
-##   must never show a raw dirt cross-section.
+##   left/right ends, ragged hanging underside that shows sky through the
+##   gaps. For airborne steps, which must never show a raw dirt
+##   cross-section nor a boxy filled bottom.
 ## Missing art falls back to a ColorRect (headless/tests).
 
 @export var size: Vector2 = Vector2(64, 16)
@@ -33,9 +34,14 @@ const FILL_FADE_A := "res://assets/env/tile_fill_fade_a.png"
 const FILL_FADE_B := "res://assets/env/tile_fill_fade_b.png"
 const FILL_DEEP := "res://assets/env/tile_fill_deep.png"
 const FLOAT_LEFT := "res://assets/env/float_left.png"
-const FLOAT_MID_A := "res://assets/env/float_mid_a.png"
-const FLOAT_MID_B := "res://assets/env/float_mid_b.png"
 const FLOAT_RIGHT := "res://assets/env/float_right.png"
+## 四种中段：同一石板的不同切段（含镜像），垂挂轮廓各不相同。
+const FLOAT_MIDS: Array[String] = [
+	"res://assets/env/float_mid_a.png",
+	"res://assets/env/float_mid_b.png",
+	"res://assets/env/float_mid_c.png",
+	"res://assets/env/float_mid_d.png",
+]
 ## 悬浮石台整体略偏冷灰，和草顶暖土在同一色板里拉开对比。
 const FLOAT_TONE := Color(0.82, 0.8, 0.95)
 const WORLD := 16.0
@@ -61,6 +67,7 @@ func _ready() -> void:
 	col.shape = shape
 	col.position = size * 0.5
 	add_child(col)
+	_add_light_occluder()
 
 
 func _build_visual() -> void:
@@ -170,13 +177,13 @@ func _build_visual() -> void:
 			add_child(spr)
 
 
-## 悬浮石台：左右端头 + 交替中段，顶面与碰撞体顶对齐，垂挂岩底自然收边。
+## 悬浮石台：左右端头 + 随机中段，顶面与碰撞体顶对齐，薄石板 + 短垂岩（透明）。
 ## 端头永远画完整 16px（非整数宽度时右端头向左回收对齐 size.x，盖在中段上）。
 func _build_floating() -> bool:
 	var lcap := _load_tex(FLOAT_LEFT)
 	var rcap := _load_tex(FLOAT_RIGHT)
 	var mids: Array[Texture2D] = []
-	for path in [FLOAT_MID_A, FLOAT_MID_B]:
+	for path in FLOAT_MIDS:
 		var t := _load_tex(path)
 		if t != null:
 			mids.append(t)
@@ -184,14 +191,17 @@ func _build_floating() -> bool:
 		return false
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(Vector4(position.x, position.y, size.x, size.y))
-	var mid_flip := rng.randi_range(0, 1)
 	# 中段先铺（16..size.x-16），端头最后画压在上面，保证两端永远是完整收边。
+	# 每格随机取一种中段且不与前一格重复，长台的垂挂轮廓才不会按 16px 打拍子。
 	var x := WORLD
-	var i := 0
+	var prev := -1
 	while x < size.x - WORLD - 0.01:
-		_add_float_piece(mids[(i + mid_flip) % mids.size()], x, minf(WORLD, size.x - WORLD - x))
+		var i := rng.randi_range(0, mids.size() - 1)
+		if i == prev and mids.size() > 1:
+			i = (i + 1 + rng.randi_range(0, mids.size() - 2)) % mids.size()
+		prev = i
+		_add_float_piece(mids[i], x, minf(WORLD, size.x - WORLD - x))
 		x += WORLD
-		i += 1
 	_add_float_piece(lcap, 0.0, WORLD)
 	_add_float_piece(rcap, size.x - WORLD, WORLD)
 	return true
@@ -228,6 +238,23 @@ func _load_tex(path: String) -> Texture2D:
 	if ResourceLoader.exists(path):
 		return load(path) as Texture2D
 	return null
+
+
+## Occluder matches the collision rectangle only — never the hanging float skin.
+func _add_light_occluder() -> void:
+	if get_node_or_null("LightOccluder") != null:
+		return
+	var occ := LightOccluder2D.new()
+	occ.name = "LightOccluder"
+	var poly := OccluderPolygon2D.new()
+	poly.polygon = PackedVector2Array([
+		Vector2.ZERO,
+		Vector2(size.x, 0.0),
+		Vector2(size.x, size.y),
+		Vector2(0.0, size.y),
+	])
+	occ.occluder = poly
+	add_child(occ)
 
 
 func _fallback_rect() -> void:

@@ -155,6 +155,84 @@ def mountains_lift(src: Image.Image) -> Image.Image:
     return out
 
 
+# The Gothicvania hovering islands paint the mass below the rock in one flat
+# near-black; nothing else in those tiles uses it.
+FLOAT_SHADOW = (27, 15, 43, 255)
+
+
+def carve_underside(src: Image.Image) -> Image.Image:
+    """Knock the flat shadow block out from under a hovering slab.
+
+    The source art is a pale slab sitting on a full-width rectangle of that
+    one near-black, which only reads as depth over a dark backdrop — on the
+    maroon sky every step looks like a box. Dropping the colour leaves the
+    slab plus the broken rock hanging off it. Clusters that end up detached
+    from the walkable top row are specks, and the drained bottom rows are
+    trimmed so the texture height matches the real silhouette.
+    """
+    out = src.convert("RGBA").copy()
+    px = out.load()
+    w, h = out.size
+    for y in range(h):
+        for x in range(w):
+            if px[x, y] == FLOAT_SHADOW:
+                px[x, y] = (0, 0, 0, 0)
+    keep = [[False] * w for _ in range(h)]
+    stack = [(x, 0) for x in range(w) if px[x, 0][3] >= 8]
+    for x, y in stack:
+        keep[y][x] = True
+    while stack:
+        x, y = stack.pop()
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h and not keep[ny][nx] and px[nx, ny][3] >= 8:
+                    keep[ny][nx] = True
+                    stack.append((nx, ny))
+    bottom = 0
+    for y in range(h):
+        for x in range(w):
+            if keep[y][x]:
+                bottom = y
+            else:
+                px[x, y] = (0, 0, 0, 0)
+    return out.crop((0, 0, w, bottom + 1))
+
+
+# Walkable stone lip + short hanging rock. The carved island is still a
+# 26-30px purple mass; the fill between lip and underside is what reads as
+# a thick wall. Drop that band so the sprite is a thin slab (~14px).
+FLOAT_LIP = 8
+FLOAT_HANG = 6
+
+
+def squash_slab(src: Image.Image, lip: int = FLOAT_LIP, hang: int = FLOAT_HANG) -> Image.Image:
+    """Keep the walkable lip; slide ragged rock up; drop the solid middle.
+
+    A row still counts as slab body if at most one column is empty (the
+    island's open end). The first row thinner than that is hanging rock.
+    """
+    w, h = src.size
+    px = src.load()
+    hang_start = h
+    for y in range(h):
+        opa = sum(1 for x in range(w) if px[x, y][3] >= 8)
+        if opa < w - 1:
+            hang_start = y
+            break
+    take = min(hang, max(0, h - hang_start))
+    out = Image.new("RGBA", (w, lip + take), (0, 0, 0, 0))
+    out.paste(src.crop((0, 0, w, min(lip, h))), (0, 0))
+    if take:
+        out.paste(src.crop((0, hang_start, w, hang_start + take)), (0, lip))
+    op = out.load()
+    bottom = 0
+    for y in range(out.size[1]):
+        if any(op[x, y][3] >= 8 for x in range(w)):
+            bottom = y
+    return out.crop((0, 0, w, bottom + 1))
+
+
 def cover_watermark(path: Path) -> None:
     im = Image.open(path).convert("RGB")
     w, h = im.size
@@ -162,6 +240,11 @@ def cover_watermark(path: Path) -> None:
     # Sample a dark nearby pixel (left of the badge).
     sample = px[max(0, w - 300), min(h - 1, h - 18)]
     x0, y0 = w - 250, h - 46
+    # This edits the keyart in place, and the soft edge would creep darker on
+    # every run. Bail out once the patch interior is already flat.
+    if all(px[x, y] == sample for y in range(y0 + 10, h) for x in range(x0 + 14, w)):
+        print("watermark already covered:", path)
+        return
     for y in range(y0, h):
         for x in range(x0, w):
             # Soft-ish edge: blend 10px from the left/top of the patch.
@@ -214,24 +297,42 @@ def main() -> None:
     plate.save(ENV / "plate_stone.png")
     print("wrote plate_stone.png", plate.size)
 
-    # Floating stone platforms: church "hovering island" chunk at x0-48,
-    # rows 10-12 — pale slab top face + dark ragged rock hanging underneath.
-    # Content starts at y=168 -> sprite y=0 == walkable top. mid_b is a
-    # mirrored mid_a so long platforms don't strobe one identical column.
+    # Floating stone platforms, cut from the church "hovering island" at
+    # x0-48. y=169 is the first row opaque across the whole island, so with
+    # sprite y=0 there the walkable top is a flat line on the collision box.
+    # Mid variants come from overlapping spans of x1-28 (the crack-free half)
+    # plus mirrors, so a long platform never repeats one hanging profile. The
+    # right cap mirrors the left one: the island's own right end is split by
+    # a fissure that, once the shadow is gone, tears open at the tile seam.
+    # After carving, squash_slab drops the solid purple middle so the
+    # in-game piece is a ~14px slab (8px lip + short hang), not a 30px wall.
+    island_y, island_h = 169, 39
+
+    def slab(x0: int, mirror: bool = False) -> Image.Image:
+        cut = church.crop((x0, island_y, x0 + TILE, island_y + island_h))
+        if mirror:
+            cut = cut.transpose(Image.FLIP_LEFT_RIGHT)
+        return squash_slab(carve_underside(cut))
+
     floats = {
-        "float_left.png": (0, 168, 16, 208),
-        "float_mid_a.png": (16, 168, 32, 208),
-        "float_right.png": (32, 168, 48, 208),
-        "float_small.png": (192, 160, 224, 192),  # 2-tile hovering block
+        "float_left.png": slab(0),
+        "float_right.png": slab(0, mirror=True),
+        "float_mid_a.png": slab(6),
+        "float_mid_b.png": slab(11, mirror=True),
+        "float_mid_c.png": slab(1),
+        "float_mid_d.png": slab(6, mirror=True),
     }
-    for name, box in floats.items():
-        img = church.crop(box).convert("RGBA")
+    # 2-tile hovering block for the gear platform. The sheet's own 32x32
+    # blocks (x192 / x240) are a stepped pair whose raised half is nothing but
+    # shadow below the lip, so carving leaves a stub; two mirrored end caps
+    # give a closed little rock with a flat top instead.
+    small = Image.new("RGBA", (TILE * 2, floats["float_left.png"].height))
+    small.alpha_composite(floats["float_left.png"], (0, 0))
+    small.alpha_composite(floats["float_right.png"], (TILE, 0))
+    floats["float_small.png"] = small
+    for name, img in floats.items():
         img.save(ENV / name)
-        print("wrote", name, img.size)
-    mid_b = church.crop(floats["float_mid_a.png"]).convert("RGBA")
-    mid_b = mid_b.transpose(Image.FLIP_LEFT_RIGHT)
-    mid_b.save(ENV / "float_mid_b.png")
-    print("wrote float_mid_b.png", mid_b.size)
+        print("wrote", name, img.size, "alpha", img.getchannel("A").getextrema())
 
     # Parallax set: seamless sky (352x224 after edge crossfade) + lifted
     # mountains. Always rebuilt from the untouched external sources.
