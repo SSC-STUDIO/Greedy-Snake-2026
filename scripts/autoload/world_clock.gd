@@ -19,7 +19,7 @@ signal wind_changed(heading: float, speed: float)
 
 ## 20 min around the clock; 昼→夜 lands near the 8–12 min brief.
 const CYCLE_SECONDS := 1200.0
-const DEFAULT_TIME := 0.28
+const DEFAULT_TIME := 0.52
 const TITLE_TIME := 0.56
 const TICK_INTERVAL := 0.25
 const WEATHER_HOLD_MIN := 50.0
@@ -30,14 +30,14 @@ const BLEND_MAX := 8.0
 ## Outdoor night is a cold corridor so WorldLight pools can carve.
 ## Floor stays above a black frame; HUD isolate keeps UI readable.
 const NIGHT_TINT := Color(0.36, 0.34, 0.48)
-const DAY_TINT := Color(0.955, 0.92, 1.0)
-const DAWN_TINT := Color(0.86, 0.82, 0.94)
+const DAY_TINT := Color(0.82, 0.80, 0.88)
+const DAWN_TINT := Color(0.78, 0.74, 0.86)
 const DUSK_TINT := Color(0.70, 0.60, 0.68)
 ## Indoor: warmer than outdoor night. Readability comes from the warm pool.
 const INDOOR_TINT := Color(0.66, 0.52, 0.42)
 const RUST_RAIN_INTERVAL := 1.6
 const RUST_RAIN_EXPOSE := 8.0
-const BREEZE_BASE := 0.22
+const BREEZE_BASE := 0.28
 const INDOOR_WIND_FADE := 1.5
 const HEADING_TURN := 42.0
 
@@ -384,25 +384,25 @@ func sky_modulate() -> Color:
 func nest_light_energy() -> float:
 	match phase:
 		Phase.NIGHT:
-			return 1.65
+			return 2.60
 		Phase.DUSK:
-			return 0.95
+			return 1.90
 		Phase.DAWN:
-			return 0.40
+			return 1.55
 		_:
-			return 0.14
+			return 1.35
 
 
 func nest_light_radius() -> float:
 	match phase:
 		Phase.NIGHT:
-			return 120.0
+			return 210.0
 		Phase.DUSK:
-			return 96.0
+			return 170.0
 		Phase.DAWN:
-			return 72.0
+			return 155.0
 		_:
-			return 52.0
+			return 140.0
 
 
 func moon_fill_energy() -> float:
@@ -420,19 +420,19 @@ func moon_fill_energy() -> float:
 
 
 func indoor_fill_energy() -> float:
-	return 0.55
+	return 0.85
 
 
 func indoor_fill_radius() -> float:
-	return 180.0
+	return 220.0
 
 
 func heart_light_energy() -> float:
-	return 0.45
+	return 0.70
 
 
 func heart_light_radius() -> float:
-	return 64.0
+	return 80.0
 
 
 func weather_weight(kind: int) -> float:
@@ -519,7 +519,9 @@ func wind_vector() -> Vector2:
 
 
 func sway_radians() -> float:
-	return deg_to_rad(3.4) * wind_heading * wind_speed * gust
+	if wind_speed <= 0.04:
+		return 0.0
+	return deg_to_rad(10.0) * wind_heading * clampf(wind_speed * 2.4, 0.35, 1.4) * gust
 
 
 func is_breeze_active() -> bool:

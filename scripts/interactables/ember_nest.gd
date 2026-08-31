@@ -12,12 +12,14 @@ const SPARK_FRAMES := 8
 const LIT_FPS := 12.0
 const LIT_MOD := Color(1.0, 0.92, 0.62, 1.0)
 const LIGHT_COLOR := Color(1.0, 0.70, 0.36)
+const HALO_PATH := "res://assets/env/glow_soft.png"
 
 var _lit: bool = false
 var _flame: Sprite2D
 var _sparks: Node2D
 var _light: WorldLight
 var _beam: Sprite2D
+var _halo: Sprite2D
 var _frame_t := 0.0
 var _spark_t := 0.35
 var _headless := false
@@ -32,6 +34,7 @@ func _ready() -> void:
 	_headless = DisplayServer.get_name() == "headless"
 	_ensure_flame()
 	_ensure_light()
+	_ensure_halo()
 	_ensure_beam()
 	_apply_flame_state()
 	if not WorldClock.phase_changed.is_connected(_on_atmosphere):
@@ -116,6 +119,37 @@ func _ensure_light() -> void:
 	_light = light
 
 
+func _ensure_halo() -> void:
+	if _halo != null:
+		return
+	var spr := Sprite2D.new()
+	spr.name = "Halo"
+	if ResourceLoader.exists(HALO_PATH):
+		spr.texture = load(HALO_PATH) as Texture2D
+	spr.centered = true
+	spr.position = Vector2(7, -10)
+	spr.z_index = 0
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spr.material = mat
+	spr.visible = false
+	spr.modulate = Color(1.0, 0.62, 0.28, 0.0)
+	add_child(spr)
+	_halo = spr
+
+
+func _sync_halo() -> void:
+	if _halo == null:
+		return
+	_halo.visible = _lit
+	if not _lit:
+		_halo.modulate.a = 0.0
+		return
+	var k := clampf(WorldClock.nest_light_energy() / 2.60, 0.45, 1.0)
+	_halo.scale = Vector2(1.85, 1.65) * (0.85 + 0.25 * k)
+	_halo.modulate = Color(1.0, 0.62, 0.28, 0.38 + 0.28 * k)
+
+
 func _sync_light(delta: float) -> void:
 	if _light == null:
 		return
@@ -155,12 +189,14 @@ func _lean_flame() -> void:
 	var lean := WorldClock.sway_radians() * 0.55 if _lit else 0.0
 	if _flame != null:
 		_flame.rotation = lean
+	if _halo != null:
+		_halo.rotation = lean * 0.2
 	if _beam != null:
 		_beam.rotation = lean * 0.35
 		_beam.visible = _lit
 		if _lit:
 			var e := WorldClock.nest_light_energy()
-			_beam.modulate.a = 0.10 + 0.22 * clampf(e / 1.65, 0.0, 1.0)
+			_beam.modulate.a = 0.16 + 0.28 * clampf(e / 2.60, 0.0, 1.0)
 		else:
 			_beam.modulate.a = 0.0
 
@@ -177,6 +213,7 @@ func _apply_flame_state() -> void:
 			for child in _sparks.get_children():
 				child.queue_free()
 	_sync_light(999.0)
+	_sync_halo()
 	_lean_flame()
 
 

@@ -16,6 +16,7 @@ func _ready() -> void:
 	shadow_enabled = true
 	shadow_filter = Light2D.SHADOW_FILTER_NONE
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	blend_mode = Light2D.BLEND_MODE_ADD
 	if texture == null:
 		texture = _radial_texture()
 	apply(true)
