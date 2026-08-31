@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://c02h087f3omgc"]
+[gd_scene load_steps=23 format=3 uid="uid://c02h087f3omgc"]
 
 [ext_resource type="Script" path="res://scripts/levels/level01_static.gd" id="1_level"]
 [ext_resource type="PackedScene" path="res://scenes/world/Platform.tscn" id="2_plat"]
@@ -19,6 +19,8 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/CorePickup.tscn" id="20_pickup"]
 [ext_resource type="Resource" path="res://assets/data/kiln_core.tres" id="21_kiln"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/EmberNest.tscn" id="22_nest"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ScrapperEnemy.tscn" id="23_scrapper"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/GearShieldEnemy.tscn" id="24_gearshield"]
 
 [node name="Level01_Static" type="Node2D"]
 script = ExtResource("1_level")
@@ -192,7 +194,13 @@ position = Vector2(150, 306)
 position = Vector2(812, 184)
 
 [node name="Spitter2" parent="Props" instance=ExtResource("12_spitter")]
-position = Vector2(1018, 164)
+position = Vector2(1018, 180)
+
+[node name="Scrapper1" parent="Props" instance=ExtResource("23_scrapper")]
+position = Vector2(860, 320)
+
+[node name="GearShield1" parent="Props" instance=ExtResource("24_gearshield")]
+position = Vector2(960, 320)
 
 [node name="Hooks" type="Node2D" parent="."]
 
