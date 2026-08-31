@@ -18,6 +18,7 @@ var save_path := "user://rustgrave_save.cfg"
 ##   player    = { hp, max_hp, toxin, max_toxin, pos (Vector2), facing }
 ##   inventory = { pouch: [core ids], sockets: [core ids or ""] }
 ##   world     = { "/root/Level01../Props/Door": {...}, ... }
+##   atmosphere = { time_of_day (0–1), weather }
 var data: Dictionary = {}
 
 ## One-shot spawn override consumed by a level right after it instantiates the
@@ -87,6 +88,10 @@ func save_game(scene_path: String, player: Node) -> bool:
 	cfg.set_value("lit_nests", "paths", Array(lit_nests))
 	cfg.set_value("story", "flags", Array(flags))
 	cfg.set_value("meta", "ending", ending)
+	var atmosphere := WorldClock.snapshot()
+	data["atmosphere"] = atmosphere
+	cfg.set_value("atmosphere", "time_of_day", float(atmosphere.get("time_of_day", WorldClock.DEFAULT_TIME)))
+	cfg.set_value("atmosphere", "weather", String(atmosphere.get("weather", "haze")))
 	var err := cfg.save(save_path)
 	if err != OK:
 		push_warning("SaveData: failed to save to %s (err %d)" % [save_path, err])
@@ -132,6 +137,12 @@ func load_game() -> bool:
 	for f in cfg.get_value("story", "flags", []):
 		flags.append(String(f))
 	ending = String(cfg.get_value("meta", "ending", ""))
+	var atmosphere := {
+		"time_of_day": float(cfg.get_value("atmosphere", "time_of_day", WorldClock.DEFAULT_TIME)),
+		"weather": String(cfg.get_value("atmosphere", "weather", "haze")),
+	}
+	data["atmosphere"] = atmosphere
+	WorldClock.apply_snapshot(atmosphere)
 	return true
 
 
@@ -143,6 +154,7 @@ func delete_save() -> void:
 	lit_nests.clear()
 	flags.clear()
 	ending = ""
+	WorldClock.reset()
 
 
 ## Record that a one-shot interactable at `path` has been consumed (picked up,

@@ -61,6 +61,7 @@ var _time := 0.0
 var _breath_time := 0.0
 var _announce_queue: Array[String] = []
 var _resonating := false
+var _atmos_hint: Label
 
 
 func _ready() -> void:
@@ -78,6 +79,9 @@ func _ready() -> void:
 	GameEvents.core_acquired.connect(func(_c): _refresh_cores())
 	GameEvents.sockets_changed.connect(_refresh_cores)
 	GameEvents.resonance_changed.connect(_on_resonance)
+	WorldClock.phase_changed.connect(_on_atmosphere)
+	WorldClock.weather_changed.connect(_on_atmosphere)
+	_refresh_atmosphere()
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player:
 		_on_hp(player.health.current, player.health.max_hp)
@@ -138,6 +142,9 @@ func _build_stat_panel(root: Control) -> void:
 	column.add_child(_socket_label)
 	_pouch_label = UiKit.label("袋中 0", &"HudLabel")
 	column.add_child(_pouch_label)
+	_atmos_hint = UiKit.label("", &"FootnoteLabel")
+	_atmos_hint.name = "AtmosphereHint"
+	column.add_child(_atmos_hint)
 
 
 func _build_banner(root: Control) -> void:
@@ -370,6 +377,23 @@ func _on_player_died() -> void:
 	_death_overlay.visible = true
 	var tween := create_tween()
 	tween.tween_property(_death_overlay, "modulate:a", 1.0, 0.45)
+
+
+func _exit_tree() -> void:
+	if WorldClock.phase_changed.is_connected(_on_atmosphere):
+		WorldClock.phase_changed.disconnect(_on_atmosphere)
+	if WorldClock.weather_changed.is_connected(_on_atmosphere):
+		WorldClock.weather_changed.disconnect(_on_atmosphere)
+
+
+func _on_atmosphere(_value: int = 0) -> void:
+	_refresh_atmosphere()
+
+
+func _refresh_atmosphere() -> void:
+	if _atmos_hint == null:
+		return
+	_atmos_hint.text = WorldClock.hud_line()
 
 
 func _refresh_cores() -> void:

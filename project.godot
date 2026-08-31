@@ -29,6 +29,7 @@ Sfx="*res://scripts/autoload/sfx.gd"
 Fx="*res://scripts/autoload/fx.gd"
 SaveData="*res://scripts/autoload/save_data.gd"
 Director="*res://scripts/autoload/director.gd"
+WorldClock="*res://scripts/autoload/world_clock.gd"
 
 [display]
 

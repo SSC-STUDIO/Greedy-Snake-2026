@@ -303,6 +303,8 @@ Gutterworks —— Furnace Hub —— Kiln
 
 见 `docs/visual-prompt.md` 与 `docs/art-spec.md`。主色：Shadow `#3A3A3A`、Rust Dark `#8B4513`、Rust Light `#CD5C5C`、Toxic Glow `#FF8C00`、Teal `#4A6B6B`。16 色上限，无抗锯齿，破披风。
 
+陵墓昼夜约 20 分钟一轮（昼→夜约 10 分钟）：白天阴冷，夜里更深但不纯黑。天气为薄雾 / 雨 / 浓雾（偶发余烬风），只改氛围与视距，不改跳跃或毒素。点燃的余烬巢在夜里给周围一小圈暖光。
+
 ---
 
 ## 14. 范围与里程碑
