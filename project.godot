@@ -21,6 +21,10 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.png"
 config/windows_native_icon="res://icon.ico"
 
+[audio]
+
+buses/default_bus_layout="res://assets/audio/default_bus_layout.tres"
+
 [autoload]
 
 GameEvents="*res://scripts/autoload/game_events.gd"

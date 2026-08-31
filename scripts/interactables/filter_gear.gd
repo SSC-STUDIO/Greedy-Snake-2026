@@ -18,6 +18,7 @@ func _ready() -> void:
 func interact(actor: Node) -> void:
 	if actor is Player:
 		(actor as Player).toxin.purify(0.45)
+		Sfx.play(&"pickup")
 		GameEvents.announcement.emit("滤芯咬合，毒素下降")
 		SaveData.mark_consumed(String(get_path()))
 		queue_free()

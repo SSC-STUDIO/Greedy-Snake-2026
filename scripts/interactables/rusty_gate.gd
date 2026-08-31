@@ -58,5 +58,6 @@ func melt(_actor: Node) -> void:
 		solid.collision_layer = 0
 	visible = false
 	GameEvents.rusty_gate_melted.emit()
+	Sfx.play(&"gate")
 	GameEvents.announcement.emit("熔热锻咬开了锈门")
 	queue_free()

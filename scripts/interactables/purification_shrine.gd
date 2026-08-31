@@ -17,4 +17,5 @@ func interact(actor: Node) -> void:
 		p.toxin.purify(1.0)
 		p.health.heal_full()
 		GameEvents.player_health_changed.emit(p.health.current, p.health.max_hp)
+		Sfx.play(&"insert")
 		GameEvents.announcement.emit("净化祠洗去了锈尘")

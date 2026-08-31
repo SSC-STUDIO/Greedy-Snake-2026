@@ -51,6 +51,9 @@ func _build() -> void:
 	_menu.add_item(ID_TITLE, "返 回 标 题")
 	_menu.chosen.connect(_on_chosen)
 
+	column.add_child(_volume_row("音 效", &"Sfx"))
+	column.add_child(_volume_row("氛 围", &"Ambience"))
+
 	column.add_child(UiKit.label("进度在余烬巢刻录 · 回标题不会丢档",
 			&"FootnoteLabel", HORIZONTAL_ALIGNMENT_CENTER))
 
@@ -58,6 +61,22 @@ func _build() -> void:
 	_controls.layer = 21
 	_controls.closed.connect(func() -> void: _menu.active = true)
 	add_child(_controls)
+
+
+func _volume_row(label: String, bus: StringName) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	var name := UiKit.label(label, &"FootnoteLabel")
+	name.custom_minimum_size = Vector2(72, 0)
+	row.add_child(name)
+	var slider := HSlider.new()
+	slider.min_value = 0.0
+	slider.max_value = 100.0
+	slider.step = 1.0
+	slider.custom_minimum_size = Vector2(160, 16)
+	slider.value = Sfx.bus_percent(bus)
+	slider.value_changed.connect(func(v: float) -> void: Sfx.set_bus_percent(bus, v))
+	row.add_child(slider)
+	return row
 
 
 func is_open() -> bool:

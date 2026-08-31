@@ -39,6 +39,7 @@ func insert_into_socket(index: int) -> bool:
 	GameEvents.sockets_changed.emit()
 	GameEvents.core_inserted.emit(core, index)
 	GameEvents.ability_unlocked.emit(core.ability_id)
+	Sfx.play(&"insert")
 	GameEvents.announcement.emit(
 		"嵌核 %d：%s（%s）" % [index + 1, core.display_name, AbilityIds.display_name(core.ability_id)]
 	)

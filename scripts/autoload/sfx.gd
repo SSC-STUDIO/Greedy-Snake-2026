@@ -30,6 +30,7 @@ const LIBRARY := {
 const AMBIENCE := {
 	&"rain": "res://assets/audio/ambience/rain.wav",
 	&"rust_rain": "res://assets/audio/ambience/rust_rain.wav",
+	&"cemetery": "res://assets/audio/ambience/cemetery_drone.wav",
 }
 
 var _pool: Array[AudioStreamPlayer] = []
@@ -45,7 +46,7 @@ func _ready() -> void:
 		return
 	for i in POOL_SIZE:
 		var p := AudioStreamPlayer.new()
-		p.bus = &"Master"
+		p.bus = _bus_or_master(&"Sfx")
 		p.volume_db = BASE_DB
 		add_child(p)
 		_pool.append(p)
@@ -55,6 +56,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_fade_ambience(&"rain", WorldClock.rain_audio_gain(), delta)
 	_fade_ambience(&"rust_rain", WorldClock.rust_rain_audio_gain(), delta)
+	_fade_ambience(&"cemetery", WorldClock.drone_audio_gain(), delta)
 
 
 func play(key: StringName, pitch_jitter: float = 0.08) -> void:
@@ -94,7 +96,7 @@ func _ensure_ambience() -> void:
 			continue
 		var player := AudioStreamPlayer.new()
 		player.name = "Ambience_%s" % String(key)
-		player.bus = &"Master"
+		player.bus = _bus_or_master(&"Ambience")
 		player.volume_db = -80.0
 		var path: String = AMBIENCE[key]
 		if path != "" and ResourceLoader.exists(path):
@@ -128,3 +130,22 @@ func _fade_ambience(key: StringName, target: float, delta: float) -> void:
 	player.volume_db = linear_to_db(next * 0.28)
 	if not player.playing:
 		player.play()
+
+
+func _bus_or_master(name: StringName) -> StringName:
+	return name if AudioServer.get_bus_index(name) >= 0 else &"Master"
+
+
+func bus_percent(bus_name: StringName) -> float:
+	var idx := AudioServer.get_bus_index(bus_name)
+	if idx < 0:
+		idx = 0
+	return clampf(db_to_linear(AudioServer.get_bus_volume_db(idx)), 0.0, 1.0) * 100.0
+
+
+func set_bus_percent(bus_name: StringName, percent: float) -> void:
+	var idx := AudioServer.get_bus_index(bus_name)
+	if idx < 0:
+		return
+	var linear := clampf(percent / 100.0, 0.0, 1.0)
+	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(linear, 0.0001)))

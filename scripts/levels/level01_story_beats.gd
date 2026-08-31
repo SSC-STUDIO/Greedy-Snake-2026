@@ -51,6 +51,7 @@ func try_wake() -> void:
 		nest = _host.get_node_or_null("Props/EmberNest")
 	Director.play([
 		{"kind": "lock"},
+		{"kind": "sfx", "id": "insert"},
 		{"kind": "cam_focus", "target": nest, "duration": 0.2},
 		{"kind": "wait", "seconds": 0.25},
 		{"kind": "caption", "text": "炉灭之后，循环变成了锈。", "hold": 1.5},
@@ -69,6 +70,7 @@ func on_boss_gate(body: Node) -> void:
 	SaveData.mark_flag("boss_intro")
 	Director.play([
 		{"kind": "lock"},
+		{"kind": "sfx", "id": "gate"},
 		{"kind": "cam_focus", "target": _boss, "duration": 0.55},
 		{"kind": "caption", "text": "炉约的刽子手还守着残芯。", "hold": 1.6},
 		{"kind": "cam_release"},
@@ -87,6 +89,7 @@ func on_boss_slain() -> void:
 	Level01EastWing.mark_executioner_slain()
 	Director.play([
 		{"kind": "lock"},
+		{"kind": "sfx", "id": "insert"},
 		{"kind": "cam_focus", "target": heart, "duration": 0.7},
 		{"kind": "caption", "text": "残芯还在跳。你可以把剑送进去。", "hold": 1.7},
 		{"kind": "cam_release"},

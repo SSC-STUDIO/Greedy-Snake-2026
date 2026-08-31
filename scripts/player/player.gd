@@ -279,6 +279,7 @@ func is_invincible() -> bool:
 
 func collect_core(core: RustCore) -> void:
 	inventory.add_to_pouch(core)
+	Sfx.play(&"pickup")
 
 
 func _tick_cutscene_idle(delta: float) -> void:

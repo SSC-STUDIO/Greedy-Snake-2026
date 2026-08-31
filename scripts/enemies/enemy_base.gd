@@ -139,6 +139,7 @@ func _death_burst(frames: Array[Texture2D], fps: float, flip: bool,
 	Fx.hit_sparks(global_position)
 	if message != "":
 		GameEvents.announcement.emit(message)
+	Sfx.play(&"hit_flesh")
 	queue_free()
 
 

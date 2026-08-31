@@ -32,6 +32,7 @@ func open_door() -> void:
 	if is_open:
 		return
 	is_open = true
+	Sfx.play(&"gate")
 	var solid := get_node_or_null("Solid") as StaticBody2D
 	if solid:
 		solid.collision_layer = 0
