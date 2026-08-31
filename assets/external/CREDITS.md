@@ -58,10 +58,44 @@
 - Local: assets/external/oga_slash/pixel_art_sword_slash_sprites.png
 - Used (copy in assets/kenney_clean/vfx/): slash_spritesheet.png (3x3 frames of 64x47)
 
+## Character Art — Gothicvania Patreon's Collection (ansimuz)
+- Source: https://opengameart.org/content/gothicvania-patreons-collection
+- Author: Luis Zuno (ansimuz), https://ansimuz.itch.io/
+- License: free to use, "by ansimuz (Not required but appreciated it)" per OGA notice
+- Local: assets/external/gothicvania_patreon/
+- Used (sliced frames in assets/characters/): spitter_hell_beast (Hell Beast
+  idle/breath/burn + fire-ball projectile), scrapper_hell_hound (Hell Hound
+  idle/walk/run/jump), flying_demon / fire_skull / ghost / boss_nightmare (reserve)
+
+## Character Art — GothicVania Cemetery Pack sprites (ansimuz)
+- Same source/license as the Cemetery environment section above (public domain).
+- Local: assets/external/gothicvania_cemetery/Sprites/
+- Used (sliced frames in assets/characters/): fx_enemy_death (5-frame death smoke),
+  player_cemetery_hero + skeleton (reserve)
+
+## Character Art — Fantasy Knight (aamatniekss)
+- Source: https://aamatniekss.itch.io/fantasy-knight-free-pixelart-animated-character
+- Author: Nauris Amatnieks (aamatniekss)
+- License (itch page): "can be used in both free and commercial projects. You can
+  modify it... Credit is not necessary, but highly appreciated. You may not
+  redistribute or resell the assets on their own... can't be used in AI creations."
+- Local: assets/external/free_knight/FreeKnight_v1/ (Colour1 dark / NoOutline in use)
+- Used (sliced frames in assets/characters/player_fantasy_knight/): player idle/run/
+  jump/fall/dash/attack1/attack2/attack_combo/roll/hurt/death/turn
+
+## Character Art — Boss: Undead Executioner (Kronovi)
+- Source: https://darkpixel-kronovi.itch.io/undead-executioner
+- Author: Kronovi (DarkPixel-Kronovi)
+- License (itch page): "You are free to edit the sprite... you can use it for
+  commercial and non-commercial use, credits are not required but always deeply
+  appreciated."
+- Local: assets/external/undead_executioner/
+- Used (sliced frames in assets/characters/gear_shield_executioner/): gear-shield
+  guard idle/idle2(block)/attack/skill/summon/death + summoned spirit
+
 ## AI-generated art (project-original)
-- Ember Knight character sheet (walk x4 / idle / jump / hurt), Spitter & Scrapper enemy
-  sprites, title screen keyart — generated with the built-in AI image tool for this
-  project, sliced in tools/slice_ai_sprites.ps1.
-- Local: assets/external/ai/ (originals), assets/kenney_clean/player_ai/ +
-  assets/kenney_clean/enemies_ai/ + assets/kenney_clean/backgrounds/title_keyart.png
-  (processed, magenta-keyed transparent PNGs)
+- Title screen keyart — generated with the built-in AI image tool for this project,
+  converted in tools/slice_ai_sprites.ps1. The former AI player/enemy sprites were
+  replaced by the pixel character art above and removed.
+- Local: assets/external/ai/title_keyart*.jpg (originals),
+  assets/kenney_clean/backgrounds/title_keyart.png (in game)
