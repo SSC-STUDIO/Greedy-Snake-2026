@@ -1,11 +1,12 @@
 extends Node
 ## Sfx autoload: tiny pooled sound-effect player keyed by short names.
-## Files live under assets/kenney_clean/audio/*.ogg (CC0, Kenney),
-## renamed copies picked from the Kenney "Audio (295 files)" bundle.
+## One-shots live under assets/kenney_clean/audio/*.ogg (CC0, Kenney).
+## Weather loops live under assets/audio/ambience/ (project-original CC0).
 ## Loads are guarded so the suite stays green even before/without assets.
 
 const POOL_SIZE := 10
 const BASE_DB := -9.0
+const AMBIENCE_FADE := 2.6
 
 ## key -> curated CC0 sound (see assets/external/CREDITS.md for sources).
 const LIBRARY := {
@@ -25,11 +26,20 @@ const LIBRARY := {
 	&"ui_denied": "res://assets/kenney_clean/audio/ui_denied.ogg",
 }
 
+## Looping weather beds (project-original CC0 rain; Kenney has no rain).
+const AMBIENCE := {
+	&"rain": "res://assets/audio/ambience/rain.wav",
+	&"rust_rain": "res://assets/audio/ambience/rust_rain.wav",
+}
+
 var _pool: Array[AudioStreamPlayer] = []
 var _streams: Dictionary = {}
+var _ambience: Dictionary = {}
+var _ambience_gain: Dictionary = {}
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	if DisplayServer.get_name() == "headless":
 		set_process(false)
 		return
@@ -39,6 +49,12 @@ func _ready() -> void:
 		p.volume_db = BASE_DB
 		add_child(p)
 		_pool.append(p)
+	_ensure_ambience()
+
+
+func _process(delta: float) -> void:
+	_fade_ambience(&"rain", WorldClock.rain_audio_gain(), delta)
+	_fade_ambience(&"rust_rain", WorldClock.rust_rain_audio_gain(), delta)
 
 
 func play(key: StringName, pitch_jitter: float = 0.08) -> void:
@@ -70,3 +86,45 @@ func _resolve_stream(key: StringName) -> AudioStream:
 		stream.loop = false
 	_streams[key] = stream
 	return stream
+
+
+func _ensure_ambience() -> void:
+	for key in AMBIENCE:
+		if _ambience.has(key):
+			continue
+		var player := AudioStreamPlayer.new()
+		player.name = "Ambience_%s" % String(key)
+		player.bus = &"Master"
+		player.volume_db = -80.0
+		var path: String = AMBIENCE[key]
+		if path != "" and ResourceLoader.exists(path):
+			var stream := load(path) as AudioStream
+			if stream is AudioStreamWAV:
+				stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+				stream.loop_begin = 0
+				stream.loop_end = 0
+			elif stream is AudioStreamOggVorbis:
+				stream.loop = true
+			player.stream = stream
+		add_child(player)
+		_ambience[key] = player
+		_ambience_gain[key] = 0.0
+
+
+func _fade_ambience(key: StringName, target: float, delta: float) -> void:
+	if not _ambience.has(key):
+		return
+	var player: AudioStreamPlayer = _ambience[key]
+	if player.stream == null:
+		return
+	var cur := float(_ambience_gain.get(key, 0.0))
+	var next := move_toward(cur, clampf(target, 0.0, 1.0), delta / AMBIENCE_FADE)
+	_ambience_gain[key] = next
+	if next <= 0.001:
+		player.volume_db = -80.0
+		if player.playing:
+			player.stop()
+		return
+	player.volume_db = linear_to_db(next * 0.28)
+	if not player.playing:
+		player.play()

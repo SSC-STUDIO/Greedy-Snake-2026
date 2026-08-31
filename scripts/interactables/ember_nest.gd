@@ -111,7 +111,8 @@ func _ensure_light() -> void:
 	light.color = LIGHT_COLOR
 	light.energy = 0.0
 	light.enabled = false
-	light.shadow_enabled = false
+	light.shadow_enabled = true
+	light.shadow_filter = Light2D.SHADOW_FILTER_NONE
 	light.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	light.texture = _nest_light_texture()
 	light.texture_scale = (WorldClock.nest_light_radius() * 2.0) / LIGHT_TEX

@@ -188,6 +188,7 @@ func _extend_east() -> void:
 	zone.position = Vector2(1688, 280)
 	add_child(zone)
 	zone.body_entered.connect(_on_boss_gate)
+	Level01EastWing.place_forge_shelter(self)
 
 
 func _bind_story() -> void:

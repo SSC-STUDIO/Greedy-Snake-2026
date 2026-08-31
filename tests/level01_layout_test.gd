@@ -40,6 +40,11 @@ func test_east_wing_places_heart_gate_and_boss() -> void:
 	ok(heart != null, "ForgeHeart lives on Props")
 	ok(not heart.unlocked, "heart stays locked while boss lives")
 	ok(host.get_node_or_null("BossGate") != null, "BossGate on the level root")
+	var shelter := host.get_node_or_null("ForgeShelter") as AtmosphereZone
+	ok(shelter != null, "forge remnant is an indoor AtmosphereZone")
+	if shelter != null:
+		eq(shelter.zone, WorldClock.Zone.INDOORS)
+		eq(shelter.position, Level01EastWing.FORGE_SHELTER_POS)
 	eq(host.get_node("BossGate").position, Vector2(1688, 280))
 	var wall := host.get_node("Platforms/WallRight") as Node2D
 	almost(wall.position.x, float(Level01EastWing.EAST_LIMIT), 0.01, "WallRight moved to east limit")

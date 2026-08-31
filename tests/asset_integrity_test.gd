@@ -19,6 +19,10 @@ func test_every_sfx_library_entry_resolves_to_a_file() -> void:
 	for key in Sfx.LIBRARY:
 		var path: String = Sfx.LIBRARY[key]
 		ok(ResourceLoader.exists(path), "missing sfx %s -> %s" % [key, path])
+	ok(not Sfx.AMBIENCE.is_empty(), "weather ambience library should not be empty")
+	for key in Sfx.AMBIENCE:
+		var path: String = Sfx.AMBIENCE[key]
+		ok(ResourceLoader.exists(path), "missing ambience %s -> %s" % [key, path])
 
 
 func test_every_char_frames_action_has_at_least_one_frame() -> void:

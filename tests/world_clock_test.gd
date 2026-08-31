@@ -95,7 +95,7 @@ func test_weather_blend_stays_legal() -> void:
 	WorldClock._process(1.0)
 	ok(WorldClock.weather_blend > 0.0 and WorldClock.weather_blend <= 1.0)
 	ok(WorldClock.weather >= WorldClock.Weather.HAZE)
-	ok(WorldClock.weather <= WorldClock.Weather.EMBER_WIND)
+	ok(WorldClock.weather <= WorldClock.Weather.RUST_RAIN)
 	ok(WorldClock.rain_opacity() > 0.0, "rain opacity rises during blend-in")
 	WorldClock.set_weather(WorldClock.Weather.FOG, true)
 	almost(WorldClock.weather_blend, 1.0, 0.001)
@@ -167,6 +167,148 @@ func test_parallax_follows_clock_tint() -> void:
 				"MoodTint night stays in the playable band")
 		ok(tint.color.a >= 0.99)
 	ok(host.get_node_or_null("WeatherFx") != null, "rain layer is attached")
+
+
+func test_indoor_zone_locks_warm_light_and_hides_rain() -> void:
+	WorldClock.set_time(0.80)
+	WorldClock.set_weather(WorldClock.Weather.FOG, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	var outdoor := WorldClock.mood_tint()
+	var outdoor_lum := WorldClock.mood_luminance()
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	var indoor := WorldClock.mood_tint()
+	ok(indoor.r > outdoor.r + 0.08, "indoor night stays warmer than outdoor night")
+	ok(WorldClock.mood_luminance() > outdoor_lum, "indoor lock is brighter than outdoor night")
+	eq(WorldClock.zone_id(), "indoors")
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	almost(WorldClock.rain_opacity(), 0.0, 0.001, "rain particles stop at the door")
+	ok(WorldClock.rain_audio_gain() <= 0.05, "indoor rain is muffled")
+	ok(WorldClock.rust_rain_audio_gain() < 0.20)
+	ok(not WorldClock.weather_fx_allowed())
+
+
+func test_zone_api_simulates_second_scene() -> void:
+	WorldClock.set_time(0.30)
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	ok(WorldClock.rain_opacity() > 0.9, "outdoor scene can rain")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	almost(WorldClock.rain_opacity(), 0.0, 0.001, "second scene indoor suppresses rain")
+	eq(WorldClock.zone_id(), "indoors")
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	eq(WorldClock.zone_id(), "outdoors")
+	ok(WorldClock.rain_opacity() > 0.9, "leaving the room restores outdoor rain")
+
+
+func test_atmosphere_zone_switches_on_overlap() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	var shelter := AtmosphereZone.new()
+	shelter.zone = WorldClock.Zone.INDOORS
+	shelter.position = player.global_position
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(96, 96)
+	shape.shape = rect
+	shelter.add_child(shape)
+	arena.add_child(shelter)
+	await flush(6)
+	eq(WorldClock.zone, WorldClock.Zone.INDOORS, "entering the room sets indoor")
+	player.position.x += 420.0
+	await flush(6)
+	eq(WorldClock.zone, WorldClock.Zone.OUTDOORS, "leaving the room restores outdoor")
+
+
+func test_rust_rain_exposes_outdoors_only() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	player.toxin.toxin = 0.0
+	WorldClock.set_time(0.80)
+	WorldClock.set_weather(WorldClock.Weather.RUST_RAIN, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	ok(WorldClock.is_rust_raining())
+	ok(WorldClock.apply_rust_rain_expose(player), "outdoor rust rain soaks")
+	almost(player.toxin.toxin, WorldClock.RUST_RAIN_EXPOSE, 0.05)
+	ok(player.toxin.toxin < 36.0, "weaker than a toxin-pool second")
+	player.toxin.toxin = 0.0
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	ok(not WorldClock.apply_rust_rain_expose(player), "indoor rust rain does not soak")
+	almost(player.toxin.toxin, 0.0, 0.01)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	get_tree().paused = true
+	ok(not WorldClock.apply_rust_rain_expose(player), "pause blocks rust rain")
+	get_tree().paused = false
+	Director.play([{"kind": "lock"}, {"kind": "wait", "seconds": 2.0}, {"kind": "unlock"}])
+	ok(not WorldClock.apply_rust_rain_expose(player), "cutscene blocks rust rain")
+	Director.abort()
+	player.health.current = 0
+	ok(not WorldClock.apply_rust_rain_expose(player), "dead player is not soaked")
+	eq(WorldClock.weather_label(), "锈雨")
+
+
+func test_night_rain_upgrades_to_rust_rain() -> void:
+	WorldClock.set_time(0.80)
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	ok(WorldClock.is_rust_raining(), "night rain is rust rain")
+	ok(WorldClock.rust_rain_mix() > 0.8)
+	WorldClock.set_time(0.30)
+	ok(not WorldClock.is_rust_raining(), "day rain stays ordinary rain")
+
+
+func test_ember_wind_has_particle_weight() -> void:
+	WorldClock.set_weather(WorldClock.Weather.EMBER_WIND, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	almost(WorldClock.ember_wind_opacity(), 1.0, 0.001)
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	almost(WorldClock.ember_wind_opacity(), 0.0, 0.001, "embers stay outside")
+
+
+func test_hud_stays_readable_at_night() -> void:
+	WorldClock.set_time(0.80)
+	WorldClock.set_weather(WorldClock.Weather.FOG, true)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	var host := Node2D.new()
+	add_child(host)
+	var backdrop := ParallaxBackground.new()
+	backdrop.name = "ParallaxBackdrop"
+	host.add_child(backdrop)
+	var extras := Level01Parallax.new()
+	add_child(extras)
+	extras.build(host)
+	const HUD_SCENE := preload("res://scenes/ui/HUD.tscn")
+	var hud: CanvasLayer = HUD_SCENE.instantiate()
+	host.add_child(hud)
+	await flush(2)
+	WorldClock.isolate_ui_layer(hud)
+	ok(hud.layer >= 10)
+	ok(not hud.follow_viewport_enabled, "HUD is its own canvas")
+	var root := hud.get_node_or_null("Root") as CanvasItem
+	ok(root != null, "HUD draws on a CanvasItem child")
+	if root != null:
+		eq(root.modulate, Color.WHITE, "HUD root does not inherit night")
+	var tint := host.get_node_or_null("MoodTint") as CanvasModulate
+	ok(tint != null)
+	if tint != null:
+		ok(absf(tint.color.r - 1.0) > 0.15, "world MoodTint is actually night")
+		if root != null:
+			ok(absf(tint.color.r - root.modulate.r) > 0.15, "HUD does not follow night MoodTint")
+	var pause := hud.get_node_or_null("PauseMenu") as CanvasLayer
+	ok(pause != null)
+	if pause != null:
+		ok(pause.layer >= 10, "pause sits above the world canvas")
+		ok(not pause.follow_viewport_enabled)
+	var cap := Director.caption()
+	var cap_layer := cap.get_parent() as CanvasLayer
+	ok(cap_layer != null, "caption lives on a CanvasLayer")
+	if cap_layer != null:
+		ok(cap_layer.layer >= 10)
+		eq(cap.modulate, Color.WHITE, "caption stays off MoodTint")
 
 
 const CYCLE_CROSS := 30.0

@@ -137,3 +137,41 @@ func test_lit_night_glow_stronger_than_day() -> void:
 	nest.apply_persistent_state({"lit": false})
 	ok(not light.enabled, "extinguishing snaps the light off")
 	almost(light.energy, 0.0, 0.001)
+
+
+func test_lit_nest_light_uses_platform_occluder() -> void:
+	var nest := EmberNest.new()
+	add_child(nest)
+	await flush(1)
+	var light := nest.get_node_or_null("NestLight") as PointLight2D
+	ok(light != null, "NestLight exists")
+	if light != null:
+		ok(light.shadow_enabled, "night glow casts against occluders")
+	nest.apply_persistent_state({"lit": true})
+	if light != null:
+		ok(light.enabled)
+		ok(light.energy > 0.0)
+	var plat := SolidPlatform.new()
+	plat.size = Vector2(64, 16)
+	plat.position = Vector2(40, 20)
+	add_child(plat)
+	await flush(1)
+	var occ := plat.get_node_or_null("LightOccluder") as LightOccluder2D
+	ok(occ != null, "SolidPlatform carries a LightOccluder2D")
+	if occ == null:
+		return
+	ok(occ.occluder != null)
+	eq(occ.occluder.polygon.size(), 4, "occluder is the collision rectangle")
+	var col: CollisionShape2D = null
+	for child in plat.get_children():
+		if child is CollisionShape2D:
+			col = child
+			break
+	ok(col != null)
+	if col != null:
+		var shape := col.shape as RectangleShape2D
+		ok(shape != null)
+		if shape != null:
+			eq(shape.size, plat.size, "collision size unchanged by occluder")
+			eq(col.position, plat.size * 0.5, "collision offset unchanged")
+	eq(occ.occluder.polygon[2], Vector2(plat.size.x, plat.size.y))

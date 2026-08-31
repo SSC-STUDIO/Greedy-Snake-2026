@@ -60,6 +60,8 @@ func _build_overlay() -> void:
 	_caption = Caption.new()
 	_caption.name = "Caption"
 	_caption_layer.add_child(_caption)
+	WorldClock.isolate_ui_layer(_fade_layer)
+	WorldClock.isolate_ui_layer(_caption_layer)
 
 
 func caption() -> Caption:

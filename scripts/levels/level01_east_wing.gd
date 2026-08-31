@@ -13,6 +13,9 @@ const FORGE := preload("res://scenes/interactables/ForgeHeart.tscn")
 
 const EAST_LIMIT := 2240
 const EAST_FLOOR_X := 1600.0
+## Roofed forge remnant past the Executioner — indoor lighting, rain stops.
+const FORGE_SHELTER_POS := Vector2(2112, 240)
+const FORGE_SHELTER_SIZE := Vector2(256, 160)
 
 signal boss_gate_entered(body: Node)
 signal boss_slain
@@ -115,7 +118,25 @@ func build(host: Node2D) -> ExecutionerBoss:
 	zone.position = Vector2(1688, 280)
 	host.add_child(zone)
 	zone.body_entered.connect(_on_boss_gate)
+	place_forge_shelter(host)
 	return boss
+
+
+static func place_forge_shelter(host: Node2D) -> AtmosphereZone:
+	var existing := host.get_node_or_null("ForgeShelter") as AtmosphereZone
+	if existing != null:
+		return existing
+	var shelter := AtmosphereZone.new()
+	shelter.name = "ForgeShelter"
+	shelter.zone = WorldClock.Zone.INDOORS
+	shelter.position = FORGE_SHELTER_POS
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = FORGE_SHELTER_SIZE
+	shape.shape = rect
+	shelter.add_child(shape)
+	host.add_child(shelter)
+	return shelter
 
 
 func _on_boss_gate(body: Node) -> void:

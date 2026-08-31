@@ -66,6 +66,7 @@ var _atmos_hint: Label
 
 func _ready() -> void:
 	layer = 10
+	WorldClock.isolate_ui_layer(self)
 	DisplayServer.window_set_title("Rustgrave")
 	_heart_full = UiKit.tex(HEART_FULL_PATH)
 	_heart_empty = UiKit.tex(HEART_EMPTY_PATH)
@@ -105,6 +106,7 @@ func _build() -> void:
 
 	_pause = PAUSE_MENU.instantiate()
 	add_child(_pause)
+	WorldClock.isolate_ui_layer(_pause)
 
 
 func _build_stat_panel(root: Control) -> void:

@@ -20,6 +20,7 @@ func _ready() -> void:
 	layer = 20
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
+	WorldClock.isolate_ui_layer(self)
 	_build()
 
 

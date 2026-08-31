@@ -7,10 +7,12 @@ extends Node
 ## never fights a fade or a pause overlay.
 
 enum Phase { DAWN, DAY, DUSK, NIGHT }
-enum Weather { HAZE, RAIN, FOG, EMBER_WIND }
+enum Weather { HAZE, RAIN, FOG, EMBER_WIND, RUST_RAIN }
+enum Zone { OUTDOORS, INDOORS }
 
 signal phase_changed(phase: int)
 signal weather_changed(weather: int)
+signal zone_changed(zone: int)
 signal clock_ticked(time_of_day: float, phase: int)
 
 ## 20 min around the clock; 昼→夜 lands near the 8–12 min brief.
@@ -28,12 +30,17 @@ const NIGHT_TINT := Color(0.64, 0.60, 0.78)
 const DAY_TINT := Color(0.955, 0.92, 1.0)
 const DAWN_TINT := Color(0.86, 0.82, 0.94)
 const DUSK_TINT := Color(0.80, 0.70, 0.76)
+## Indoor lock: warm furnace, never as dark as outdoor night.
+const INDOOR_TINT := Color(0.90, 0.78, 0.66)
+const RUST_RAIN_INTERVAL := 1.6
+const RUST_RAIN_EXPOSE := 8.0
 
 var time_of_day: float = DEFAULT_TIME
 var phase: int = Phase.DAY
 var weather: int = Weather.HAZE
 var previous_weather: int = Weather.HAZE
 var weather_blend: float = 1.0
+var zone: int = Zone.OUTDOORS
 var menu_hold: bool = false
 ## Test-only multiplier; gameplay stays at 1.
 var time_scale: float = 1.0
@@ -41,6 +48,7 @@ var time_scale: float = 1.0
 var _weather_hold: float = 80.0
 var _blend_duration: float = 5.0
 var _tick_emit: float = 0.0
+var _rust_accum: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -55,7 +63,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if is_frozen():
 		return
-	tick(delta * time_scale)
+	var scaled := delta * time_scale
+	tick(scaled)
+	_tick_hazards(scaled)
 
 
 func is_frozen() -> bool:
@@ -124,14 +134,40 @@ func reset() -> void:
 	weather = Weather.HAZE
 	previous_weather = Weather.HAZE
 	weather_blend = 1.0
+	set_zone(Zone.OUTDOORS)
 	_weather_hold = _rng.randf_range(WEATHER_HOLD_MIN, WEATHER_HOLD_MAX)
 	_blend_duration = _rng.randf_range(BLEND_MIN, BLEND_MAX)
 	_tick_emit = 0.0
+	_rust_accum = 0.0
 	time_scale = 1.0
+
+
+func set_zone(next_zone: int) -> void:
+	var z := Zone.INDOORS if next_zone == Zone.INDOORS else Zone.OUTDOORS
+	if z == zone:
+		return
+	zone = z
+	zone_changed.emit(zone)
+
+
+func zone_id() -> String:
+	return "indoors" if zone == Zone.INDOORS else "outdoors"
+
+
+func isolate_ui_layer(layer: CanvasLayer) -> void:
+	if layer == null:
+		return
+	layer.follow_viewport_enabled = false
+	if layer.is_inside_tree():
+		RenderingServer.canvas_set_modulate(layer.get_canvas(), Color.WHITE)
+	for child in layer.get_children():
+		if child is CanvasItem:
+			(child as CanvasItem).modulate = Color.WHITE
 
 
 func hold_for_menu() -> void:
 	menu_hold = true
+	set_zone(Zone.OUTDOORS)
 	set_time(TITLE_TIME)
 	set_weather(Weather.HAZE, true)
 
@@ -196,6 +232,8 @@ func weather_id() -> String:
 			return "fog"
 		Weather.EMBER_WIND:
 			return "ember_wind"
+		Weather.RUST_RAIN:
+			return "rust_rain"
 		_:
 			return "haze"
 
@@ -208,6 +246,8 @@ func weather_from_id(id: String) -> int:
 			return Weather.FOG
 		"ember_wind":
 			return Weather.EMBER_WIND
+		"rust_rain":
+			return Weather.RUST_RAIN
 		_:
 			return Weather.HAZE
 
@@ -224,6 +264,8 @@ func _weather_label(w: int) -> String:
 			return "浓雾"
 		Weather.EMBER_WIND:
 			return "余烬风"
+		Weather.RUST_RAIN:
+			return "锈雨"
 		_:
 			return "薄雾"
 
@@ -233,9 +275,20 @@ func hud_line() -> String:
 
 
 func mood_tint() -> Color:
+	if zone == Zone.INDOORS:
+		return _indoor_tint()
 	var a := _phase_tint(phase)
 	var b := _weather_mul(_blend_weather())
 	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
+
+
+func _indoor_tint() -> Color:
+	var b := _weather_mul(_blend_weather())
+	var c := Color(INDOOR_TINT.r * b.r, INDOOR_TINT.g * b.g, INDOOR_TINT.b * b.b, 1.0)
+	c.r = maxf(c.r, 0.78)
+	c.g = maxf(c.g, 0.68)
+	c.b = maxf(c.b, 0.56)
+	return c
 
 
 func mood_luminance() -> float:
@@ -258,6 +311,8 @@ func silhouette_modulate() -> Color:
 		faded = 0.52
 	elif w == Weather.RAIN:
 		faded = 0.78
+	elif w == Weather.RUST_RAIN:
+		faded = 0.70
 	elif w == Weather.EMBER_WIND:
 		faded = 0.90
 	if phase == Phase.NIGHT:
@@ -301,10 +356,99 @@ func nest_light_radius() -> float:
 			return 48.0
 
 
+func weather_weight(kind: int) -> float:
+	var from_w := 1.0 if previous_weather == kind else 0.0
+	var to_w := 1.0 if weather == kind else 0.0
+	return lerpf(from_w, to_w, clampf(weather_blend, 0.0, 1.0))
+
+
+func weather_fx_allowed() -> bool:
+	return zone == Zone.OUTDOORS and not menu_hold
+
+
 func rain_opacity() -> float:
-	var from_rain := 1.0 if previous_weather == Weather.RAIN else 0.0
-	var to_rain := 1.0 if weather == Weather.RAIN else 0.0
-	return lerpf(from_rain, to_rain, clampf(weather_blend, 0.0, 1.0))
+	if not weather_fx_allowed():
+		return 0.0
+	return clampf(weather_weight(Weather.RAIN) + weather_weight(Weather.RUST_RAIN), 0.0, 1.0)
+
+
+func ember_wind_opacity() -> float:
+	if not weather_fx_allowed():
+		return 0.0
+	return weather_weight(Weather.EMBER_WIND)
+
+
+## 1 when rust rain is fully in; night also upgrades ordinary rain.
+func rust_rain_mix() -> float:
+	var rust := weather_weight(Weather.RUST_RAIN)
+	if phase == Phase.NIGHT:
+		rust = maxf(rust, weather_weight(Weather.RAIN) * 0.90)
+	return rust
+
+
+func is_rust_raining() -> bool:
+	return rust_rain_mix() >= 0.45
+
+
+func rust_rain_applies() -> bool:
+	if is_frozen() or menu_hold:
+		return false
+	if zone != Zone.OUTDOORS:
+		return false
+	return is_rust_raining()
+
+
+func apply_rust_rain_expose(player: Node = null) -> bool:
+	if not rust_rain_applies():
+		return false
+	var p := player as Player
+	if p == null:
+		p = _find_player()
+	if p == null or p.toxin == null or p.health == null:
+		return false
+	if p.health.current <= 0:
+		return false
+	p.toxin.expose(RUST_RAIN_EXPOSE)
+	return true
+
+
+func rain_audio_gain() -> float:
+	var clear := maxf(weather_weight(Weather.RAIN) - rust_rain_mix(), 0.0)
+	return _audio_gate(clear)
+
+
+func rust_rain_audio_gain() -> float:
+	return _audio_gate(rust_rain_mix())
+
+
+func _audio_gate(amount: float) -> float:
+	if menu_hold:
+		return 0.0
+	var g := clampf(amount, 0.0, 1.0)
+	if zone == Zone.INDOORS:
+		g *= 0.12
+	if is_inside_tree():
+		var tree := get_tree()
+		if tree != null and tree.paused:
+			g *= 0.08
+	return g
+
+
+func _tick_hazards(delta: float) -> void:
+	if not rust_rain_applies():
+		_rust_accum = 0.0
+		return
+	_rust_accum += delta
+	if _rust_accum < RUST_RAIN_INTERVAL:
+		return
+	_rust_accum = 0.0
+	apply_rust_rain_expose()
+
+
+func _find_player() -> Player:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group("player") as Player
 
 
 func _refresh_phase() -> void:
@@ -335,30 +479,36 @@ func _pick_weather() -> int:
 	var next := weather
 	match phase:
 		Phase.NIGHT:
-			if r < 0.50:
+			if r < 0.42:
 				next = Weather.FOG
-			elif r < 0.80:
+			elif r < 0.64:
 				next = Weather.HAZE
+			elif r < 0.86:
+				next = Weather.RUST_RAIN
 			elif r < 0.95:
 				next = Weather.RAIN
 			else:
 				next = Weather.EMBER_WIND
 		Phase.DUSK, Phase.DAWN:
-			if r < 0.32:
+			if r < 0.30:
 				next = Weather.FOG
-			elif r < 0.62:
+			elif r < 0.56:
 				next = Weather.HAZE
-			elif r < 0.90:
+			elif r < 0.78:
 				next = Weather.RAIN
+			elif r < 0.92:
+				next = Weather.RUST_RAIN
 			else:
 				next = Weather.EMBER_WIND
 		_:
-			if r < 0.52:
+			if r < 0.48:
 				next = Weather.HAZE
-			elif r < 0.84:
+			elif r < 0.76:
 				next = Weather.RAIN
-			elif r < 0.97:
+			elif r < 0.88:
 				next = Weather.FOG
+			elif r < 0.96:
+				next = Weather.RUST_RAIN
 			else:
 				next = Weather.EMBER_WIND
 	if next == weather:
@@ -386,6 +536,8 @@ func _weather_mul(w: int) -> Color:
 			return Color(0.90, 0.90, 0.96)
 		Weather.EMBER_WIND:
 			return Color(1.04, 0.92, 0.86)
+		Weather.RUST_RAIN:
+			return Color(0.90, 0.84, 0.78)
 		_:
 			return Color(1, 1, 1)
 
@@ -415,11 +567,13 @@ func _weather_fog(w: int, haze: float, rain: float, fog: float, ember: float) ->
 			return fog
 		Weather.EMBER_WIND:
 			return ember
+		Weather.RUST_RAIN:
+			return rain + 0.04
 		_:
 			return haze
 
 
 func _clamp_weather(w: int) -> int:
-	if w < 0 or w > Weather.EMBER_WIND:
+	if w < 0 or w > Weather.RUST_RAIN:
 		return Weather.HAZE
 	return w

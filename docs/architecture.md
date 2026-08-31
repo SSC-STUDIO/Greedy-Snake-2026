@@ -10,11 +10,11 @@ Do not give autoload scripts a `class_name` — the autoload name is the API.
 |---|---|---|
 | `GameEvents` | `scripts/autoload/game_events.gd` | Signal bus (`hit`, `parried`, `announcement`, `toxin_changed`, `core_acquired`, `ability_unlocked`, `ending_chosen`, …). Cross-cutting traffic goes through it; systems do not couple directly. |
 | `Juice` | `scripts/autoload/juice.gd` | Hit-stop / camera punch. |
-| `Sfx` | `scripts/autoload/sfx.gd` | One-shot library playback. |
+| `Sfx` | `scripts/autoload/sfx.gd` | One-shot library + looping rain / rust-rain beds. |
 | `Fx` | `scripts/autoload/fx.gd` | Particles, ember attach, death puffs. |
 | `SaveData` | `scripts/autoload/save_data.gd` | `user://` save: player, inventory, persistent world, consumed paths, story `flags`, ending. |
 | `Director` | `scripts/autoload/director.gd` | Fade transitions + sequenced cutscenes. Never touches `Engine.time_scale`. |
-| `WorldClock` | `scripts/autoload/world_clock.gd` | `time_of_day` (0–1)、`phase`、`weather`；信号 `phase_changed` / `weather_changed` / `clock_ticked`。暂停、过场、淡变、标题屏冻结。 |
+| `WorldClock` | `scripts/autoload/world_clock.gd` | `time_of_day` (0–1)、`phase`、`weather`、`zone`（`outdoors` / `indoors`）；信号 `phase_changed` / `weather_changed` / `zone_changed` / `clock_ticked`。暂停、过场、淡变、标题屏冻结。室内锁暖光、天气粒子停在门外。`AtmosphereZone`（Area2D）换区。 |
 
 ## Level01 (`scenes/levels/Level01_Static.tscn`)
 
@@ -24,7 +24,7 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 |---|---|
 | `scripts/levels/level01_env.gd` | Shared cemetery sprite `plant()` helper. |
 | `scripts/levels/level01_parallax.gd` | Fog bands, near silhouette, mood tint, slow drift. Subscribes to `WorldClock` for tint / fog / sky. |
-| `scripts/levels/level01_east_wing.gd` | Pit beams, east floor, ember ledge, Executioner, ForgeHeart, BossGate. |
+| `scripts/levels/level01_east_wing.gd` | Pit beams, east floor, ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
 | `scripts/levels/level01_story_beats.gd` | One-shot Director scripts from `GameEvents` + east-wing signals. |
 
 East wing is a helper node, not a PackedScene: instancing a sub-scene would reparent those nodes and break save / story lookups.

@@ -53,7 +53,7 @@ godot --path "C:\Users\Administrator\OneDrive\Documents\My-Program\Rustgrave"
 - 过场：Director 淡变/字幕/镜头托管（苏醒、初毒、初核、初弹反、Boss、结局）
 - 像素帧动画角色：玩家 Fantasy Knight，敌人 Hell Beast / Hell Hound / Undead Executioner（`CharFrames` + `FrameAnimSprite` 逐帧驱动）
 - Gothicvania 环境：无缝视差背景、双皮肤平台、腐液毒池、剪影层与漂雾
-- 墓园昼夜（约 20 分钟一轮）与薄雾 / 雨 / 浓雾；夜里点燃的余烬巢有一小圈暖光
+- 墓园昼夜（约 20 分钟一轮）与薄雾 / 雨 / 锈雨 / 浓雾 / 余烬风；室内锁暖光；夜里点燃的余烬巢有被平台挡住的暖光
 - 压力板、门、废料堆、滤芯、净化祠、锈门
 - 毒素槽：满了掉血，同时驱动能力档位；滤芯/祠减毒
 - 锈核背包与剑上插座（窑核 / 系绳核 / 余烬核），插入后解锁能力
