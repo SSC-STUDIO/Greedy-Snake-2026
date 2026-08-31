@@ -1,32 +1,77 @@
 extends CanvasLayer
-## In-game HUD for 1280x720: compact hearts, toxin bar, sockets, prompts.
+## 游戏内 HUD（1280x720）：左上状态板、顶部播报横幅、底部交互提示、
+## 低血量血雾，外挂一个暂停菜单层。
+##
+## 所有外观取自项目默认主题 assets/ui/theme_rust.tres 的变体，面板一律是
+## 9-slice 贴图；这里只负责布局、数值与动效。华丽但克制：状态板收在左上角
+## 一小块，播报和提示都是横向窄条，不切进玩家的视野中央。
 
-var _hp_bar: HBoxContainer
-var _toxin_fill: ColorRect
+const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")
+
+## 心：11x9 的 Gothicvania 像素心按 2 倍放进 26x22 的插槽里，和 24px 字号同栅格。
+const HEART_FULL_PATH := "res://assets/env/hud_heart_full.png"
+const HEART_EMPTY_PATH := "res://assets/env/hud_heart_empty.png"
+const HEART_SIZE := Vector2(22, 18)
+const HEART_SLOT_SIZE := Vector2(26, 22)
+const HEART_FLASH := 0.22
+
+const TOXIN_BAR_SIZE := Vector2(168, 16)
+## 与 assets/ui/banner.png 的高度一致（21 设计像素 * 2）。
+const BANNER_HEIGHT := 42.0
+
+# 危险反馈：毒素报警脉动 + 低血量血雾呼吸。
+const TOXIN_ALARM_RATIO := 0.8
+const TOXIN_PULSE_PERIOD := 0.5
+const TOXIN_PULSE_MIN := 1.0
+const TOXIN_PULSE_MAX := 1.6
+const VIGNETTE_FADE_IN := 0.4
+const VIGNETTE_FADE_OUT := 0.6
+const VIGNETTE_ALPHA := 0.55
+const VIGNETTE_BREATH_MIN := 0.38
+const VIGNETTE_BREATH_MAX := 0.68
+const VIGNETTE_BREATH_PERIOD := 3.0
+
+const ANNOUNCE_HOLD := 2.4
+const ANNOUNCE_FADE := 0.35
+const HINT_HOLD := 6.0
+
+var _hearts_row: HBoxContainer
+var _toxin_bar: ProgressBar
 var _toxin_label: Label
 var _socket_label: Label
 var _pouch_label: Label
-var _prompt: Label
-var _announce: Label
+var _prompt_panel: PanelContainer
+var _prompt_label: Label
+var _banner: PanelContainer
+var _announce_label: Label
 var _hint: Label
-var _announce_time: float = 0.0
-var _hint_time: float = 5.0
-var _toxin_ratio: float = 0.0
-var _low_hp: bool = false
-var _vignette: Control
+var _vignette: TextureRect
+var _death_overlay: Control
+var _pause: PauseMenu
+
+var _heart_full: Texture2D
+var _heart_empty: Texture2D
+var _hp_shown := -1
+var _announce_time := 0.0
+var _hint_time := HINT_HOLD
+var _toxin_ratio := 0.0
+var _low_hp := false
 var _vignette_tween: Tween
-var _time: float = 0.0
-var _breath_time: float = 0.0
+var _time := 0.0
+var _breath_time := 0.0
 
 
 func _ready() -> void:
 	layer = 10
 	DisplayServer.window_set_title("Rustgrave")
+	_heart_full = UiKit.tex(HEART_FULL_PATH)
+	_heart_empty = UiKit.tex(HEART_EMPTY_PATH)
 	_build()
 	GameEvents.player_health_changed.connect(_on_hp)
 	GameEvents.toxin_changed.connect(_on_toxin)
 	GameEvents.interact_prompt.connect(_on_prompt)
 	GameEvents.announcement.connect(_on_announce)
+	GameEvents.player_died.connect(_on_player_died)
 	GameEvents.core_inserted.connect(func(_c, _i): _refresh_cores())
 	GameEvents.core_acquired.connect(func(_c): _refresh_cores())
 	var player := get_tree().get_first_node_in_group("player") as Player
@@ -36,206 +81,210 @@ func _ready() -> void:
 		_refresh_cores()
 
 
+func _build() -> void:
+	var root := Control.new()
+	root.name = "Root"
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(root)
+
+	_build_stat_panel(root)
+	_build_banner(root)
+	_build_prompt(root)
+	_build_hint(root)
+	_build_vignette(root)
+	_build_death_overlay(root)
+
+	_pause = PAUSE_MENU.instantiate()
+	add_child(_pause)
+
+
+func _build_stat_panel(root: Control) -> void:
+	var plate := UiKit.panel(&"HudPanel")
+	plate.name = "StatPanel"
+	plate.offset_left = 16.0
+	plate.offset_top = 12.0
+	plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(plate)
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	plate.add_child(column)
+
+	_hearts_row = HBoxContainer.new()
+	_hearts_row.add_theme_constant_override("separation", 4)
+	column.add_child(_hearts_row)
+
+	var toxin_row := HBoxContainer.new()
+	toxin_row.add_theme_constant_override("separation", 8)
+	toxin_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.add_child(toxin_row)
+	_toxin_bar = ProgressBar.new()
+	_toxin_bar.custom_minimum_size = TOXIN_BAR_SIZE
+	_toxin_bar.show_percentage = false
+	_toxin_bar.min_value = 0.0
+	_toxin_bar.max_value = 100.0
+	_toxin_bar.value = 0.0
+	toxin_row.add_child(_toxin_bar)
+	_toxin_label = UiKit.label("毒素 0%", &"HudToxinLabel")
+	_toxin_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	toxin_row.add_child(_toxin_label)
+
+	_socket_label = UiKit.label("剑核  - · -", &"HudStrongLabel")
+	column.add_child(_socket_label)
+	_pouch_label = UiKit.label("袋中 0", &"HudLabel")
+	column.add_child(_pouch_label)
+
+
+func _build_banner(root: Control) -> void:
+	_banner = UiKit.panel(&"BannerPanel")
+	_banner.name = "Banner"
+	_banner.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_banner.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_banner.offset_top = 14.0
+	# 高度钉在贴图原高：横幅一被纵向拉伸，两端的尖角就会出现半像素毛边。
+	_banner.custom_minimum_size = Vector2(0.0, BANNER_HEIGHT)
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.modulate.a = 0.0
+	root.add_child(_banner)
+	_announce_label = UiKit.label("", &"AnnounceLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_announce_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_banner.add_child(_announce_label)
+
+
+func _build_prompt(root: Control) -> void:
+	_prompt_panel = UiKit.panel(&"HudPanel")
+	_prompt_panel.name = "Prompt"
+	_prompt_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_prompt_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_prompt_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_prompt_panel.offset_top = -74.0
+	_prompt_panel.offset_bottom = -74.0
+	_prompt_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prompt_panel.visible = false
+	root.add_child(_prompt_panel)
+	_prompt_label = UiKit.label("", &"PromptLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_prompt_panel.add_child(_prompt_label)
+
+
+func _build_hint(root: Control) -> void:
+	_hint = UiKit.label("Esc 暂停 · 完整键位见暂停菜单里的操作说明", &"FootnoteLabel",
+			HORIZONTAL_ALIGNMENT_RIGHT)
+	_hint.anchor_left = 1.0
+	_hint.anchor_right = 1.0
+	_hint.offset_left = -440.0
+	_hint.offset_right = -18.0
+	_hint.offset_top = 16.0
+	_hint.offset_bottom = 34.0
+	root.add_child(_hint)
+
+
+func _build_vignette(root: Control) -> void:
+	_vignette = UiKit.sprite_rect(UiKit.TEX_VIGNETTE)
+	_vignette.name = "BloodVignette"
+	_vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	_vignette.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_vignette.modulate = Color(1, 1, 1, 0.0)
+	_vignette.visible = false
+	root.add_child(_vignette)
+
+
+func _build_death_overlay(root: Control) -> void:
+	_death_overlay = Control.new()
+	_death_overlay.name = "DeathOverlay"
+	_death_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_death_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_death_overlay.modulate.a = 0.0
+	_death_overlay.visible = false
+	root.add_child(_death_overlay)
+	_death_overlay.add_child(UiKit.scrim(0.86, 0.86, 0.86))
+
+	var column := VBoxContainer.new()
+	column.set_anchors_preset(Control.PRESET_CENTER)
+	column.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	column.grow_vertical = Control.GROW_DIRECTION_BOTH
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	_death_overlay.add_child(column)
+	column.add_child(UiKit.label("余 烬 熄 灭", &"HeadLabel", HORIZONTAL_ALIGNMENT_CENTER))
+	column.add_child(UiKit.divider())
+	column.add_child(UiKit.label("在最后点亮的余烬巢重燃…", &"DimLabel",
+			HORIZONTAL_ALIGNMENT_CENTER))
+
+
 func _process(delta: float) -> void:
 	_time += delta
 	if _announce_time > 0.0:
 		_announce_time -= delta
 		if _announce_time <= 0.0:
-			_announce.text = ""
-	if _hint_time > 0.0 and _hint:
+			_hide_banner()
+	if _hint_time > 0.0:
 		_hint_time -= delta
-		_hint.modulate.a = clampf(_hint_time / 1.6, 0.0, 0.55)
+		_hint.modulate.a = clampf(_hint_time / 1.6, 0.0, 0.7)
 		if _hint_time <= 0.0:
 			_hint.visible = false
 	if _toxin_ratio >= TOXIN_ALARM_RATIO:
-		var pulse := lerpf(TOXIN_PULSE_MIN, TOXIN_PULSE_MAX, 0.5 + 0.5 * sin(TAU * _time / TOXIN_PULSE_PERIOD))
-		_toxin_fill.modulate = Color(pulse, pulse, pulse)
+		var pulse := lerpf(TOXIN_PULSE_MIN, TOXIN_PULSE_MAX,
+				0.5 + 0.5 * sin(TAU * _time / TOXIN_PULSE_PERIOD))
+		_toxin_bar.modulate = Color(pulse, pulse, pulse)
 		_toxin_label.modulate = Color(pulse, pulse, pulse)
 	if _low_hp and not _vignette_tween_active():
 		_breath_time += delta
-		_vignette.modulate.a = lerpf(VIGNETTE_BREATH_MIN, VIGNETTE_BREATH_MAX, 0.5 + 0.5 * sin(TAU * _breath_time / VIGNETTE_BREATH_PERIOD))
+		_vignette.modulate.a = lerpf(VIGNETTE_BREATH_MIN, VIGNETTE_BREATH_MAX,
+				0.5 + 0.5 * sin(TAU * _breath_time / VIGNETTE_BREATH_PERIOD))
 	_refresh_cores()
 
 
-const HEART_FULL_PATH := "res://assets/env/hud_heart_full.png"
-const HEART_EMPTY_PATH := "res://assets/env/hud_heart_empty.png"
-const HEART_HALF_PATH := "res://assets/env/hud_heart_full.png"
-var _heart_full: Texture2D
-var _heart_empty: Texture2D
-var _heart_half: Texture2D
-var _use_sprite_hearts: bool = false
-
-# Danger feedback tuning: toxin alarm pulse + low-HP blood vignette.
-const TOXIN_ALARM_RATIO := 0.8
-const TOXIN_PULSE_PERIOD := 0.5
-const TOXIN_PULSE_MIN := 1.0
-const TOXIN_PULSE_MAX := 1.6
-const VIGNETTE_EDGE := 24.0
-const VIGNETTE_RED := Color(0.6, 0.05, 0.05)
-const VIGNETTE_FADE_IN := 0.4
-const VIGNETTE_FADE_OUT := 0.6
-const VIGNETTE_ALPHA := 0.35
-const VIGNETTE_BREATH_MIN := 0.25
-const VIGNETTE_BREATH_MAX := 0.45
-const VIGNETTE_BREATH_PERIOD := 3.0
-
-func _build() -> void:
-	_heart_full = _load_tex(HEART_FULL_PATH)
-	_heart_empty = _load_tex(HEART_EMPTY_PATH)
-	_heart_half = _load_tex(HEART_HALF_PATH)
-	_use_sprite_hearts = _heart_full != null and _heart_empty != null
-
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(root)
-
-	_hp_bar = HBoxContainer.new()
-	_hp_bar.position = Vector2(18, 12)
-	_hp_bar.add_theme_constant_override("separation", 2)
-	root.add_child(_hp_bar)
-
-	var toxin_back := ColorRect.new()
-	toxin_back.position = Vector2(18, 32)
-	toxin_back.size = Vector2(110, 6)
-	toxin_back.color = Color(0.08, 0.07, 0.1, 0.85)
-	root.add_child(toxin_back)
-	_toxin_fill = ColorRect.new()
-	_toxin_fill.size = Vector2(0, 6)
-	_toxin_fill.color = Color(0.38, 0.62, 0.48)
-	toxin_back.add_child(_toxin_fill)
-	_toxin_label = Label.new()
-	_toxin_label.position = Vector2(134, 28)
-	_toxin_label.add_theme_font_size_override("font_size", 11)
-	_toxin_label.add_theme_color_override("font_color", Color(0.62, 0.78, 0.7, 0.85))
-	_toxin_label.text = "毒素"
-	root.add_child(_toxin_label)
-
-	_socket_label = Label.new()
-	_socket_label.position = Vector2(18, 42)
-	_socket_label.add_theme_font_size_override("font_size", 11)
-	_socket_label.add_theme_color_override("font_color", Color(0.82, 0.76, 0.68, 0.8))
-	root.add_child(_socket_label)
-
-	_pouch_label = Label.new()
-	_pouch_label.position = Vector2(18, 56)
-	_pouch_label.add_theme_font_size_override("font_size", 11)
-	_pouch_label.add_theme_color_override("font_color", Color(0.55, 0.52, 0.5, 0.7))
-	root.add_child(_pouch_label)
-
-	_prompt = Label.new()
-	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_prompt.position = Vector2(-200, -48)
-	_prompt.custom_minimum_size = Vector2(400, 0)
-	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_prompt.add_theme_font_size_override("font_size", 16)
-	_prompt.add_theme_color_override("font_color", Palette.EMBER)
-	root.add_child(_prompt)
-
-	_announce = Label.new()
-	_announce.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_announce.position = Vector2(-240, 18)
-	_announce.custom_minimum_size = Vector2(480, 0)
-	_announce.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_announce.add_theme_font_size_override("font_size", 18)
-	_announce.add_theme_color_override("font_color", Palette.EMBER_ASH)
-	root.add_child(_announce)
-
-	_hint = Label.new()
-	_hint.anchor_left = 1.0
-	_hint.anchor_right = 1.0
-	_hint.anchor_top = 0.0
-	_hint.anchor_bottom = 0.0
-	_hint.offset_left = -520.0
-	_hint.offset_right = -16.0
-	_hint.offset_top = 12.0
-	_hint.offset_bottom = 32.0
-	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_hint.add_theme_font_size_override("font_size", 12)
-	_hint.add_theme_color_override("font_color", Color(0.78, 0.74, 0.68, 0.62))
-	_hint.text = "AD 移动  ·  空格跳  ·  Shift 冲  ·  J 斩/弹反  ·  E 交互"
-	root.add_child(_hint)
-
-	# Low-HP blood vignette: 4 red edge bands (hollow center), topmost layer.
-	_vignette = Control.new()
-	_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_vignette.modulate = Color(1, 1, 1, 0.0)
-	_vignette.visible = false
-	root.add_child(_vignette)
-	_add_edge_rect(Vector4(0.0, 0.0, 1.0, 0.0), Vector4(0.0, 0.0, 0.0, VIGNETTE_EDGE))
-	_add_edge_rect(Vector4(0.0, 1.0, 1.0, 1.0), Vector4(0.0, -VIGNETTE_EDGE, 0.0, 0.0))
-	_add_edge_rect(Vector4(0.0, 0.0, 0.0, 1.0), Vector4(0.0, VIGNETTE_EDGE, VIGNETTE_EDGE, -VIGNETTE_EDGE))
-	_add_edge_rect(Vector4(1.0, 0.0, 1.0, 1.0), Vector4(-VIGNETTE_EDGE, VIGNETTE_EDGE, 0.0, -VIGNETTE_EDGE))
-
-
+## 一颗心 = 深色插槽 + 2 倍放大的像素心。插槽让血量在明亮场景里也读得出来。
 func _make_heart() -> Control:
-	if _use_sprite_hearts:
-		var wrap := Control.new()
-		wrap.custom_minimum_size = Vector2(11, 9)
-		var tr := TextureRect.new()
-		tr.name = "Icon"
-		tr.texture = _heart_full
-		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-		tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		wrap.add_child(tr)
-		return wrap
-	var pip := ColorRect.new()
-	pip.custom_minimum_size = Vector2(12, 10)
-	pip.color = Palette.RUST_LIGHT
-	return pip
-
-
-func _add_edge_rect(anchors: Vector4, offsets: Vector4) -> void:
-	var rect := ColorRect.new()
-	rect.color = VIGNETTE_RED
-	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	rect.anchor_left = anchors.x
-	rect.anchor_top = anchors.y
-	rect.anchor_right = anchors.z
-	rect.anchor_bottom = anchors.w
-	rect.offset_left = offsets.x
-	rect.offset_top = offsets.y
-	rect.offset_right = offsets.z
-	rect.offset_bottom = offsets.w
-	_vignette.add_child(rect)
-
-
-func _load_tex(path: String) -> Texture2D:
-	if not ResourceLoader.exists(path):
-		return null
-	return load(path) as Texture2D
+	var wrap := Control.new()
+	wrap.custom_minimum_size = HEART_SLOT_SIZE
+	wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var slot := UiKit.sprite_rect(UiKit.TEX_HEART_SLOT)
+	slot.name = "Slot"
+	wrap.add_child(slot)
+	var icon := TextureRect.new()
+	icon.name = "Icon"
+	icon.texture = _heart_full
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_SCALE
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.position = (HEART_SLOT_SIZE - HEART_SIZE) * 0.5
+	icon.size = HEART_SIZE
+	wrap.add_child(icon)
+	return wrap
 
 
 func _on_hp(current: int, maximum: int) -> void:
-	# Ensure bar size matches max (supports 3-8 hearts).
-	while _hp_bar.get_child_count() < maximum:
-		_hp_bar.add_child(_make_heart())
-	while _hp_bar.get_child_count() > maximum:
-		_hp_bar.get_child(_hp_bar.get_child_count() - 1).queue_free()
-	for i in _hp_bar.get_child_count():
-		var child := _hp_bar.get_child(i)
-		var tr := child as TextureRect
-		if tr == null and child.get_child_count() > 0:
-			tr = child.get_node_or_null("Icon") as TextureRect
-		if _use_sprite_hearts and tr != null:
-			if i < current:
-				tr.texture = _heart_full
-				tr.modulate = Color(1, 1, 1, 1)
-			else:
-				tr.texture = _heart_empty
-				tr.modulate = Color(1, 1, 1, 0.55)
-		elif child is ColorRect:
-			var pip := child as ColorRect
-			pip.color = Palette.RUST_LIGHT if i < current else Palette.SHADOW
+	while _hearts_row.get_child_count() < maximum:
+		_hearts_row.add_child(_make_heart())
+	while _hearts_row.get_child_count() > maximum:
+		_hearts_row.get_child(_hearts_row.get_child_count() - 1).queue_free()
+	var lost := _hp_shown > current
+	for i in _hearts_row.get_child_count():
+		var icon := _hearts_row.get_child(i).get_node_or_null("Icon") as TextureRect
+		if icon == null:
+			continue
+		var alive := i < current
+		icon.texture = _heart_full if alive else _heart_empty
+		icon.modulate = Color(1, 1, 1, 1.0 if alive else 0.5)
+		# 刚刚熄灭的那颗心闪一下白，把掉血读成一次事件而不是静默变化。
+		if lost and not alive and i < _hp_shown:
+			_flash(icon)
+	_hp_shown = current
 	if current <= 1 and not _low_hp:
 		_low_hp = true
 		_show_vignette()
 	elif current > 1 and _low_hp:
 		_low_hp = false
 		_hide_vignette()
+
+
+func _flash(icon: TextureRect) -> void:
+	icon.modulate = Color(2.4, 2.0, 1.8, 1.0)
+	var tween := create_tween()
+	tween.tween_property(icon, "modulate", Color(1, 1, 1, 0.5), HEART_FLASH)
 
 
 func _show_vignette() -> void:
@@ -262,20 +311,37 @@ func _vignette_tween_active() -> bool:
 func _on_toxin(current: float, maximum: float) -> void:
 	var t := 0.0 if maximum <= 0.0 else current / maximum
 	_toxin_ratio = t
-	_toxin_fill.size.x = 110.0 * t
+	_toxin_bar.value = t * 100.0
 	_toxin_label.text = "毒素 %d%%" % int(t * 100.0)
 	if t < TOXIN_ALARM_RATIO:
-		_toxin_fill.modulate = Color.WHITE
+		_toxin_bar.modulate = Color.WHITE
 		_toxin_label.modulate = Color.WHITE
 
 
 func _on_prompt(text: String) -> void:
-	_prompt.text = text
+	_prompt_label.text = text
+	_prompt_panel.visible = text != ""
 
 
 func _on_announce(text: String) -> void:
-	_announce.text = text
-	_announce_time = 2.4
+	_announce_label.text = text
+	_announce_time = ANNOUNCE_HOLD
+	var tween := create_tween()
+	tween.tween_property(_banner, "modulate:a", 1.0, ANNOUNCE_FADE)
+
+
+func _hide_banner() -> void:
+	var tween := create_tween()
+	tween.tween_property(_banner, "modulate:a", 0.0, ANNOUNCE_FADE)
+	tween.tween_callback(func() -> void: _announce_label.text = "")
+
+
+func _on_player_died() -> void:
+	if _pause != null and _pause.is_open():
+		_pause.close()
+	_death_overlay.visible = true
+	var tween := create_tween()
+	tween.tween_property(_death_overlay, "modulate:a", 1.0, 0.45)
 
 
 func _refresh_cores() -> void:

@@ -19,6 +19,10 @@ const LIBRARY := {
 	&"pickup": "res://assets/kenney_clean/audio/pickup.ogg",
 	&"insert": "res://assets/kenney_clean/audio/insert.ogg",
 	&"gate": "res://assets/kenney_clean/audio/gate.ogg",
+	&"ui_move": "res://assets/kenney_clean/audio/ui_move.ogg",
+	&"ui_select": "res://assets/kenney_clean/audio/ui_select.ogg",
+	&"ui_back": "res://assets/kenney_clean/audio/ui_back.ogg",
+	&"ui_denied": "res://assets/kenney_clean/audio/ui_denied.ogg",
 }
 
 var _pool: Array[AudioStreamPlayer] = []
