@@ -87,6 +87,26 @@ func rust_debris(pos: Vector2) -> void:
 		add_child(bit)
 
 
+## 世界坐标一次性帧动画（敌人死亡尸体动画/烟雾等）。播完自毁；headless 或
+## 空帧列表时静默退化——调用方逻辑（queue_free 等）不受影响。
+## `pos` 为脚底世界坐标；`baseline` 为帧画布内容的基线偏移
+## （centered Sprite：-(画布高/2 - 底部透明边距)）。
+func play_frames_once(frames: Array[Texture2D], pos: Vector2, fps: float,
+		flip: bool = false, baseline: float = 0.0) -> void:
+	if _headless or frames.is_empty():
+		return
+	var player := OneShotFrames.new(frames, fps)
+	player.position = pos + Vector2(0.0, baseline)
+	player.flip_h = flip
+	player.z_index = FX_Z
+	add_child(player)
+
+
+## 通用敌人死亡烟雾（Gothicvania cemetery 5 帧，44x52，底部留白 2px）。
+func enemy_death_smoke(pos: Vector2) -> void:
+	play_frames_once(CharFrames.anim("fx_enemy_death", "death"), pos, 12.0, false, -24.0)
+
+
 ## One toxin bubble rising out of `rect` (parent-local coordinates) and
 ## popping as it fades. Tinted orange, pressed toward Palette.TOXIC.
 func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
@@ -98,6 +118,31 @@ func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
 	bubble.position = rect.position + Vector2(randf() * rect.size.x, randf() * rect.size.y)
 	bubble.modulate = Color(0.45, 0.78, 0.55, 0.75)
 	parent.add_child(bubble)
+
+
+## 一次性帧序列播放器：固定 fps 播完即自由。像素素材 NEAREST。
+class OneShotFrames extends Sprite2D:
+	var _frames: Array[Texture2D] = []
+	var _fps := 12.0
+	var _age := 0.0
+
+
+	func _init(frames: Array[Texture2D], fps: float) -> void:
+		_frames = frames
+		_fps = maxf(fps, 0.001)
+		texture = _frames[0]
+		centered = true
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+
+	func _process(delta: float) -> void:
+		_age += delta
+		var idx := int(_age * _fps)
+		if idx >= _frames.size():
+			queue_free()
+			return
+		if texture != _frames[idx]:
+			texture = _frames[idx]
 
 
 ## Spawns and owns up to six drifting embers around the target's body.

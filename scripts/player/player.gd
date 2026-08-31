@@ -15,28 +15,20 @@ extends CharacterBody2D
 const P_STAND_PATH := "res://assets/kenney_clean/player/p1_stand.png"
 const P_JUMP_PATH := "res://assets/kenney_clean/player/p1_jump.png"
 const P_HURT_PATH := "res://assets/kenney_clean/player/p1_hurt.png"
-
-## AI 生成的余烬骑士贴图（紧贴内容裁切，96px 高，脚底在图片底边）。
-## 厚涂风：idle + jump + fall + hurt + 三段斩击（windup/active/parry/recovery）。
-## 行走的逐帧轮换被砍掉，运行时复用 idle；视觉差异用一个简单的代码 bob 补回。
-const AI_DIR := "res://assets/kenney_clean/player_ai/"
-const AI_IDLE_PATH := AI_DIR + "knight_pose_idle.png"
-const AI_JUMP_PATH := AI_DIR + "knight_pose_jump.png"
-const AI_FALL_PATH := AI_DIR + "knight_pose_fall.png"
-const AI_HURT_PATH := AI_DIR + "knight_pose_hurt.png"
-const AI_SLASH_PATHS := [
-	AI_DIR + "knight_pose_slash_a.png",  # windup
-	AI_DIR + "knight_pose_slash_b.png",  # active (parry)
-	AI_DIR + "knight_pose_slash_c.png",  # recovery
-]
-## AI 帧是紧裁切的：精灵中心在半高处（Kenney 图带留白，中心偏移不同）。
-const AI_SPRITE_OFFSET := Vector2(0.0, -48.0)
 const KENNEY_SPRITE_OFFSET := Vector2(0.0, -13.0)
-## 巨剑在手部的挂点（AI 骑士 96 高，手约在 -52）。
-const AI_SWORD_ANCHOR := Vector2(10.0, -52.0)
-## 行走的代码 bob：在地面移动时给精灵一个 ~2px 的 Y 方向 sin 摆动。
+## 行走的代码 bob（仅 Kenney 单帧回退路径）：地面移动时 ~2px 的 Y 向 sin 摆动。
 const WALK_BOB_AMPLITUDE := 1.5
 const WALK_BOB_FREQ := 7.0
+
+## Fantasy Knight 像素帧动画（assets/characters/player_fantasy_knight/，朝右）。
+## 画布统一 120x80、脚底贴画布底边；身体中心在画布 x≈54.5 → 补偿 +6px。
+## centered=true 时 (6, -40) 让脚底落在节点原点、身体对准碰撞体中线。
+const KNIGHT_CHAR := "player_fantasy_knight"
+const KNIGHT_POS := Vector2(6.0, -40.0)
+## 三段连击对应的动作名（fps 在 swing_started 时按挥砍总时长动态同步）。
+const KNIGHT_ATTACK_ANIMS := ["attack1", "attack2", "attack_combo"]
+## 受击帧短暂覆盖运动动画的时长。
+const HURT_POSE_SECONDS := 0.18
 ## 判定帧前冲（世界单位/秒），克制到不破坏沉重移动手感。
 const SLASH_LUNGE := 78.0
 const AFTERIMAGE_LIFE := 0.16
@@ -46,7 +38,9 @@ const HIT_FLASH_SECONDS := 0.12
 
 var _sprites: Dictionary = {}
 var _sprite_root: Sprite2D
-var _slash_textures: Array[Texture2D] = []
+var _anim: FrameAnimSprite
+var _attack_anim: String = "attack1"
+var _hurt_timer: float = 0.0
 var _hit_flash_tween: Tween
 var _was_on_floor := true
 var _melee_active_prev := false
@@ -64,7 +58,9 @@ func _ready() -> void:
 	GameEvents.toxin_changed.emit(toxin.toxin, toxin.max_toxin)
 	GameEvents.hit.connect(_on_game_hit)
 	GameEvents.dash_performed.connect(_on_dash_performed)
-	_setup_kenney_sprite()
+	GameEvents.swing_started.connect(_on_swing_started)
+	if not _setup_knight_anim():
+		_setup_kenney_sprite()
 	# 主题标识：余烬骑士周身漂浮的橙色余烬（Fx 内部自带 headless 守卫）。
 	Fx.attach_ember(self)
 
@@ -87,7 +83,7 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor() and not _was_on_floor and fall_speed > 60.0:
 		Fx.dust_puff(global_position + Vector2(0.0, -2.0))
 	_was_on_floor = is_on_floor()
-	_update_kenney_sprite(delta)
+	_update_visual(delta)
 	_poll_slash_arc(face)
 	_poll_interact()
 	_poll_sockets()
@@ -96,6 +92,50 @@ func _physics_process(delta: float) -> void:
 
 func _on_dash_performed() -> void:
 	Fx.dust_puff(global_position)
+
+
+## Fantasy Knight 逐帧动画（主路径）。素材缺失（如未导入）返回 false，
+## 交给 Kenney 单帧回退；两者都缺时保留场景内 ColorRect 占位。
+func _setup_knight_anim() -> bool:
+	if not CharFrames.available(KNIGHT_CHAR):
+		return false
+	_anim = FrameAnimSprite.new()
+	_anim.name = "KnightSprite"
+	# 动作表：帧目录 / fps / 是否循环（画布统一 → 基线相同）。
+	var table := [
+		["idle", 10.0, true], ["run", 12.0, true],
+		["jump", 10.0, false], ["fall", 10.0, true],
+		["dash", 14.0, true], ["hurt", 10.0, false],
+		["death", 10.0, false], ["turn", 14.0, false],
+		["attack1", 14.0, false], ["attack2", 14.0, false],
+		["attack_combo", 14.0, false],
+	]
+	for row in table:
+		_anim.register(row[0], CharFrames.anim(KNIGHT_CHAR, row[0]), row[1], row[2], KNIGHT_POS)
+	_anim.play("idle")
+	visual.add_child(_anim)
+	_sprite_root = _anim  # 残像/白闪等表现直接复用同一 Sprite。
+	# 骑士帧自带剑与盔甲：隐藏所有占位色块和程序化多边形剑。
+	for c in visual.get_children():
+		if c == _anim:
+			continue
+		if c is ColorRect or c is Polygon2D:
+			c.visible = false
+	return true
+
+
+## 按挥砍段位同步攻击动画：一次挥砍（前摇+判定+后摇）≈ 播完整段帧。
+func _on_swing_started(combo_index: int) -> void:
+	if _anim == null:
+		return
+	var idx := clampi(combo_index, 0, KNIGHT_ATTACK_ANIMS.size() - 1)
+	_attack_anim = KNIGHT_ATTACK_ANIMS[idx]
+	var duration: float = MeleeCombat.COMBO_WINDUP[idx] \
+			+ MeleeCombat.COMBO_ACTIVE[idx] + MeleeCombat.COMBO_RECOVERY[idx]
+	var frames := CharFrames.anim(KNIGHT_CHAR, _attack_anim)
+	if not frames.is_empty():
+		_anim.set_fps(_attack_anim, float(frames.size()) / maxf(duration, 0.05))
+	_anim.play(_attack_anim, true)
 
 
 func _setup_kenney_sprite() -> void:
@@ -118,64 +158,59 @@ func _setup_kenney_sprite() -> void:
 		_sprites["jump"] = load(P_JUMP_PATH) as Texture2D
 	if ResourceLoader.exists(P_HURT_PATH):
 		_sprites["hurt"] = load(P_HURT_PATH) as Texture2D
-	# AI 厚涂帧优先（覆盖 Kenney）；缺哪张就 fall-back 到 stand。
-	if ResourceLoader.exists(AI_IDLE_PATH):
-		_sprite_root.position = AI_SPRITE_OFFSET
-		_sprites["stand"] = load(AI_IDLE_PATH) as Texture2D
-		if ResourceLoader.exists(AI_JUMP_PATH):
-			_sprites["jump"] = load(AI_JUMP_PATH) as Texture2D
-		if ResourceLoader.exists(AI_FALL_PATH):
-			_sprites["fall"] = load(AI_FALL_PATH) as Texture2D
-		if ResourceLoader.exists(AI_HURT_PATH):
-			_sprites["hurt"] = load(AI_HURT_PATH) as Texture2D
-		_slash_textures.clear()
-		for p in AI_SLASH_PATHS:
-			if ResourceLoader.exists(p):
-				_slash_textures.append(load(p) as Texture2D)
-		# 巨剑挂点移到 AI 骑士的手部高度。
-		var sword := visual.get_node_or_null("Sword") as Node2D
-		if sword != null:
-			sword.position = AI_SWORD_ANCHOR
-	# FILTER：厚涂的 192px 渲染尺寸在 mipmap 关闭时会闪烁；切到 LINEAR_MIPMAP。
-	_sprite_root.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_sprite_root.texture = _sprites["stand"]
 	_sprite_root.modulate = Color(1, 1, 1, 1)
+
+
+func _update_visual(delta: float) -> void:
+	if _hurt_timer > 0.0:
+		_hurt_timer = maxf(0.0, _hurt_timer - delta)
+	if _anim != null:
+		_update_knight_anim()
+		return
+	_update_kenney_sprite(delta)
+
+
+## 状态优先级：死亡 > 挥砍 > dash > 受击帧 > 空中(升/降) > 跑动 > 待机。
+func _update_knight_anim() -> void:
+	if health.current <= 0:
+		_anim.play("death")
+		return
+	if melee.is_busy():
+		_anim.play(_attack_anim)
+		return
+	if controller.is_dashing():
+		_anim.play("dash")
+		return
+	if _hurt_timer > 0.0:
+		_anim.play("hurt")
+		return
+	if not is_on_floor():
+		_anim.play("jump" if velocity.y < 0.0 else "fall")
+		return
+	_anim.play("run" if absf(velocity.x) > 12.0 else "idle")
 
 
 func _update_kenney_sprite(delta: float) -> void:
 	if _sprite_root == null:
 		return
 	var tex: Texture2D = _sprites.get("stand") as Texture2D
-	var phase := melee.phase_name()
-	var is_slashing := phase != "idle"
-	var slash_idx := 0
-	match phase:
-		"windup": slash_idx = 0
-		"active": slash_idx = 1
-		"recovery": slash_idx = 2
+	var is_slashing := melee.phase_name() != "idle"
 	if health.current <= 0:
 		tex = _sprites.get("hurt", tex) as Texture2D
-	elif is_slashing and slash_idx < _slash_textures.size():
-		tex = _slash_textures[slash_idx]
 	elif controller.is_dashing() or not is_on_floor():
-		var key := "fall" if velocity.y > 30.0 and not is_on_floor() else "jump"
-		tex = _sprites.get(key, _sprites.get("jump", tex)) as Texture2D
-	var sword := visual.get_node_or_null("Sword") as Node2D
-	if sword:
-		# AI slash poses already paint the blade; hide the polygon sword.
-		sword.visible = _slash_textures.is_empty()
-	# else: on floor, not slashing, not dashing — show idle (with walk-bob below).
+		tex = _sprites.get("jump", tex) as Texture2D
 	if tex != null and _sprite_root.texture != tex:
 		_sprite_root.texture = tex
 	# 行走 bob：地面移动时给精灵 Y 方向 sin 摆动，恢复到 stand 时直接归零。
 	var moving := is_on_floor() and not is_slashing and absf(velocity.x) > 12.0
 	if moving:
 		_bob_t += delta
-		var base_y := AI_SPRITE_OFFSET.y
+		var base_y := KENNEY_SPRITE_OFFSET.y
 		_sprite_root.position.y = base_y + sin(_bob_t * WALK_BOB_FREQ * TAU) * WALK_BOB_AMPLITUDE
 		_moving_prev = true
 	elif _moving_prev:
-		_sprite_root.position.y = AI_SPRITE_OFFSET.y
+		_sprite_root.position.y = KENNEY_SPRITE_OFFSET.y
 		_moving_prev = false
 
 
@@ -189,6 +224,12 @@ func _poll_slash_arc(face: float) -> void:
 			var arc := SlashArc.new()
 			arc.flip_h = face < 0.0
 			arc.position = Vector2(24.0 * face, -22.0)
+			if _anim != null:
+				# 骑士帧自带剑痕：弧光降级为辅助拖影（缩小压暗），避免双重剑光；
+				# 弹反炸亮由 SlashArc._on_parried 覆盖 modulate/scale，反馈保留。
+				arc.scale = Vector2(0.6, 0.6)
+				arc.modulate = Color(1.0, 0.92, 0.78, 0.5)
+				arc.position = Vector2(20.0 * face, -18.0)
 			add_child(arc)
 	_melee_active_prev = active_now
 
@@ -215,6 +256,9 @@ func _spawn_afterimages(_face: float) -> void:
 func _on_game_hit(_attacker: Node, target: Node, _amount: int) -> void:
 	if target != self or _sprite_root == null:
 		return
+	# 存活且不在挥砍锁定时，短暂切到受击帧。
+	if health.current > 0 and not melee.is_busy():
+		_hurt_timer = HURT_POSE_SECONDS
 	if _hit_flash_tween != null and _hit_flash_tween.is_valid():
 		_hit_flash_tween.kill()
 	_sprite_root.modulate = HIT_FLASH_COLOR
@@ -268,6 +312,8 @@ func _on_toxin_overflow() -> void:
 
 
 func _on_died() -> void:
+	if _anim != null:
+		_anim.play("death")  # 物理停摆后由 _process 继续播完倒地
 	set_physics_process(false)
 	GameEvents.player_died.emit()
 	GameEvents.announcement.emit("余烬熄灭…")

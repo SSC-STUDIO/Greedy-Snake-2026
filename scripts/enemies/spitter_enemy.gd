@@ -23,6 +23,7 @@ const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
 @onready var muzzle: Marker2D = $Muzzle
 
 var _body: CanvasItem
+var _anim: FrameAnimSprite  # 有帧素材时与 _body 指向同一节点，否则为 null
 var _base_modulate := Color.WHITE
 var _charging := false
 var _charge_timer: Timer
@@ -30,8 +31,12 @@ var _visual_tween: Tween
 
 
 const FLY_TEX_PATH := "res://assets/kenney_clean/enemies/flyFly1.png"
-## AI 生成的喷吐者（64px 高，面朝左，紧裁切）。
-const AI_TEX_PATH := "res://assets/kenney_clean/enemies_ai/spitter.png"
+## Hell Beast 像素帧动画（ansimuz，原图面朝左）：idle 5帧 / attack(吐息) 4帧 /
+## death(烈焰焚毁) 6帧。画布 66x67 / 64x64 / 74x160，脚底均贴画布底边。
+const BEAST_CHAR := "spitter_hell_beast"
+const BEAST_IDLE_POS := Vector2(-4.0, -33.0)   # 身体中心在画布 x≈37 → 补偿 -4
+const BEAST_ATTACK_POS := Vector2(0.0, -32.0)
+const BEAST_DEATH_BASELINE := -80.0            # 死亡帧画布 160 高（火柱向上）
 
 
 func _ready() -> void:
@@ -52,37 +57,39 @@ func _ready() -> void:
 	GameEvents.hit.connect(_on_hit)
 
 
+## 三级回退：Hell Beast 帧动画 → Kenney 单帧 → ColorRect 占位（headless/缺素材）。
 func _build_visual() -> void:
 	var existing := get_node_or_null("Body") as CanvasItem
 	if existing != null:
 		_body = existing
 		_base_modulate = existing.modulate
 		return
-	var tex: Texture2D = null
-	if ResourceLoader.exists(AI_TEX_PATH):
-		tex = load(AI_TEX_PATH) as Texture2D
-	elif ResourceLoader.exists(FLY_TEX_PATH):
-		tex = load(FLY_TEX_PATH) as Texture2D
-	if tex != null:
+	if CharFrames.available(BEAST_CHAR):
+		_anim = FrameAnimSprite.new()
+		_anim.name = "Body"
+		_anim.register("idle", CharFrames.anim(BEAST_CHAR, "idle"), 8.0, true, BEAST_IDLE_POS)
+		_anim.register("attack", CharFrames.anim(BEAST_CHAR, "attack"), 10.0, false, BEAST_ATTACK_POS)
+		_anim.play("idle")
+		_anim.finished.connect(_on_anim_finished)
+		add_child(_anim)
+		_body = _anim
+		_base_modulate = _anim.modulate
+		return
+	if ResourceLoader.exists(FLY_TEX_PATH):
 		var spr := Sprite2D.new()
 		spr.name = "Body"
-		spr.texture = tex
-		# AI 贴图紧裁切（底边是脚）：64 高 → 中心在 -32；Kenney 回退用旧偏移。
-		spr.position = Vector2(0, -32) if tex.get_height() > 48 else Vector2(0, -10)
-		if tex.get_height() > 48:
-			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		else:
-			spr.modulate = Palette.RUST_MID.lerp(Color.WHITE, 0.25)
+		spr.texture = load(FLY_TEX_PATH) as Texture2D
+		spr.position = Vector2(0, -10)
+		spr.modulate = Palette.RUST_MID.lerp(Color.WHITE, 0.25)
 		add_child(spr)
 		_body = spr
 		_base_modulate = spr.modulate
-		if tex.get_height() <= 48:
-			var nozzle := ColorRect.new()
-			nozzle.size = Vector2(10, 4)
-			nozzle.position = Vector2(-14, -14)
-			nozzle.color = Palette.TOXIC
-			nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			add_child(nozzle)
+		var nozzle := ColorRect.new()
+		nozzle.size = Vector2(10, 4)
+		nozzle.position = Vector2(-14, -14)
+		nozzle.color = Palette.TOXIC
+		nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(nozzle)
 		return
 	var body := ColorRect.new()
 	body.name = "Body"
@@ -115,6 +122,10 @@ func _on_shoot_tick() -> void:
 func _begin_charge() -> void:
 	_charging = true
 	_face_player()
+	# 吐息动画横跨整个蓄力窗：4 帧在 CHARGE_TIME 内播完，释放帧正好落在发射瞬间。
+	if _anim != null:
+		_anim.set_fps("attack", 4.0 / maxf(CHARGE_TIME, 0.1))
+		_anim.play("attack", true)
 	_kill_visual_tween()
 	_visual_tween = create_tween()
 	_visual_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
@@ -142,10 +153,20 @@ func _on_charged() -> void:
 	_fire(player)
 
 
+## 吐息动画播完（非循环停在末帧）后回到待机循环。
+func _on_anim_finished(anim: StringName) -> void:
+	if anim == &"attack" and not _charging:
+		_anim.play("idle")
+
+
 func _fire(player: Player) -> void:
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
 	get_tree().current_scene.add_child(proj)
-	var origin := muzzle.global_position
+	# 喷口跟随身体朝向镜像（原图面朝左，scale.x=-1 时面朝右）。
+	var mpos := muzzle.position
+	if _body != null and _body.scale.x < 0.0:
+		mpos.x = -mpos.x
+	var origin := global_position + mpos
 	var dir := player.global_position + Vector2(0, -12) - origin
 	proj.setup(origin, dir, projectile_speed, &"enemy", self)
 
@@ -185,6 +206,10 @@ func _kill_visual_tween() -> void:
 
 
 func _on_died() -> void:
+	# 尸体演出：烈焰焚毁 6 帧（火柱画布 160 高，脚底对齐原地），随朝向镜像。
+	var death_frames := CharFrames.anim(BEAST_CHAR, "death")
+	var facing_right: bool = _body != null and _body.scale.x < 0.0
+	Fx.play_frames_once(death_frames, global_position, 12.0, facing_right, BEAST_DEATH_BASELINE)
 	Fx.rust_debris(global_position)
 	Fx.hit_sparks(global_position)
 	var pickup := PICKUP_SCENE.instantiate() as CorePickup

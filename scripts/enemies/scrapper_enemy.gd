@@ -34,8 +34,13 @@ var _flash_tween: Tween
 @onready var visual: Node2D = $Visual
 @onready var eye: ColorRect = $Visual/Eye
 
-## AI 生成的碎甲者（56px 高，面朝左，紧裁切）。
-const AI_TEX_PATH := "res://assets/kenney_clean/enemies_ai/scrapper.png"
+## Hell Hound 像素帧动画（ansimuz，原图面朝左）：idle 6 / walk 12 / run 5 / jump 5。
+## 画布 64x32（run 67x32、jump 78x48），脚底均贴画布底边。
+const HOUND_CHAR := "scrapper_hell_hound"
+const HOUND_POS := Vector2(0.0, -16.0)        # 32 高画布 → 中心 -16
+const HOUND_JUMP_POS := Vector2(0.0, -24.0)   # jump 画布 48 高
+
+var _anim: FrameAnimSprite  # 有帧素材时非 null
 
 
 func _ready() -> void:
@@ -51,21 +56,39 @@ func _ready() -> void:
 	_build_visual()
 
 
+## 两级回退：Hell Hound 帧动画 → 场景内 ColorRect 占位（headless/缺素材）。
 func _build_visual() -> void:
-	if not ResourceLoader.exists(AI_TEX_PATH):
+	if not CharFrames.available(HOUND_CHAR):
 		return
-	var spr := Sprite2D.new()
-	spr.name = "BodySprite"
-	spr.texture = load(AI_TEX_PATH) as Texture2D
-	spr.centered = true
-	# 紧裁切：底边是脚，56 高 → 中心在 -28。
-	spr.position = Vector2(0, -28)
-	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	visual.add_child(spr)
-	# AI 贴图自带造型与橙色独眼：隐藏占位色块（含 Eye，状态由行为/冲锋预告表达）。
+	_anim = FrameAnimSprite.new()
+	_anim.name = "BodySprite"
+	_anim.register("idle", CharFrames.anim(HOUND_CHAR, "idle"), 8.0, true, HOUND_POS)
+	_anim.register("walk", CharFrames.anim(HOUND_CHAR, "walk"), 10.0, true, HOUND_POS)
+	_anim.register("run", CharFrames.anim(HOUND_CHAR, "run"), 14.0, true, HOUND_POS)
+	_anim.register("jump", CharFrames.anim(HOUND_CHAR, "jump"), 12.0, true, HOUND_JUMP_POS)
+	_anim.play("walk")
+	visual.add_child(_anim)
+	# 帧动画自带地狱犬造型：隐藏占位色块（含 Eye，状态改由动画/冲锋预告表达）。
 	for c in visual.get_children():
 		if c is ColorRect:
 			c.visible = false
+
+
+## 状态 → 动画：巡逻小跑 / 预备低吼(慢速待机) / 冲刺疾跑 / 硬直(定格待机)。
+func _update_anim() -> void:
+	if _anim == null:
+		return
+	match _state:
+		State.PATROL:
+			_anim.play("walk")
+		State.WINDUP:
+			_anim.set_fps("idle", 14.0)  # 蓄势：急促喘息
+			_anim.play("idle")
+		State.CHARGE:
+			_anim.play("run")
+		State.STUN:
+			_anim.set_fps("idle", 4.0)   # 撞墙眩晕：拖慢到近乎定格
+			_anim.play("idle")
 
 
 func _physics_process(delta: float) -> void:
@@ -86,6 +109,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	_update_facing()
+	_update_anim()
 	# The charge box leads where we are driving toward.
 	charge_box.position.x = absf(charge_box.position.x) * signf(_dir)
 
@@ -161,6 +185,7 @@ func _flash_white() -> void:
 
 
 func _on_died() -> void:
+	Fx.enemy_death_smoke(global_position)  # 地狱犬无专用死亡帧 → 通用烟雾
 	Fx.rust_debris(global_position)
 	Fx.hit_sparks(global_position)
 	GameEvents.announcement.emit("碎甲者崩塌成一堆废铁")

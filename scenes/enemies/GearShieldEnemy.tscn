@@ -8,7 +8,7 @@
 size = Vector2(16, 26)
 
 [sub_resource type="RectangleShape2D" id="hurt"]
-size = Vector2(16, 24)
+size = Vector2(24, 44)
 
 [node name="GearShieldEnemy" type="CharacterBody2D"]
 collision_layer = 4
@@ -52,7 +52,7 @@ color = Color(0.42, 0.5, 0.5, 1)
 polygon = PackedVector2Array(2, -10, 10, -8, 12, 6, 8, 12, 2, 12, -2, 6, -2, -6)
 
 [node name="Hurtbox" type="Area2D" parent="."]
-position = Vector2(0, -13)
+position = Vector2(0, -22)
 collision_layer = 32
 collision_mask = 24
 script = ExtResource("3")
