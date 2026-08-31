@@ -9,9 +9,7 @@ const FLAME_PATH := "res://assets/fx/shrine_flame.png"
 const SPARK_PATH := "res://assets/ui/ember_motes.png"
 const FLAME_FRAMES := 8
 const SPARK_FRAMES := 8
-const UNLIT_FPS := 8.0
 const LIT_FPS := 12.0
-const UNLIT_MOD := Color(0.62, 0.70, 0.92, 0.72)
 const LIT_MOD := Color(1.0, 0.92, 0.62, 1.0)
 
 var _lit: bool = false
@@ -60,42 +58,43 @@ func _ensure_flame() -> void:
 
 
 func _process(delta: float) -> void:
-	if _flame == null:
+	if _flame == null or not _lit:
 		return
 	_frame_t += delta
-	var step := 1.0 / (_lit_fps())
+	var step := 1.0 / LIT_FPS
 	while _frame_t >= step:
 		_frame_t -= step
 		_flame.frame = (_flame.frame + 1) % FLAME_FRAMES
 	if _headless or _sparks == null:
 		return
 	_spark_t += delta
-	var interval := 0.40 if _lit else 0.90
-	if _spark_t >= interval:
+	if _spark_t >= 0.40:
 		_spark_t = 0.0
 		_spawn_spark()
 
 
-func _lit_fps() -> float:
-	return LIT_FPS if _lit else UNLIT_FPS
-
-
 func _spawn_spark() -> void:
-	if not ResourceLoader.exists(SPARK_PATH):
+	if not _lit or not ResourceLoader.exists(SPARK_PATH):
 		return
-	var cap := 3 if _lit else 1
-	if _sparks.get_child_count() >= cap:
+	if _sparks.get_child_count() >= 3:
 		return
 	var sheet := load(SPARK_PATH) as Texture2D
 	if sheet == null:
 		return
-	_sparks.add_child(NestSpark.new(sheet, _lit))
+	_sparks.add_child(NestSpark.new(sheet))
 
 
 func _apply_flame_state() -> void:
 	if _flame == null:
 		return
-	_flame.modulate = LIT_MOD if _lit else UNLIT_MOD
+	_flame.visible = _lit
+	_flame.modulate = LIT_MOD
+	if _sparks == null:
+		return
+	_sparks.visible = _lit
+	if not _lit:
+		for child in _sparks.get_children():
+			child.queue_free()
 
 
 func can_interact(_actor: Node) -> bool:
@@ -137,7 +136,7 @@ class NestSpark extends Sprite2D:
 	var _phase := 0.0
 	var _x0 := 0.0
 
-	func _init(sheet: Texture2D, lit: bool) -> void:
+	func _init(sheet: Texture2D) -> void:
 		texture = sheet
 		hframes = EmberNest.SPARK_FRAMES
 		vframes = 1
@@ -147,10 +146,10 @@ class NestSpark extends Sprite2D:
 		frame = randi_range(0, EmberNest.SPARK_FRAMES - 1)
 		_x0 = float(randi_range(-2, 2))
 		position = Vector2(_x0, float(randi_range(-8, -4)))
-		_rise = randf_range(11.0, 18.0) if lit else randf_range(6.0, 10.0)
+		_rise = randf_range(11.0, 18.0)
 		_life = randf_range(0.40, 0.80)
 		_phase = randf() * TAU
-		modulate = Color(1.0, 0.78, 0.42, 0.80) if lit else Color(0.55, 0.62, 0.78, 0.40)
+		modulate = Color(1.0, 0.78, 0.42, 0.80)
 
 	func _process(delta: float) -> void:
 		_age += delta
