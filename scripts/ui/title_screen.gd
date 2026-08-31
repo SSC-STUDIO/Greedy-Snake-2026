@@ -1,11 +1,11 @@
 class_name TitleScreen
 extends Control
-## 标题画面：keyart + 标题 + 漂浮余烬 + 按任意键开始（正式游戏感的入口）。
+## Title: 1280x720 keyart, centered type, watermark bar, drifting embers.
 
 
 const KEYART_PATH := "res://assets/kenney_clean/backgrounds/title_keyart.png"
 const LEVEL_PATH := "res://scenes/levels/Level01_Static.tscn"
-const EMBER_COUNT := 14
+const EMBER_COUNT := 18
 
 var _started := false
 var _time := 0.0
@@ -19,12 +19,12 @@ var _ember_meta: Array[Vector3] = []  # (speed, sway_phase, sway_amp)
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	DisplayServer.window_set_title("Rustgrave")
 	_build()
 	_spawn_embers()
 
 
 func _build() -> void:
-	# 背景 keyart（1280x720 → 640x360 正好 2:1 整数缩放）。
 	var art := TextureRect.new()
 	art.name = "Keyart"
 	art.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -32,27 +32,52 @@ func _build() -> void:
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if ResourceLoader.exists(KEYART_PATH):
 		art.texture = load(KEYART_PATH) as Texture2D
-	else:
-		art.color = Color(0.10, 0.07, 0.06, 1.0)
 	add_child(art)
 
-	# 整体压暗，让标题更可读。
 	var dim := ColorRect.new()
 	dim.name = "Dim"
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.0, 0.0, 0.0, 0.22)
+	dim.color = Color(0.0, 0.0, 0.0, 0.18)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
 
-	# 主标题。
+	# Full-width bottom gradient band: anchors the start/credits text and
+	# swallows the keyart's baked bottom-right badge in one sweep.
+	var band := TextureRect.new()
+	band.name = "BottomBand"
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	grad.colors = PackedColorArray([
+		Color(0.0, 0.0, 0.0, 0.0),
+		Color(0.02, 0.01, 0.03, 0.52),
+		Color(0.02, 0.01, 0.03, 0.85),
+	])
+	var grad_tex := GradientTexture2D.new()
+	grad_tex.gradient = grad
+	grad_tex.width = 8
+	grad_tex.height = 128
+	grad_tex.fill_from = Vector2(0.0, 0.0)
+	grad_tex.fill_to = Vector2(0.0, 1.0)
+	band.texture = grad_tex
+	band.stretch_mode = TextureRect.STRETCH_SCALE
+	band.anchor_left = 0.0
+	band.anchor_right = 1.0
+	band.anchor_top = 1.0
+	band.anchor_bottom = 1.0
+	band.offset_top = -136.0
+	band.offset_bottom = 0.0
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(band)
+
 	var title := Label.new()
 	title.name = "Title"
 	title.text = "RUSTGRAVE"
-	title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	title.position = Vector2(0, 42)
-	title.custom_minimum_size = Vector2(640, 0)
+	title.anchor_left = 0.0
+	title.anchor_right = 1.0
+	title.offset_top = 56.0
+	title.offset_bottom = 132.0
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 58)
+	title.add_theme_font_size_override("font_size", 64)
 	title.add_theme_color_override("font_color", Color(0.98, 0.62, 0.35))
 	title.add_theme_color_override("font_shadow_color", Color(0.05, 0.02, 0.0, 0.9))
 	title.add_theme_constant_override("shadow_offset_x", 3)
@@ -60,58 +85,66 @@ func _build() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(title)
 
-	# 副标题。
 	var subtitle := Label.new()
 	subtitle.name = "Subtitle"
 	subtitle.text = "锈 墓 · 余 烬 骑 士"
-	subtitle.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	subtitle.position = Vector2(0, 112)
-	subtitle.custom_minimum_size = Vector2(640, 0)
+	subtitle.anchor_left = 0.0
+	subtitle.anchor_right = 1.0
+	subtitle.offset_top = 128.0
+	subtitle.offset_bottom = 160.0
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 15)
+	subtitle.add_theme_font_size_override("font_size", 18)
 	subtitle.add_theme_color_override("font_color", Color(0.78, 0.70, 0.62))
 	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(subtitle)
 
-	# 按键提示（脉冲）。
 	_press_label = Label.new()
 	_press_label.name = "PressStart"
 	_press_label.text = "— 按任意键 点燃余烬 —"
-	_press_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_press_label.position = Vector2(0, -64)
-	_press_label.custom_minimum_size = Vector2(640, 0)
+	_press_label.anchor_left = 0.0
+	_press_label.anchor_right = 1.0
+	_press_label.anchor_top = 1.0
+	_press_label.anchor_bottom = 1.0
+	_press_label.offset_top = -92.0
+	_press_label.offset_bottom = -56.0
 	_press_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_press_label.add_theme_font_size_override("font_size", 14)
+	_press_label.add_theme_font_size_override("font_size", 18)
 	_press_label.add_theme_color_override("font_color", Color(0.95, 0.78, 0.55))
 	_press_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_press_label)
 
-	# 继续游戏提示（仅当存在存档）。
 	_continue_label = Label.new()
 	_continue_label.name = "ContinueHint"
 	_continue_label.text = "有刻录的余烬之旅 — 按 1 继续"
-	_continue_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_continue_label.position = Vector2(0, -40)
-	_continue_label.custom_minimum_size = Vector2(640, 0)
+	_continue_label.anchor_left = 0.0
+	_continue_label.anchor_right = 1.0
+	_continue_label.anchor_top = 1.0
+	_continue_label.anchor_bottom = 1.0
+	_continue_label.offset_top = -56.0
+	_continue_label.offset_bottom = -32.0
 	_continue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_continue_label.add_theme_font_size_override("font_size", 12)
+	_continue_label.add_theme_font_size_override("font_size", 14)
 	_continue_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.45))
 	_continue_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_continue_label.visible = SaveData.has_save()
 	add_child(_continue_label)
 
-	# 底部素材来源致谢。
 	var credits := Label.new()
 	credits.name = "Credits"
-	credits.text = "美术：Kenney / ansimuz / CodeManu / tbbk (CC0) · AI 生成角色 · 音频：Kenney (CC0)"
-	credits.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	credits.position = Vector2(8, -18)
-	credits.add_theme_font_size_override("font_size", 9)
+	credits.text = "美术 ansimuz / Kenney  ·  音频 Kenney"
+	credits.anchor_left = 0.0
+	credits.anchor_top = 1.0
+	credits.anchor_right = 0.0
+	credits.anchor_bottom = 1.0
+	credits.offset_left = 16.0
+	credits.offset_top = -28.0
+	credits.offset_right = 420.0
+	credits.offset_bottom = -8.0
+	credits.add_theme_font_size_override("font_size", 11)
 	credits.add_theme_color_override("font_color", Color(0.8, 0.75, 0.7, 0.55))
 	credits.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(credits)
 
-	# 转场用的黑幕。
 	_fade = ColorRect.new()
 	_fade.name = "Fade"
 	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -127,15 +160,16 @@ func _spawn_embers() -> void:
 		e.size = Vector2(s, s)
 		e.color = Palette.EMBER.lerp(Color(1.0, 0.9, 0.7), randf() * 0.5)
 		e.color.a = randf_range(0.35, 0.85)
-		e.position = Vector2(randf_range(0.0, 640.0), randf_range(0.0, 360.0))
+		e.position = Vector2(randf_range(0.0, 1280.0), randf_range(0.0, 720.0))
 		e.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(e)
 		_embers.append(e)
-		_ember_meta.append(Vector3(randf_range(9.0, 26.0), randf() * TAU, randf_range(4.0, 12.0)))
+		_ember_meta.append(Vector3(randf_range(14.0, 38.0), randf() * TAU, randf_range(6.0, 18.0)))
 
 
 func _process(delta: float) -> void:
 	_time += delta
+	DisplayServer.window_set_title("Rustgrave")
 	if _press_label != null:
 		_press_label.modulate.a = 0.55 + 0.45 * sin(_time * 2.4)
 	for i in _embers.size():
@@ -144,8 +178,8 @@ func _process(delta: float) -> void:
 		e.position.y -= m.x * delta
 		e.position.x += sin(_time * 1.3 + m.y) * m.z * delta
 		if e.position.y < -4.0:
-			e.position.y = 364.0
-			e.position.x = randf_range(0.0, 640.0)
+			e.position.y = 724.0
+			e.position.x = randf_range(0.0, 1280.0)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -169,7 +203,6 @@ func _start(continue_game: bool) -> void:
 	if continue_game:
 		SaveData.load_game()
 	else:
-		# A fresh run: wipe any previous progress.
 		SaveData.delete_save()
 	Sfx.play(&"gate")
 	var tween := create_tween()
