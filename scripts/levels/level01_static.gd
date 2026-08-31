@@ -23,6 +23,7 @@ var _beats: Level01StoryBeats
 
 
 func _ready() -> void:
+	DisplayFit.apply()
 	_extend_east()
 	_spawn_decor()
 	_build_parallax_extras()

@@ -8,11 +8,13 @@ extends CanvasLayer
 const TITLE_PATH := "res://scenes/ui/TitleScreen.tscn"
 
 const ID_RESUME := &"resume"
+const ID_FULLSCREEN := &"fullscreen"
 const ID_CONTROLS := &"controls"
 const ID_TITLE := &"title"
 
 var _root: Control
 var _menu: MenuList
+var _fullscreen_item: MenuItem
 var _controls: ControlsPanel
 
 
@@ -47,6 +49,7 @@ func _build() -> void:
 	_menu = MenuList.new()
 	column.add_child(_menu)
 	_menu.add_item(ID_RESUME, "回 到 锈 墓")
+	_fullscreen_item = _menu.add_item(ID_FULLSCREEN, DisplayFit.fullscreen_label())
 	_menu.add_item(ID_CONTROLS, "操 作 说 明")
 	_menu.add_item(ID_TITLE, "返 回 标 题")
 	_menu.chosen.connect(_on_chosen)
@@ -122,6 +125,10 @@ func _on_chosen(id: StringName) -> void:
 	match id:
 		ID_RESUME:
 			close()
+		ID_FULLSCREEN:
+			DisplayFit.toggle_fullscreen()
+			if _fullscreen_item != null:
+				_fullscreen_item.set_text(DisplayFit.fullscreen_label())
 		ID_CONTROLS:
 			_menu.active = false
 			_controls.open()
