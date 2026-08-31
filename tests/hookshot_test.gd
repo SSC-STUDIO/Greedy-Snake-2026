@@ -114,3 +114,22 @@ func test_melt_hook_does_not_stagger_boss() -> void:
 	_face(player, 1)
 	ok(not player.hookshot._try_melt_hook(player))
 	ok(boss._state != boss.State.STAGGER, "boss is not staggered by hook")
+
+
+func test_melt_hook_picks_gate_not_nearby_boss() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	_equip_melt(player)
+	var gate := _place_gate(arena, player.global_position + Vector2(140, -40))
+	var boss := BOSS_SCENE.instantiate() as ExecutionerBoss
+	boss.position = player.global_position + Vector2(90, 0)
+	arena.add_child(boss)
+	await flush(3)
+	boss._state = boss.State.BLOCK
+	boss._blocking = true
+	_face(player, 1)
+	ok(player.hookshot._try_melt_hook(player), "gate still melts with boss in range")
+	ok(gate.is_queued_for_deletion() or not is_instance_valid(gate))
+	ok(boss._state != boss.State.STAGGER, "nearby boss is not collateral")

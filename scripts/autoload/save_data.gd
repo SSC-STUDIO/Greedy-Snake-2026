@@ -184,6 +184,19 @@ func has_flag(id: String) -> bool:
 	return flags.has(id)
 
 
+## Write flags + ending onto an existing save without needing a live player.
+## Used after Boss kill so a nest-respawn load_game() cannot revive the Executioner.
+func persist_story() -> void:
+	if not has_save():
+		return
+	var cfg := ConfigFile.new()
+	if cfg.load(save_path) != OK:
+		return
+	cfg.set_value("story", "flags", Array(flags))
+	cfg.set_value("meta", "ending", ending)
+	cfg.save(save_path)
+
+
 func peek_ending() -> String:
 	if ending != "":
 		return ending

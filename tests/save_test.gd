@@ -90,3 +90,33 @@ func test_ember_core_survives_roundtrip() -> void:
 	player.inventory.sockets[0] = null
 	SaveData.apply_player(player)
 	ok(player.inventory.has_ability(AbilityIds.EMBER_STEP))
+
+
+func test_boss_dead_flag_survives_load_when_persisted() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	ok(SaveData.save_game("res://scenes/levels/Level01_Static.tscn", player))
+	ok(Level01Static.should_spawn_executioner(), "fresh save still has the boss")
+	Level01Static.mark_executioner_slain()
+	ok(SaveData.has_flag("boss_dead"))
+	SaveData.flags.clear()
+	ok(not SaveData.has_flag("boss_dead"), "memory wiped")
+	ok(SaveData.load_game())
+	ok(SaveData.has_flag("boss_dead"), "persist_story wrote boss_dead")
+	ok(not Level01Static.should_spawn_executioner(), "reload skips Executioner")
+	ok(Level01Static.should_unlock_forge())
+
+
+func test_boss_dead_flag_lost_on_load_without_persist() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	ok(SaveData.save_game("res://scenes/levels/Level01_Static.tscn", player))
+	SaveData.mark_flag("boss_dead")
+	ok(SaveData.has_flag("boss_dead"))
+	ok(SaveData.load_game())
+	ok(not SaveData.has_flag("boss_dead"), "in-memory flag is not on disk")
+	ok(Level01Static.should_spawn_executioner(), "unpersisted kill respawns the boss")

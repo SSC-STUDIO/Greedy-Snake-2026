@@ -21,7 +21,11 @@ func test_heart_locked_until_boss_dead() -> void:
 	ok(not heart.monitoring, "hidden heart does not monitor")
 	ok(not heart.monitorable)
 	SaveData.mark_flag("boss_dead")
-	ok(heart.can_interact(heart), "boss_dead → can E")
+	ok(not heart.can_interact(heart), "flag alone does not unlock a locked heart")
+	ok(not heart.monitoring, "flag does not turn monitoring back on")
+	heart.unlock()
+	ok(heart.can_interact(heart), "unlock → can E")
+	ok(heart.monitoring)
 
 
 func test_heart_unlocks_when_spawned_after_flag() -> void:
@@ -43,5 +47,24 @@ func test_east_wing_skips_boss_when_flagged() -> void:
 
 
 func test_east_floor_meets_the_wall() -> void:
-	almost(Level01Static.EAST_FLOOR_X + (float(Level01Static.EAST_LIMIT) - Level01Static.EAST_FLOOR_X),
-			float(Level01Static.EAST_LIMIT), 0.01, "east floor ends at the wall")
+	var r := Level01Static.east_floor_rect()
+	almost(r.position.x, Level01Static.EAST_FLOOR_X, 0.01, "east floor starts at GroundRight end")
+	almost(r.end.x, float(Level01Static.EAST_LIMIT), 0.01, "east floor ends at WallRight")
+	ok(r.size.x > 608.0, "old 608px floor left a 32px pit before the wall")
+	almost(r.size.x, float(Level01Static.EAST_LIMIT) - Level01Static.EAST_FLOOR_X, 0.01)
+
+
+func test_locked_heart_is_not_sensor_focus() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	var heart := ForgeHeart.new()
+	heart.position = player.global_position
+	arena.add_child(heart)
+	await flush(3)
+	ok(not heart.can_interact(player))
+	ok(player.sensor.get_focus() != heart, "locked heart is not an E target")
+	heart.unlock()
+	player.sensor._on_area_entered(heart)
+	eq(player.sensor.get_focus(), heart, "unlocked heart is focusable")

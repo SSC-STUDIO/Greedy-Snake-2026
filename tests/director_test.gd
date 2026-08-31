@@ -81,3 +81,22 @@ func test_fade_to_queues_latest_target() -> void:
 	var done := await wait_until(func() -> bool: return not Director.is_fading(), 120)
 	ok(done, "fade finished")
 	eq(Director.last_fade_target, "res://scenes/levels/TestArena.tscn", "second fade_to wins")
+
+
+func test_play_runs_two_queued_scripts_in_order() -> void:
+	var kinds: Array[String] = []
+	var on_step := func(_i: int, step: Dictionary) -> void:
+		kinds.append(String(step.get("kind", "")))
+	Director.step_started.connect(on_step)
+	Director.play([{"kind": "wait", "seconds": 8.0}])
+	Director.play([{"kind": "lock"}])
+	Director.play([{"kind": "sfx", "id": "ui_select"}])
+	Director.skip_step()
+	var done := await wait_until(func() -> bool: return not Director.playing, 80)
+	ok(done, "queued scripts finished")
+	ok(kinds.has("wait") and kinds.has("lock") and kinds.has("sfx"), "all three scripts ran")
+	var wait_i := kinds.find("wait")
+	var lock_i := kinds.find("lock")
+	var sfx_i := kinds.find("sfx")
+	ok(wait_i >= 0 and lock_i > wait_i and sfx_i > lock_i, "queue order preserved")
+	Director.step_started.disconnect(on_step)

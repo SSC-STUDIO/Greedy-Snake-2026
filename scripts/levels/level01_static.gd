@@ -372,13 +372,24 @@ static func should_unlock_forge() -> bool:
 	return SaveData.has_flag("boss_dead")
 
 
+## GroundRight in Level01_Static.tscn is (512, 320) size (1088, 80) → ends at 1600.
+## Floor must reach EAST_LIMIT (WallRight) or the boss room drops 32px into the void.
+static func east_floor_rect() -> Rect2:
+	return Rect2(EAST_FLOOR_X, 320.0, float(EAST_LIMIT) - EAST_FLOOR_X, 80.0)
+
+
+static func mark_executioner_slain() -> void:
+	SaveData.mark_flag("boss_dead")
+	SaveData.persist_story()
+
+
 func _on_boss_slain() -> void:
 	var heart := get_node_or_null("Props/ForgeHeart") as ForgeHeart
 	if heart:
 		heart.unlock()
 	if SaveData.has_flag("boss_dead"):
 		return
-	SaveData.mark_flag("boss_dead")
+	mark_executioner_slain()
 	Director.play([
 		{"kind": "lock"},
 		{"kind": "cam_focus", "target": heart, "duration": 0.7},

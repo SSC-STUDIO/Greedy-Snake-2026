@@ -23,7 +23,7 @@ func _ready() -> void:
 
 
 func can_interact(_actor: Node) -> bool:
-	return unlocked or SaveData.has_flag("boss_dead")
+	return unlocked
 
 
 func lock() -> void:
