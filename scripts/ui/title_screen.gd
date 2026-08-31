@@ -131,7 +131,7 @@ func _build() -> void:
 
 	var credits := Label.new()
 	credits.name = "Credits"
-	credits.text = "美术 ansimuz / Kenney  ·  音频 Kenney"
+	credits.text = "美术 ansimuz · aamatniekss · Kronovi · CodeManu · Kenney — 音频 Kenney"
 	credits.anchor_left = 0.0
 	credits.anchor_top = 1.0
 	credits.anchor_right = 0.0
