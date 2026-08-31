@@ -4,7 +4,9 @@
 
 param(
     [string]$GodotExe = "C:\Program Files\Godot\Godot_v4.7.1-stable_win64.exe",
-    [string]$OutDir = (Join-Path $PSScriptRoot "screenshots")
+    [string]$OutDir = (Join-Path $PSScriptRoot "screenshots"),
+    # -Extended: 03 之后继续按住 D 周期跳跃横穿全关，多截 04..08 五张图（巡查右半关卡）。
+    [switch]$Extended
 )
 
 $ErrorActionPreference = 'Stop'
@@ -190,6 +192,28 @@ try {
     Send-Key 0x4A    # J 挥砍
     Start-Sleep -Milliseconds 180                        # 命中判定帧内
     Save-WindowShot $hwnd (Join-Path $OutDir '03_action.png')
+
+    # --- Step 6 (可选): 横穿全关,分段截图巡查右半关卡 ---
+    # 跳跃模式: 先原地满高双跳(不顶墙,不浪费二段跳),到最高点才按 D 平移。
+    # 注意 jump-cut: 松开 Space 会砍跳跃高度(重力x2.15),所以每跳按住 200ms
+    # 保住满高,双跳合计 ~70px,足以从 48px 深的毒坑底爬出来。
+    if ($Extended) {
+        Assert-Foreground $hwnd | Out-Null
+        foreach ($leg in 4..8) {
+            foreach ($hop in 1..3) {
+                Send-Key 0x20 200                        # Space (地面跳,满高)
+                Start-Sleep -Milliseconds 30
+                Send-Key 0x20 200                        # Space (二段跳,满高)
+                Press-Key 0x44                           # 近最高点,空中前移
+                Start-Sleep -Milliseconds 620
+                Release-Key 0x44
+                Start-Sleep -Milliseconds 340            # 落地稳定
+            }
+            Save-WindowShot $hwnd (Join-Path $OutDir ('{0:D2}_walk.png' -f $leg))
+        }
+        Write-Host "=== 自测完成,8 张截图已保存到 $OutDir ==="
+        exit 0
+    }
 
     Write-Host "=== 自测完成,3 张截图已保存到 $OutDir ==="
     exit 0
