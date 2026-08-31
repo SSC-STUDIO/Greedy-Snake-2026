@@ -32,9 +32,8 @@ func _ready() -> void:
 		sword = get_node("Sword")
 	if hitbox == null and has_node("Hitbox"):
 		hitbox = get_node("Hitbox")
-	# Canonical deflection path: the swing's active frames acknowledge incoming
-	# projectiles through the hitbox signal (projectile-side polling is kept
-	# as a fallback in projectile.gd).
+	# Sole deflection path: the swing's active frames acknowledge incoming
+	# projectiles through the hitbox signal plus the idle-frame sweep below.
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	if hitbox:
 		hitbox.damage = damage
@@ -43,13 +42,23 @@ func _ready() -> void:
 
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
-	if _state != State.ACTIVE or not is_parry_window():
-		return
 	if area is Projectile:
-		var bolt := area as Projectile
-		if bolt.can_deflect():
-			var host := get_parent()
-			bolt.deflect(host if host != null else self)
+		try_deflect(area as Projectile)
+
+
+## 弹反唯一权威入口：窗口判定、反弹指令与成功反馈（parried 信号 / 播报 /
+## 音效）都在这里。Projectile.deflect 只执行反弹本身；敌人（齿轮盾卫的
+## 格挡硬直等）只作为响应方接信号或被 hurtbox 调用，不再自行判窗。
+func try_deflect(bolt: Projectile) -> bool:
+	if not is_parry_window() or not bolt.can_deflect():
+		return false
+	var host := get_parent()
+	var actor: Node2D = (host as Node2D) if host is Node2D else self
+	bolt.deflect(actor)
+	GameEvents.parried.emit(bolt, actor)
+	GameEvents.announcement.emit("弹反！")
+	Sfx.play(&"parry")
+	return true
 
 
 func is_busy() -> bool:

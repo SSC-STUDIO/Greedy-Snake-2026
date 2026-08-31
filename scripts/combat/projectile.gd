@@ -19,7 +19,6 @@ var _sprite: Sprite2D
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
-	area_entered.connect(_on_area_entered)
 	collision_layer = 16
 	collision_mask = 1 | 8 | 32
 	_setup_sprite()
@@ -65,7 +64,10 @@ func can_deflect() -> bool:
 	return not deflected and team != &"player"
 
 
-func deflect(by: Node2D) -> void:
+## 反弹执行（响应方）：翻转归属、瞄准射源加速回敬、换弹反配色。
+## 窗口判定与成功反馈（parried 信号/播报/音效）由 MeleeCombat.try_deflect
+## 统一负责，这里不再自行判窗。
+func deflect(_by: Node2D) -> void:
 	if not can_deflect():
 		return
 	deflected = true
@@ -74,9 +76,6 @@ func deflect(by: Node2D) -> void:
 	if source != null and is_instance_valid(source):
 		aim = (source.global_position - global_position).normalized()
 	velocity = aim * maxf(velocity.length() * 1.45, 180.0)
-	GameEvents.parried.emit(self, by)
-	GameEvents.announcement.emit("弹反！")
-	Sfx.play(&"parry")
 	_update_visual()
 
 
@@ -87,36 +86,12 @@ func _physics_process(delta: float) -> void:
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
-		return
-	_try_parry_overlap()
-
-
-func _try_parry_overlap() -> void:
-	if not can_deflect():
-		return
-	for area in get_overlapping_areas():
-		if area is Hitbox:
-			var box := area as Hitbox
-			if box.monitoring and box.team == &"player":
-				var melee := box.get_parent()
-				if melee is MeleeCombat and (melee as MeleeCombat).is_parry_window():
-					deflect(melee.get_parent())
-					return
 
 
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
 		return
 	queue_free()
-
-
-func _on_area_entered(area: Area2D) -> void:
-	if area is Hitbox:
-		var box := area as Hitbox
-		if can_deflect() and box.monitoring and box.team == &"player":
-			var melee := box.get_parent()
-			if melee is MeleeCombat and (melee as MeleeCombat).is_parry_window():
-				deflect(melee.get_parent())
 
 
 func _update_visual() -> void:
