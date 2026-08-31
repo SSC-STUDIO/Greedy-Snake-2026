@@ -1,19 +1,11 @@
 class_name ScrapperEnemy
-extends CharacterBody2D
-## Rust plate-brute: patrols its beat, then charges. Slamming into a wall
-## leaves it stunned — the punish window that teaches spacing.
+extends EnemyBase
+## Rust plate-brute: patrols its beat, then charges. Slamming into a wall —
+## or skidding to a stop at a ledge / toxin pit — leaves it stunned, the
+## punish window that teaches spacing.
 
 enum State { PATROL, WINDUP, CHARGE, STUN }
 
-const GRAVITY := 980.0
-
-## Overbright modulate clamps to a white silhouette in the LDR framebuffer —
-## reads as a hit flash across every ColorRect under $Visual at once, and the
-## eye tint keeps following the state machine untouched.
-const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
-
-@export var patrol_range: float = 64.0
-@export var patrol_speed: float = 40.0
 @export var charge_speed: float = 235.0
 @export var aggro_range: float = 215.0
 @export var windup_time: float = 0.45
@@ -22,17 +14,12 @@ const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
 @export var re_aggro_cooldown: float = 1.15
 @export var contact_damage: int = 1
 
-var _state: State = State.PATROL
-var _dir: float = -1.0
-var _timer: float = 0.0
-var _cooldown: float = 0.0
-var _anchor_x: float = 0.0
-var _flash_tween: Tween
-
-@onready var health: Health = $Health
-@onready var charge_box: Hitbox = $ChargeBox
-@onready var visual: Node2D = $Visual
-@onready var eye: ColorRect = $Visual/Eye
+## 冲锋探针：身前 20px 处、从膝盖(-16)扫到脚下(+10)的竖直射线。
+const CHARGE_PROBE_AHEAD := 20.0
+const CHARGE_PROBE_TOP := 16.0
+const CHARGE_PROBE_BOTTOM := 10.0
+## 危害区（毒池 ToxinPool）所在的物理层。
+const HAZARD_LAYER := 128
 
 ## Hell Hound 像素帧动画（ansimuz，原图面朝左）：idle 6 / walk 12 / run 5 / jump 5。
 ## 画布 64x32（run 67x32、jump 78x48），脚底均贴画布底边。
@@ -40,38 +27,38 @@ const HOUND_CHAR := "scrapper_hell_hound"
 const HOUND_POS := Vector2(0.0, -16.0)        # 32 高画布 → 中心 -16
 const HOUND_JUMP_POS := Vector2(0.0, -24.0)   # jump 画布 48 高
 
-var _anim: FrameAnimSprite  # 有帧素材时非 null
+var _state: State = State.PATROL
+var _timer: float = 0.0
+var _cooldown: float = 0.0
+
+@onready var charge_box: Hitbox = $ChargeBox
+@onready var visual: Node2D = $Visual
+@onready var eye: ColorRect = $Visual/Eye
 
 
-func _ready() -> void:
-	add_to_group("enemies")
-	_anchor_x = global_position.x
+func _enemy_ready() -> void:
 	health.max_hp = 3
 	health.heal_full()
-	health.died.connect(_on_died)
 	charge_box.team = &"enemy"
 	charge_box.damage = contact_damage
 	charge_box.monitoring = false
-	GameEvents.hit.connect(_on_hit)
 	_build_visual()
 
 
 ## 两级回退：Hell Hound 帧动画 → 场景内 ColorRect 占位（headless/缺素材）。
 func _build_visual() -> void:
-	if not CharFrames.available(HOUND_CHAR):
+	_anim = _build_frame_anim(HOUND_CHAR, [
+		["idle", "", 8.0, true, HOUND_POS],
+		["walk", "", 10.0, true, HOUND_POS],
+		["run", "", 14.0, true, HOUND_POS],
+		["jump", "", 12.0, true, HOUND_JUMP_POS],
+	])
+	if _anim == null:
 		return
-	_anim = FrameAnimSprite.new()
-	_anim.name = "BodySprite"
-	_anim.register("idle", CharFrames.anim(HOUND_CHAR, "idle"), 8.0, true, HOUND_POS)
-	_anim.register("walk", CharFrames.anim(HOUND_CHAR, "walk"), 10.0, true, HOUND_POS)
-	_anim.register("run", CharFrames.anim(HOUND_CHAR, "run"), 14.0, true, HOUND_POS)
-	_anim.register("jump", CharFrames.anim(HOUND_CHAR, "jump"), 12.0, true, HOUND_JUMP_POS)
 	_anim.play("walk")
 	visual.add_child(_anim)
 	# 帧动画自带地狱犬造型：隐藏占位色块（含 Eye，状态改由动画/冲锋预告表达）。
-	for c in visual.get_children():
-		if c is ColorRect:
-			c.visible = false
+	_hide_placeholder_rects(visual)
 
 
 ## 状态 → 动画：巡逻小跑 / 预备低吼(慢速待机) / 冲刺疾跑 / 硬直(定格待机)。
@@ -91,12 +78,9 @@ func _update_anim() -> void:
 			_anim.play("idle")
 
 
-func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity.y += GRAVITY * delta
+func _tick_state(delta: float) -> void:
 	if _cooldown > 0.0:
 		_cooldown = maxf(0.0, _cooldown - delta)
-
 	match _state:
 		State.PATROL:
 			_tick_patrol(delta)
@@ -107,20 +91,17 @@ func _physics_process(delta: float) -> void:
 		State.STUN:
 			_tick_stun(delta)
 
-	move_and_slide()
+
+func _after_move() -> void:
 	_update_facing()
 	_update_anim()
 	# The charge box leads where we are driving toward.
 	charge_box.position.x = absf(charge_box.position.x) * signf(_dir)
 
 
-func _tick_patrol(delta: float) -> void:
+func _tick_patrol(_delta: float) -> void:
 	charge_box.monitoring = false
-	velocity.x = _dir * patrol_speed
-	# Bounce between the anchor posts; walls count too.
-	if is_on_wall() or global_position.x < _anchor_x - patrol_range \
-			or global_position.x > _anchor_x + patrol_range:
-		_dir = -_dir
+	_patrol_step()
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if _cooldown <= 0.0 and player != null:
 		var to_player := player.global_position - global_position
@@ -148,11 +129,34 @@ func _tick_charge(delta: float) -> void:
 		_timer = stun_time
 		charge_box.monitoring = false
 		GameEvents.hit.emit(self, self, 0)  # Camera/hear feedback via bus.
+	elif _charge_hazard_ahead():
+		# （bug fix）冲锋不再扎进毒坑/冲出平台：前下方探不到地面或探到
+		# 危害区就地刹车、回头，进入与撞墙同长的眩晕惩罚窗。
+		velocity.x = 0.0
+		_dir = -_dir
+		_state = State.STUN
+		_timer = stun_time
+		charge_box.monitoring = false
 	elif _timer <= 0.0:
 		_cooldown = re_aggro_cooldown
 		_state = State.PATROL
 		charge_box.monitoring = false
 		eye.color = Palette.TOXIC
+
+
+## 冲锋方向前下方两条射线：地面射线（layer 1）探不到 = 平台边缘/坑口；
+## 危害射线（layer 128，Area）命中 = 毒池就在嘴边。
+func _charge_hazard_ahead() -> bool:
+	var space := get_world_2d().direct_space_state
+	var from := global_position + Vector2(_dir * CHARGE_PROBE_AHEAD, -CHARGE_PROBE_TOP)
+	var to := global_position + Vector2(_dir * CHARGE_PROBE_AHEAD, CHARGE_PROBE_BOTTOM)
+	var ground := PhysicsRayQueryParameters2D.create(from, to, 1, [get_rid()])
+	if space.intersect_ray(ground).is_empty():
+		return true
+	var hazard := PhysicsRayQueryParameters2D.create(from, to, HAZARD_LAYER, [get_rid()])
+	hazard.collide_with_areas = true
+	hazard.collide_with_bodies = false
+	return not space.intersect_ray(hazard).is_empty()
 
 
 func _tick_stun(delta: float) -> void:
@@ -169,24 +173,6 @@ func _update_facing() -> void:
 	visual.scale.x = -_dir if _dir > 0.0 else 1.0
 
 
-func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:
-	if target != self:
-		return
-	_flash_white()
-
-
-func _flash_white() -> void:
-	if _flash_tween != null and _flash_tween.is_valid():
-		_flash_tween.kill()
-	_flash_tween = create_tween()
-	_flash_tween.tween_property(visual, "modulate", FLASH_MODULATE, 0.03)
-	_flash_tween.tween_interval(0.05)
-	_flash_tween.tween_property(visual, "modulate", Color.WHITE, 0.12)
-
-
 func _on_died() -> void:
-	Fx.enemy_death_smoke(global_position)  # 地狱犬无专用死亡帧 → 通用烟雾
-	Fx.rust_debris(global_position)
-	Fx.hit_sparks(global_position)
-	GameEvents.announcement.emit("碎甲者崩塌成一堆废铁")
-	queue_free()
+	# 地狱犬无专用死亡帧 → 通用烟雾。
+	_death_burst([] as Array[Texture2D], 12.0, false, 0.0, "碎甲者崩塌成一堆废铁")

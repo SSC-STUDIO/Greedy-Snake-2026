@@ -1,5 +1,5 @@
 class_name SpitterEnemy
-extends Node2D
+extends EnemyBase
 ## Stationary rust-spitter. Teaches parry: its slag bolts can be sent home.
 
 const PROJECTILE_SCENE := preload("res://scenes/combat/Projectile.tscn")
@@ -15,15 +15,10 @@ const PICKUP_SCENE := preload("res://scenes/interactables/CorePickup.tscn")
 const CHARGE_TIME := 0.45
 const CHARGE_TINT_WEIGHT := 0.65
 const CHARGE_SCALE := Vector2(1.1, 1.1)
-## Overbright modulate clamps to a white silhouette in the LDR framebuffer,
-## which reads as a hit flash for both the Sprite2D and ColorRect bodies.
-const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
 
-@onready var health: Health = $Health
 @onready var muzzle: Marker2D = $Muzzle
 
 var _body: CanvasItem
-var _anim: FrameAnimSprite  # 有帧素材时与 _body 指向同一节点，否则为 null
 var _base_modulate := Color.WHITE
 var _charging := false
 var _charge_timer: Timer
@@ -39,10 +34,10 @@ const BEAST_ATTACK_POS := Vector2(0.0, -32.0)
 const BEAST_DEATH_BASELINE := -80.0            # 死亡帧画布 160 高（火柱向上）
 
 
-func _ready() -> void:
+func _enemy_ready() -> void:
+	_mobile = false  # 定点炮台：不施重力、不 move_and_slide
 	health.max_hp = 2
 	health.heal_full()
-	health.died.connect(_on_died)
 	var timer := Timer.new()
 	timer.wait_time = shoot_interval
 	timer.autostart = true
@@ -54,7 +49,6 @@ func _ready() -> void:
 	_charge_timer.timeout.connect(_on_charged)
 	add_child(_charge_timer)
 	_build_visual()
-	GameEvents.hit.connect(_on_hit)
 
 
 ## 三级回退：Hell Beast 帧动画 → Kenney 单帧 → ColorRect 占位（headless/缺素材）。
@@ -64,11 +58,11 @@ func _build_visual() -> void:
 		_body = existing
 		_base_modulate = existing.modulate
 		return
-	if CharFrames.available(BEAST_CHAR):
-		_anim = FrameAnimSprite.new()
-		_anim.name = "Body"
-		_anim.register("idle", CharFrames.anim(BEAST_CHAR, "idle"), 8.0, true, BEAST_IDLE_POS)
-		_anim.register("attack", CharFrames.anim(BEAST_CHAR, "attack"), 10.0, false, BEAST_ATTACK_POS)
+	_anim = _build_frame_anim(BEAST_CHAR, [
+		["idle", "", 8.0, true, BEAST_IDLE_POS],
+		["attack", "", 10.0, false, BEAST_ATTACK_POS],
+	])
+	if _anim != null:
 		_anim.play("idle")
 		_anim.finished.connect(_on_anim_finished)
 		add_child(_anim)
@@ -84,12 +78,7 @@ func _build_visual() -> void:
 		add_child(spr)
 		_body = spr
 		_base_modulate = spr.modulate
-		var nozzle := ColorRect.new()
-		nozzle.size = Vector2(10, 4)
-		nozzle.position = Vector2(-14, -14)
-		nozzle.color = Palette.TOXIC
-		nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(nozzle)
+		_add_nozzle()
 		return
 	var body := ColorRect.new()
 	body.name = "Body"
@@ -100,12 +89,16 @@ func _build_visual() -> void:
 	add_child(body)
 	_body = body
 	_base_modulate = Color.WHITE
-	var nozzle2 := ColorRect.new()
-	nozzle2.size = Vector2(10, 4)
-	nozzle2.position = Vector2(-14, -14)
-	nozzle2.color = Palette.TOXIC
-	nozzle2.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(nozzle2)
+	_add_nozzle()
+
+
+func _add_nozzle() -> void:
+	var nozzle := ColorRect.new()
+	nozzle.size = Vector2(10, 4)
+	nozzle.position = Vector2(-14, -14)
+	nozzle.color = Palette.TOXIC
+	nozzle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(nozzle)
 
 
 func _on_shoot_tick() -> void:
@@ -171,12 +164,8 @@ func _fire(player: Player) -> void:
 	proj.setup(origin, dir, projectile_speed, &"enemy", self)
 
 
-func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:
-	if target != self:
-		return
-	_flash_white()
-
-
+## 受击白闪覆写：蓄力/回弹与白闪共用 _visual_tween 互相顶替（保持原手感），
+## 且蓄力中闪完要落回蓄力色而非纯白。
 func _flash_white() -> void:
 	_kill_visual_tween()
 	var restore_to := _charge_modulate() if _charging else _base_modulate
@@ -206,15 +195,11 @@ func _kill_visual_tween() -> void:
 
 
 func _on_died() -> void:
-	# 尸体演出：烈焰焚毁 6 帧（火柱画布 160 高，脚底对齐原地），随朝向镜像。
-	var death_frames := CharFrames.anim(BEAST_CHAR, "death")
-	var facing_right: bool = _body != null and _body.scale.x < 0.0
-	Fx.play_frames_once(death_frames, global_position, 12.0, facing_right, BEAST_DEATH_BASELINE)
-	Fx.rust_debris(global_position)
-	Fx.hit_sparks(global_position)
 	var pickup := PICKUP_SCENE.instantiate() as CorePickup
 	pickup.core = AbilityCatalog.tether_core()
 	get_parent().add_child(pickup)
 	pickup.global_position = global_position + Vector2(0, -8)
-	GameEvents.announcement.emit("喷吐者崩解，掉落钩锁核")
-	queue_free()
+	# 尸体演出：烈焰焚毁 6 帧（火柱画布 160 高，脚底对齐原地），随朝向镜像。
+	var facing_right: bool = _body != null and _body.scale.x < 0.0
+	_death_burst(CharFrames.anim(BEAST_CHAR, "death"), 12.0,
+			facing_right, BEAST_DEATH_BASELINE, "喷吐者崩解，掉落钩锁核")

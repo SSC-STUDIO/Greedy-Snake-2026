@@ -1,5 +1,5 @@
 class_name GearShieldEnemy
-extends CharacterBody2D
+extends EnemyBase
 ## Rust gear-shield guard. A slow, armored sentinel that guards one facing:
 ## frontal strikes and deflected bolts are absorbed by its shield, but dodge
 ## around back and it is plain flesh. Skilled players can reflect its own bolt
@@ -10,9 +10,7 @@ extends CharacterBody2D
 
 enum State { PATROL, BLOCK, CHARGE, STAGGER }
 
-const GRAVITY := 980.0
 const PROJECTILE_SCENE := preload("res://scenes/combat/Projectile.tscn")
-const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
 
 ## Undead Executioner 像素帧动画（Kronovi，原图面朝左，画布 100x100、
 ## 脚底距底边 16~17px）：idle 4 / idle2(举斧格挡) 8 / summon(蓄力施法) 5 /
@@ -21,8 +19,6 @@ const EXEC_CHAR := "gear_shield_executioner"
 const EXEC_POS := Vector2(6.0, -34.0)
 const EXEC_DEATH_BASELINE := -33.0
 
-@export var patrol_range: float = 64.0
-@export var patrol_speed: float = 26.0
 @export var aggro_range: float = 300.0
 @export var shoot_interval: float = 2.4
 @export var charge_time: float = 0.5
@@ -30,32 +26,28 @@ const EXEC_DEATH_BASELINE := -33.0
 @export var projectile_speed: float = 145.0
 
 var _state: State = State.PATROL
-var _dir: float = -1.0
 var _timer: float = 0.0
 var _shoot_timer: float = 0.0
-var _anchor_x: float = 0.0
 var _shield_facing: int = -1
 var _blocking: bool = false
 var _flicker_tween: Tween
 ## 格挡/蓄力指示的目标：有帧动画时是机体 Sprite（举斧姿态自带格挡语义），
 ## 否则回退为占位 Shield 多边形。
 var _indicator: CanvasItem
-var _anim: FrameAnimSprite  # 有帧素材时非 null
 
-@onready var health: Health = $Health
 @onready var visual: Node2D = $Visual
 @onready var shield: CanvasItem = $Visual/Shield
 @onready var eye: ColorRect = $Visual/Eye
 @onready var hurtbox: Hurtbox = $Hurtbox
 
 
-func _ready() -> void:
-	add_to_group("enemies")
-	_anchor_x = global_position.x
+func _init() -> void:
+	patrol_speed = 26.0  # 重甲哨兵拖着步子巡逻，慢于基类默认
+
+
+func _enemy_ready() -> void:
 	health.max_hp = 4
 	health.heal_full()
-	health.died.connect(_on_died)
-	GameEvents.hit.connect(_on_hit)
 	_shoot_timer = shoot_interval * 0.6
 	hurtbox.block_check = _shield_block_check
 	_build_visual()
@@ -66,23 +58,20 @@ func _ready() -> void:
 ## 格挡/蓄力指示改为整体染色。
 func _build_visual() -> void:
 	_indicator = shield
-	if not CharFrames.available(EXEC_CHAR):
+	_anim = _build_frame_anim(EXEC_CHAR, [
+		["idle", "", 8.0, true, EXEC_POS],
+		["block", "idle2", 8.0, true, EXEC_POS],
+		# 蓄力施法 5 帧铺满整个 charge_time，最后一帧正好是释放。
+		["charge", "summon", 5.0 / maxf(charge_time, 0.1), false, EXEC_POS],
+	])
+	if _anim == null:
 		return
-	_anim = FrameAnimSprite.new()
-	_anim.name = "BodySprite"
-	_anim.register("idle", CharFrames.anim(EXEC_CHAR, "idle"), 8.0, true, EXEC_POS)
-	_anim.register("block", CharFrames.anim(EXEC_CHAR, "idle2"), 8.0, true, EXEC_POS)
-	# 蓄力施法 5 帧铺满整个 charge_time，最后一帧正好是释放。
-	_anim.register("charge", CharFrames.anim(EXEC_CHAR, "summon"),
-			5.0 / maxf(charge_time, 0.1), false, EXEC_POS)
 	_anim.play("idle")
 	# 原图面朝左；Visual 的 scale.x=1 约定为面朝右（盾在 +x 侧），先水平翻转。
 	_anim.flip_h = true
 	visual.add_child(_anim)
 	visual.move_child(_anim, 0)
-	for c in visual.get_children():
-		if c is ColorRect:
-			c.visible = false
+	_hide_placeholder_rects(visual)
 	shield.visible = false
 	_indicator = _anim
 
@@ -106,9 +95,7 @@ func _update_anim() -> void:
 			_anim.play("idle")
 
 
-func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity.y += GRAVITY * delta
+func _tick_state(delta: float) -> void:
 	match _state:
 		State.PATROL:
 			_tick_patrol(delta)
@@ -118,16 +105,15 @@ func _physics_process(delta: float) -> void:
 			_tick_charge(delta)
 		State.STAGGER:
 			_tick_stagger(delta)
-	move_and_slide()
+
+
+func _after_move() -> void:
 	_update_anim()
 
 
-func _tick_patrol(delta: float) -> void:
+func _tick_patrol(_delta: float) -> void:
 	_set_blocking(false)
-	velocity.x = _dir * patrol_speed
-	if is_on_wall() or global_position.x < _anchor_x - patrol_range \
-			or global_position.x > _anchor_x + patrol_range:
-		_dir = -_dir
+	_patrol_step()
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player != null and global_position.distance_to(player.global_position) < aggro_range:
 		_enter_block(player)
@@ -236,38 +222,32 @@ func _update_visual() -> void:
 
 
 func _flash_shield() -> void:
-	if _flicker_tween != null and _flicker_tween.is_valid():
-		_flicker_tween.kill()
+	_kill_flicker()
 	_flicker_tween = create_tween()
 	_flicker_tween.tween_property(_indicator, "modulate", Color(0.9, 0.6, 0.3, 1.0), 0.04)
 	_flicker_tween.tween_property(_indicator, "modulate", Color.WHITE, 0.1)
 
 
 func _flicker_charge() -> void:
-	if _flicker_tween != null and _flicker_tween.is_valid():
-		_flicker_tween.kill()
+	_kill_flicker()
 	_flicker_tween = create_tween()
 	_flicker_tween.tween_property(_indicator, "modulate", Palette.TOXIC, charge_time * 0.5)
 	_flicker_tween.tween_property(_indicator, "modulate", Palette.EMBER, charge_time * 0.5)
 
 
-func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:
-	if target != self:
-		return
+func _kill_flicker() -> void:
 	if _flicker_tween != null and _flicker_tween.is_valid():
 		_flicker_tween.kill()
-	_flicker_tween = create_tween()
-	_flicker_tween.tween_property(visual, "modulate", FLASH_MODULATE, 0.03)
-	_flicker_tween.tween_interval(0.05)
-	_flicker_tween.tween_property(visual, "modulate", Color.WHITE, 0.12)
+
+
+## 受击白闪走基类；先掐掉格挡/蓄力指示的染色 tween，避免两股 tween 抢色。
+func _flash_white() -> void:
+	_kill_flicker()
+	super()
 
 
 func _on_died() -> void:
 	# 尸体演出：18 帧死亡（化作黑球消散），随当前朝向镜像。
 	# 原图面朝左：面朝右（_shield_facing==1）时需要翻转。
-	Fx.play_frames_once(CharFrames.anim(EXEC_CHAR, "death"), global_position,
-			14.0, _shield_facing == 1, EXEC_DEATH_BASELINE)
-	Fx.rust_debris(global_position)
-	Fx.hit_sparks(global_position)
-	GameEvents.announcement.emit("齿轮盾卫崩塌成废铁")
-	queue_free()
+	_death_burst(CharFrames.anim(EXEC_CHAR, "death"), 14.0,
+			_shield_facing == 1, EXEC_DEATH_BASELINE, "齿轮盾卫崩塌成废铁")
