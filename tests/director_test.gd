@@ -100,3 +100,42 @@ func test_play_runs_two_queued_scripts_in_order() -> void:
 	var sfx_i := kinds.find("sfx")
 	ok(wait_i >= 0 and lock_i > wait_i and sfx_i > lock_i, "queue order preserved")
 	Director.step_started.disconnect(on_step)
+
+
+func test_play_keeps_fourth_queued_script() -> void:
+	var kinds: Array[String] = []
+	var on_step := func(_i: int, step: Dictionary) -> void:
+		kinds.append(String(step.get("kind", "")))
+	Director.step_started.connect(on_step)
+	Director.play([{"kind": "lock"}, {"kind": "wait", "seconds": 8.0}])
+	Director.play([{"kind": "lock"}])
+	Director.play([{"kind": "sfx", "id": "ui_select"}])
+	Director.play([{"kind": "unlock"}])
+	Director.play([{"kind": "tag_fourth"}])
+	ok(Director.is_input_locked(), "first script holds the lock across the queue")
+	Director.skip_step()
+	var done := await wait_until(func() -> bool: return not Director.playing, 80)
+	ok(done, "four queued scripts plus the live one finished")
+	ok(kinds.has("wait") and kinds.has("lock") and kinds.has("sfx"), "early scripts ran")
+	ok(kinds.has("unlock") and kinds.has("tag_fourth"), "fourth queued script was not dropped")
+	ok(not Director.is_input_locked(), "lock released after the whole queue")
+	Director.step_started.disconnect(on_step)
+
+
+func test_play_overflow_drops_oldest_queued() -> void:
+	var kinds: Array[String] = []
+	var on_step := func(_i: int, step: Dictionary) -> void:
+		kinds.append(String(step.get("kind", "")))
+	Director.step_started.connect(on_step)
+	Director.play([{"kind": "wait", "seconds": 8.0}])
+	Director.play([{"kind": "old_0"}])
+	for i in range(1, Director.PLAY_QUEUE_MAX):
+		Director.play([{"kind": "keep_%d" % i}])
+	Director.play([{"kind": "newest"}])
+	Director.skip_step()
+	var done := await wait_until(func() -> bool: return not Director.playing, 80)
+	ok(done, "overflowed queue drained")
+	ok(not kinds.has("old_0"), "oldest queued script was dropped")
+	ok(kinds.has("newest"), "newest script still ran")
+	ok(kinds.has("keep_%d" % (Director.PLAY_QUEUE_MAX - 1)), "later queued scripts kept")
+	Director.step_started.disconnect(on_step)

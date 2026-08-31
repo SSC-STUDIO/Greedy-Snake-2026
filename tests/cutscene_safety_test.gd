@@ -65,6 +65,21 @@ func test_gear_shield_freezes_ai_while_locked() -> void:
 	Director.abort()
 
 
+func test_death_aborts_cutscene_lock() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	Director.play([{"kind": "lock"}, {"kind": "wait", "seconds": 8.0}])
+	ok(Director.is_input_locked())
+	ok(player.cutscene_locked)
+	player._on_died()
+	await flush(2)
+	ok(not Director.playing, "death abort()s the live script")
+	ok(not Director.is_input_locked(), "Director lock dies with the knight")
+	ok(not player.cutscene_locked, "player lock is cleared")
+
+
 func test_fade_to_aborts_playing_cutscene() -> void:
 	Director.play([
 		{"kind": "lock"},

@@ -403,17 +403,44 @@ func _on_toxin_overflow() -> void:
 
 
 func _on_died() -> void:
+	if Director.playing:
+		Director.abort()
 	if _anim != null:
 		_anim.play("death")  # 物理停摆后由 _process 继续播完倒地
 	set_physics_process(false)
 	GameEvents.player_died.emit()
 	GameEvents.announcement.emit("余烬熄灭…")
-	await get_tree().create_timer(1.15).timeout
-	var nest_path := SaveData.last_lit_nest()
-	if nest_path != "" and get_tree().current_scene != null:
-		var nest := get_tree().current_scene.get_node_or_null(nest_path)
-		var spawn: Vector2 = nest.global_position if nest != null and is_instance_valid(nest) else global_position
+	var wait := Timer.new()
+	wait.one_shot = true
+	wait.wait_time = 1.15
+	add_child(wait)
+	wait.start()
+	await wait.timeout
+	if not is_instance_valid(self) or get_tree() == null or get_tree().current_scene == null:
+		return
+	var nest := _resolve_lit_nest()
+	if nest != null:
 		GameEvents.player_respawned.emit()
-		SaveData.respawn(get_tree().current_scene.scene_file_path, spawn)
+		SaveData.respawn(get_tree().current_scene.scene_file_path, nest.global_position)
 	else:
 		Director.fade_to(get_tree().current_scene.scene_file_path)
+
+
+## 存档里的巢路径是绝对 NodePath；换场景根名或测试宿主时可能对不上，再试叶子名。
+func _resolve_lit_nest() -> Node2D:
+	var nest_path := SaveData.last_lit_nest()
+	if nest_path == "" or get_tree() == null:
+		return null
+	var scene := get_tree().current_scene
+	if scene == null:
+		return null
+	var nest := scene.get_node_or_null(nest_path)
+	if nest == null:
+		nest = get_tree().root.get_node_or_null(nest_path)
+	if nest == null:
+		var leaf := nest_path.get_file()
+		if leaf != "":
+			nest = scene.find_child(leaf, true, false)
+	if nest is Node2D and is_instance_valid(nest):
+		return nest as Node2D
+	return null

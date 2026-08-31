@@ -8,7 +8,8 @@ signal step_started(index: int, step: Dictionary)
 signal step_finished(index: int, step: Dictionary)
 
 const FADE_DEFAULT := 0.45
-const PLAY_QUEUE_MAX := 3
+## 进行中的剧本之外还能再排这么多条。满了丢掉最旧的并打日志，避免故事监听静默丢过场。
+const PLAY_QUEUE_MAX := 8
 
 var playing: bool = false
 ## 结局选择层打开时为 true：暂停菜单忽略 Esc，关掉后也不解 tree.paused。
@@ -125,8 +126,11 @@ func fade_in(duration: float = FADE_DEFAULT) -> void:
 
 func play(script: Array) -> void:
 	if playing:
-		if _script_queue.size() < PLAY_QUEUE_MAX:
-			_script_queue.append(script.duplicate())
+		if _script_queue.size() >= PLAY_QUEUE_MAX:
+			var dropped: Array = _script_queue.pop_front()
+			push_warning("Director: play queue full (%d), dropped oldest script (%d steps)" \
+					% [PLAY_QUEUE_MAX, dropped.size()])
+		_script_queue.append(script.duplicate())
 		return
 	_queue = script.duplicate()
 	_index = -1
@@ -279,11 +283,13 @@ func _finish_play() -> void:
 	playing = false
 	_waiting = false
 	_wait_kind = ""
-	_set_lock(false)
-	finished.emit()
-	if not _script_queue.is_empty() and not playing:
+	# 队列里还有下一条：保持 lock，避免两段过场之间漏一帧输入/灌毒/AI。
+	if not _script_queue.is_empty():
 		var next: Array = _script_queue.pop_front()
 		play(next)
+		return
+	_set_lock(false)
+	finished.emit()
 
 
 func _on_fade_out_done(scene: String, duration: float) -> void:

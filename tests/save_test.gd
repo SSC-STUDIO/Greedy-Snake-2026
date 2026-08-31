@@ -109,6 +109,37 @@ func test_boss_dead_flag_survives_load_when_persisted() -> void:
 	ok(Level01Static.should_unlock_forge())
 
 
+func test_ember_nest_restore_is_silent() -> void:
+	var nest := EmberNest.new()
+	add_child(nest)
+	await flush(1)
+	var heard: Array[String] = []
+	var on_announce := func(text: String) -> void:
+		heard.append(text)
+	GameEvents.announcement.connect(on_announce)
+	nest.apply_persistent_state({"lit": true})
+	ok(bool(nest.get_persistent_state().get("lit", false)), "lit flag restored")
+	eq(heard.size(), 0, "apply_persistent_state does not announce")
+	nest.apply_persistent_state({"lit": false})
+	eq(heard.size(), 0, "unlit restore is also silent")
+	GameEvents.announcement.disconnect(on_announce)
+
+
+func test_ember_nest_interact_still_announces() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	var nest := EmberNest.new()
+	arena.add_child(nest)
+	await flush(1)
+	var heard: Array[String] = []
+	GameEvents.announcement.connect(func(text: String) -> void: heard.append(text), CONNECT_ONE_SHOT)
+	nest.interact(player)
+	ok(not heard.is_empty(), "resting at the nest still announces")
+	ok(heard[0].contains("余烬"), "live rest uses the kindle line, not a load-restore hint")
+
+
 func test_boss_dead_flag_lost_on_load_without_persist() -> void:
 	var arena := Node2D.new()
 	add_child(arena)

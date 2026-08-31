@@ -76,4 +76,3 @@ func apply_persistent_state(state: Dictionary) -> void:
 	_lit = bool(state.get("lit", false))
 	if _lit:
 		_ensure_glow()
-	GameEvents.announcement.emit("余烬巢已点亮（存档恢复）")
