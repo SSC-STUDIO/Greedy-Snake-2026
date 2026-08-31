@@ -35,8 +35,9 @@ Night is a cold corridor (`mood_tint` ≈ 30–40% luminance). Lights carve warm
 
 | Node | Script | Role |
 |---|---|---|
-| `WorldLight` | `scripts/world/world_light.gd` | PointLight2D wrapper. `follow` is `nest` / `indoor` / `heart`. Shadows on. |
-| `EmberNest/NestLight` | planted by the nest | Lit fire only. Flicker follows the flame frame. Unlit = energy 0. |
+| `WorldLight` | `scripts/world/world_light.gd` | Additive PointLight2D. `follow` is `nest` / `indoor` / `heart`. Shadows on. |
+| `EmberNest/NestLight` + `Halo` | planted by the nest | Lit fire only: warm pool + additive glow sprite. Unlit = energy 0. |
+| `DisplayFit` | `scripts/ui/display_fit.gd` | Integer-scale 1280×720 onto 1440p (2×) and 4K (3×). Not an Autoload. |
 | `MoonFill` | `Level01Parallax` | Weak cool `DirectionalLight2D`. Off indoors and on the title. |
 | `ForgeShelter/WarmPool` | `Level01EastWing.place_forge_shelter` | Large dim indoor fill. |
 | `ForgeHeart/HeartLight` | `forge_heart.gd` | Residual heat after `unlock()`. |

@@ -141,9 +141,9 @@ func test_night_tint_stays_playable() -> void:
 	var day := WorldClock.mood_tint()
 	ok(day.b >= day.r * 0.95, "day stays cool, not a sunny yellow")
 	ok(WorldClock.mood_luminance() > WorldClock.NIGHT_TINT.r * 0.9)
-	ok(WorldClock.nest_light_energy() < 0.25, "day nest glow stays a ember tongue")
+	ok(WorldClock.nest_light_energy() >= 1.0, "day nest glow is a visible pool")
 	WorldClock.set_time(0.80)
-	ok(WorldClock.nest_light_energy() > 0.90, "night nest glow is the bright setting")
+	ok(WorldClock.nest_light_energy() >= 2.0, "night nest glow is the bright setting")
 
 
 func test_parallax_follows_clock_tint() -> void:

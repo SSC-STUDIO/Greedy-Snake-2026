@@ -113,6 +113,10 @@ func test_unlit_has_no_nest_light() -> void:
 	eq(nest.get_persistent_state()["lit"], false)
 	ok(not light.enabled, "unlit nest emits no point light")
 	almost(light.energy, 0.0, 0.001, "unlit energy is zero, not a gray fire")
+	var halo := nest.get_node_or_null("Halo") as Sprite2D
+	ok(halo != null, "Halo node exists")
+	if halo != null:
+		ok(not halo.visible, "unlit nest has no halo")
 
 
 func test_lit_night_glow_stronger_than_day() -> void:
@@ -131,8 +135,8 @@ func test_lit_night_glow_stronger_than_day() -> void:
 	nest.apply_persistent_state({"lit": true})
 	var day_e := light.energy
 	ok(night_e > day_e + 0.40, "night energy is clearly above day")
-	ok(day_e > 0.0 and day_e < 0.30, "day lit glow is a tongue, not a floodlight")
-	ok(night_e >= 0.90)
+	ok(day_e >= 1.0, "day lit glow is a visible pool")
+	ok(night_e >= 2.0)
 	ok(light.color.r > light.color.b, "glow stays warm orange-yellow")
 	nest.apply_persistent_state({"lit": false})
 	ok(not light.enabled, "extinguishing snaps the light off")

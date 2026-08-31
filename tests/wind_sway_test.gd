@@ -30,6 +30,10 @@ func test_sway_flips_with_heading() -> void:
 	WorldClock._heading_target = -1.0
 	sway._apply()
 	ok(host.rotation < 0.0, "left wind leans negative")
+	ok(absf(WorldClock.sway_radians()) >= 0.08, "outdoor sway is at least ~4.5 degrees")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	WorldClock._snap_wind_speed()
+	almost(WorldClock.sway_radians(), 0.0, 0.01, "indoor trees do not lean")
 
 
 func test_plant_sways_trees_not_stones() -> void:

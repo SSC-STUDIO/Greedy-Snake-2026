@@ -53,6 +53,10 @@ func test_unlit_nest_emits_nothing() -> void:
 	ok(not light.lit)
 	ok(not light.enabled)
 	almost(light.energy, 0.0, 0.001)
+	var halo := nest.get_node_or_null("Halo") as Sprite2D
+	ok(halo != null)
+	if halo != null:
+		ok(not halo.visible)
 
 
 func test_lit_nest_night_is_stronger_than_day() -> void:
@@ -72,7 +76,9 @@ func test_lit_nest_night_is_stronger_than_day() -> void:
 	WorldClock.set_time(0.28)
 	nest.apply_persistent_state({"lit": true})
 	ok(night_e > light.energy + 0.40)
-	ok(light.energy > 0.0 and light.energy < 0.30)
+	ok(light.energy >= 1.0, "day pool is visible")
+	var halo := nest.get_node_or_null("Halo") as Sprite2D
+	ok(halo != null and halo.visible, "lit nest shows an additive halo")
 
 
 func test_forge_shelter_has_warm_pool() -> void:
