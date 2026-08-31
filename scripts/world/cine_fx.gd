@@ -3,9 +3,9 @@ extends Node2D
 ## World-space depth dust / scrap plus a faint moon shaft.
 ## Presentation only — wind and zone come from WorldClock.
 
-const FAR_COUNT := 18
-const MID_COUNT := 14
-const NEAR_COUNT := 7
+const FAR_COUNT := 22
+const MID_COUNT := 22
+const NEAR_COUNT := 12
 const MOTE_PATH := "res://assets/ui/ember_motes.png"
 
 var _far: Array[Sprite2D] = []
@@ -31,9 +31,9 @@ func _ready() -> void:
 	add_child(_shaft)
 	if _headless:
 		return
-	_spawn_layer(_far, FAR_COUNT, 0.55, Color(0.82, 0.84, 0.90, 0.16))
-	_spawn_layer(_mid, MID_COUNT, 0.85, Color(0.78, 0.62, 0.48, 0.28))
-	_spawn_layer(_near, NEAR_COUNT, 1.15, Color(0.90, 0.86, 0.80, 0.40))
+	_spawn_layer(_far, FAR_COUNT, 0.70, Color(0.82, 0.84, 0.90, 0.28))
+	_spawn_layer(_mid, MID_COUNT, 1.15, Color(0.82, 0.62, 0.44, 0.48))
+	_spawn_layer(_near, NEAR_COUNT, 1.55, Color(0.94, 0.86, 0.74, 0.62))
 
 
 func mid_motes_allowed() -> bool:
@@ -66,10 +66,10 @@ func _process(delta: float) -> void:
 		return
 	var cam := get_viewport().get_camera_2d()
 	var origin := cam.global_position if cam != null else global_position
-	_drift(_far, delta, wind, 12.0, origin, 0.10)
+	_drift(_far, delta, wind, 18.0, origin, 0.22)
 	if mid_motes_allowed():
-		_drift(_mid, delta, wind, 38.0, origin, 0.22)
-		_drift(_near, delta, wind, 70.0, origin, 0.34)
+		_drift(_mid, delta, wind, 52.0, origin, 0.42)
+		_drift(_near, delta, wind, 88.0, origin, 0.58)
 	else:
 		_hide_layer(_mid)
 		_hide_layer(_near)

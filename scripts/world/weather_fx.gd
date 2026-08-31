@@ -105,7 +105,7 @@ func rain_wind_x() -> float:
 	var v := WorldClock.wind_vector().x
 	if absf(v) < 0.02:
 		return -36.0
-	return v * 90.0
+	return v * 150.0
 
 
 func _load_ember_tex() -> Texture2D:
