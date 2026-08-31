@@ -5,10 +5,21 @@ extends Interactable
 
 const SCENE_PATH := "res://scenes/levels/Level01_Static.tscn"
 const BASE_PATH := "res://assets/env/rubble_c.png"
-const GLOW_PATH := "res://assets/env/fireball_1.png"
+const FLAME_PATH := "res://assets/fx/shrine_flame.png"
+const SPARK_PATH := "res://assets/ui/ember_motes.png"
+const FLAME_FRAMES := 8
+const SPARK_FRAMES := 8
+const UNLIT_FPS := 8.0
+const LIT_FPS := 12.0
+const UNLIT_MOD := Color(0.62, 0.70, 0.92, 0.72)
+const LIT_MOD := Color(1.0, 0.92, 0.62, 1.0)
 
 var _lit: bool = false
-var _glow: CanvasItem
+var _flame: Sprite2D
+var _sparks: Node2D
+var _frame_t := 0.0
+var _spark_t := 0.35
+var _headless := false
 
 
 func _ready() -> void:
@@ -17,33 +28,74 @@ func _ready() -> void:
 	prompt = "E 点燃余烬巢"
 	# rubble_c 原生 27x33，等比 2/3 → 18x22，脚底贴地不再横向压扁。
 	ensure_sprite(BASE_PATH, Vector2(18, 22), Vector2(-2, -2), Palette.RUST_DARK)
+	_headless = DisplayServer.get_name() == "headless"
+	_ensure_flame()
+	_apply_flame_state()
 
 
-func _ensure_glow() -> void:
-	if _glow != null or not ResourceLoader.exists(GLOW_PATH):
+func _ensure_flame() -> void:
+	if _flame != null or not ResourceLoader.exists(FLAME_PATH):
 		return
-	var tex := load(GLOW_PATH) as Texture2D
+	var tex := load(FLAME_PATH) as Texture2D
+	if tex == null:
+		return
 	var spr := Sprite2D.new()
-	spr.name = "Glow"
+	spr.name = "Flame"
 	spr.texture = tex
+	spr.hframes = FLAME_FRAMES
+	spr.vframes = 1
 	spr.centered = true
-	spr.position = Vector2(9, 2)
+	# 18x22 石碑顶心约 (7, 0)；16x24 焰（8x12 设计格 2x）底坐碑帽，不盖碑身。
+	spr.position = Vector2(7, -8)
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	spr.scale = Vector2(0.28, 0.28)
-	spr.modulate = Color(1.0, 0.75, 0.4, 0.85)
+	spr.z_index = 1
 	add_child(spr)
-	_glow = spr
-	_breathe()
+	_flame = spr
+	var sparks := Node2D.new()
+	sparks.name = "Sparks"
+	sparks.position = spr.position
+	sparks.z_index = 2
+	add_child(sparks)
+	_sparks = sparks
 
 
-func _breathe() -> void:
-	if _glow == null:
+func _process(delta: float) -> void:
+	if _flame == null:
 		return
-	var tween := create_tween().set_loops()
-	tween.tween_property(_glow, "modulate:a", 0.25 if _lit else 0.15, 0.8)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(_glow, "modulate:a", 0.9 if _lit else 0.4, 0.8)\
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_frame_t += delta
+	var step := 1.0 / (_lit_fps())
+	while _frame_t >= step:
+		_frame_t -= step
+		_flame.frame = (_flame.frame + 1) % FLAME_FRAMES
+	if _headless or _sparks == null:
+		return
+	_spark_t += delta
+	var interval := 0.40 if _lit else 0.90
+	if _spark_t >= interval:
+		_spark_t = 0.0
+		_spawn_spark()
+
+
+func _lit_fps() -> float:
+	return LIT_FPS if _lit else UNLIT_FPS
+
+
+func _spawn_spark() -> void:
+	if not ResourceLoader.exists(SPARK_PATH):
+		return
+	var cap := 3 if _lit else 1
+	if _sparks.get_child_count() >= cap:
+		return
+	var sheet := load(SPARK_PATH) as Texture2D
+	if sheet == null:
+		return
+	_sparks.add_child(NestSpark.new(sheet, _lit))
+
+
+func _apply_flame_state() -> void:
+	if _flame == null:
+		return
+	_flame.modulate = LIT_MOD if _lit else UNLIT_MOD
 
 
 func can_interact(_actor: Node) -> bool:
@@ -61,7 +113,7 @@ func interact(actor: Node) -> void:
 		p.toxin.purify(1.0)
 		GameEvents.player_health_changed.emit(p.health.current, p.health.max_hp)
 		_lit = true
-		_ensure_glow()
+		_apply_flame_state()
 		SaveData.register_lit_nest(String(get_path()))
 		GameEvents.announcement.emit("余烬重新点燃 —— 进度已刻入铁锈")
 		SaveData.save_game(SCENE_PATH, p)
@@ -74,5 +126,39 @@ func get_persistent_state() -> Dictionary:
 
 func apply_persistent_state(state: Dictionary) -> void:
 	_lit = bool(state.get("lit", false))
-	if _lit:
-		_ensure_glow()
+	_apply_flame_state()
+
+
+## 1x 余烬残片，从焰尖上飘；坐标取整以免 NEAREST 发糊。
+class NestSpark extends Sprite2D:
+	var _age := 0.0
+	var _life := 0.7
+	var _rise := 12.0
+	var _phase := 0.0
+	var _x0 := 0.0
+
+	func _init(sheet: Texture2D, lit: bool) -> void:
+		texture = sheet
+		hframes = EmberNest.SPARK_FRAMES
+		vframes = 1
+		centered = true
+		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		scale = Vector2.ONE
+		frame = randi_range(0, EmberNest.SPARK_FRAMES - 1)
+		_x0 = float(randi_range(-2, 2))
+		position = Vector2(_x0, float(randi_range(-8, -4)))
+		_rise = randf_range(11.0, 18.0) if lit else randf_range(6.0, 10.0)
+		_life = randf_range(0.40, 0.80)
+		_phase = randf() * TAU
+		modulate = Color(1.0, 0.78, 0.42, 0.80) if lit else Color(0.55, 0.62, 0.78, 0.40)
+
+	func _process(delta: float) -> void:
+		_age += delta
+		if _age >= _life:
+			queue_free()
+			return
+		var sway := sin(_age * 7.0 + _phase) * 1.4
+		position = Vector2(roundf(_x0 + sway), roundf(position.y - _rise * delta))
+		frame = int(_age / 0.10) % EmberNest.SPARK_FRAMES
+		var k := _age / _life
+		modulate.a = minf(k * 8.0, 1.0) * (1.0 - k)
