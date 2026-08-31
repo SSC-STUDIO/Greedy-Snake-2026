@@ -1,23 +1,24 @@
 extends Node
 ## Sfx autoload: tiny pooled sound-effect player keyed by short names.
-## Files live under assets/external/kenney/audio/*.ogg (CC0, Kenney).
+## Files live under assets/kenney_clean/audio/*.ogg (CC0, Kenney),
+## renamed copies picked from the Kenney "Audio (295 files)" bundle.
 ## Loads are guarded so the suite stays green even before/without assets.
 
 const POOL_SIZE := 10
 const BASE_DB := -9.0
 
-## key -> file path inside the imported CC0 bundle.
+## key -> curated CC0 sound (see assets/external/CREDITS.md for sources).
 const LIBRARY := {
-	&"swing": "res://assets/external/kenney/audio/swing.ogg",
-	&"hit_flesh": "res://assets/external/kenney/audio/hit_flesh.ogg",
-	&"hurt": "res://assets/external/kenney/audio/hurt.ogg",
-	&"parry": "res://assets/external/kenney/audio/parry.ogg",
-	&"dash": "res://assets/external/kenney/audio/dash.ogg",
-	&"jump": "res://assets/external/kenney/audio/jump.ogg",
-	&"spit": "res://assets/external/kenney/audio/spit.ogg",
-	&"pickup": "res://assets/external/kenney/audio/pickup.ogg",
-	&"insert": "res://assets/external/kenney/audio/insert.ogg",
-	&"gate": "res://assets/external/kenney/audio/gate.ogg",
+	&"swing": "res://assets/kenney_clean/audio/swing.ogg",
+	&"hit_flesh": "res://assets/kenney_clean/audio/hit_flesh.ogg",
+	&"hurt": "res://assets/kenney_clean/audio/hurt.ogg",
+	&"parry": "res://assets/kenney_clean/audio/parry.ogg",
+	&"dash": "res://assets/kenney_clean/audio/dash.ogg",
+	&"jump": "res://assets/kenney_clean/audio/jump.ogg",
+	&"spit": "res://assets/kenney_clean/audio/spit.ogg",
+	&"pickup": "res://assets/kenney_clean/audio/pickup.ogg",
+	&"insert": "res://assets/kenney_clean/audio/insert.ogg",
+	&"gate": "res://assets/kenney_clean/audio/gate.ogg",
 }
 
 var _pool: Array[AudioStreamPlayer] = []
@@ -58,7 +59,10 @@ func _resolve_stream(key: StringName) -> AudioStream:
 	var stream: AudioStream = null
 	if path != "" and ResourceLoader.exists(path):
 		stream = load(path) as AudioStream
-	if stream != null:
-		stream.loop_mode = AudioStreamWAV.LOOP_DISABLED if stream is AudioStreamWAV else stream.loop_mode
+	# One-shot SFX must never loop; each stream type spells it differently.
+	if stream is AudioStreamWAV:
+		stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	elif stream is AudioStreamOggVorbis:
+		stream.loop = false
 	_streams[key] = stream
 	return stream
