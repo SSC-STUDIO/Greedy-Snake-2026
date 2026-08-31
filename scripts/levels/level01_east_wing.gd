@@ -135,6 +135,13 @@ static func place_forge_shelter(host: Node2D) -> AtmosphereZone:
 	rect.size = FORGE_SHELTER_SIZE
 	shape.shape = rect
 	shelter.add_child(shape)
+	var pool := WorldLight.new()
+	pool.name = "WarmPool"
+	pool.follow = &"indoor"
+	pool.lit = true
+	pool.color = Color(1.0, 0.62, 0.38)
+	pool.position = Vector2(0.0, -12.0)
+	shelter.add_child(pool)
 	host.add_child(shelter)
 	return shelter
 

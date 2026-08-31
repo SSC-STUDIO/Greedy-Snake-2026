@@ -28,6 +28,7 @@ var _fog_near_spr: Sprite2D
 var _sil_layer: ParallaxLayer
 var _far_sprite: Sprite2D
 var _mood_tint: CanvasModulate
+var _moon_fill: DirectionalLight2D
 
 
 func build(host: Node2D) -> void:
@@ -56,6 +57,16 @@ func build(host: Node2D) -> void:
 		host.add_child(tint)
 	_mood_tint = tint
 	_mood_tint.color = WorldClock.mood_tint()
+	var moon := host.get_node_or_null("MoonFill") as DirectionalLight2D
+	if moon == null:
+		moon = DirectionalLight2D.new()
+		moon.name = "MoonFill"
+		moon.color = Color(0.72, 0.78, 1.0)
+		moon.shadow_enabled = true
+		moon.height = 0.65
+		moon.rotation = deg_to_rad(-18.0)
+		host.add_child(moon)
+	_moon_fill = moon
 	_snap_atmosphere()
 	if host.get_node_or_null("WeatherFx") == null:
 		var wx := WeatherFx.new()
@@ -96,6 +107,10 @@ func _follow_atmosphere(delta: float) -> void:
 		_sil_layer.modulate = _sil_layer.modulate.lerp(WorldClock.silhouette_modulate(), k)
 	if _far_sprite != null:
 		_far_sprite.modulate = _far_sprite.modulate.lerp(WorldClock.sky_modulate(), k)
+	if _moon_fill != null:
+		var e := WorldClock.moon_fill_energy()
+		_moon_fill.energy = e
+		_moon_fill.enabled = e > 0.001
 
 
 func _add_fog_layer(backdrop: ParallaxBackground, layer_name: String, motion: Vector2, y: float, alpha: float, tex: Texture2D) -> ParallaxLayer:

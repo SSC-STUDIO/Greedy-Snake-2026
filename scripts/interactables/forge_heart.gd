@@ -10,12 +10,14 @@ var unlocked: bool = false
 var _choosing := false
 var _layer: CanvasLayer
 var _menu: MenuList
+var _glow: WorldLight
 
 
 func _ready() -> void:
 	super._ready()
 	prompt = "E 触碰炉心"
 	ensure_sprite("res://assets/env/bg_altar.png", Vector2(36, 40), Vector2(-10, -8), Palette.EMBER)
+	_ensure_light()
 	if SaveData.has_flag("boss_dead"):
 		unlock()
 	else:
@@ -31,6 +33,10 @@ func lock() -> void:
 	visible = false
 	monitoring = false
 	monitorable = false
+	_ensure_light()
+	if _glow != null:
+		_glow.lit = false
+		_glow.apply(true)
 
 
 func unlock() -> void:
@@ -38,6 +44,22 @@ func unlock() -> void:
 	visible = true
 	monitoring = true
 	monitorable = true
+	_ensure_light()
+	if _glow != null:
+		_glow.lit = true
+		_glow.apply(true)
+
+
+func _ensure_light() -> void:
+	if _glow != null:
+		return
+	var light := WorldLight.new()
+	light.name = "HeartLight"
+	light.follow = &"heart"
+	light.color = Color(1.0, 0.55, 0.32)
+	light.position = Vector2(8, -10)
+	add_child(light)
+	_glow = light
 
 
 func interact(actor: Node) -> void:

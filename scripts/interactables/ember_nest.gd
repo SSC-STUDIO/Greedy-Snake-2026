@@ -11,18 +11,16 @@ const FLAME_FRAMES := 8
 const SPARK_FRAMES := 8
 const LIT_FPS := 12.0
 const LIT_MOD := Color(1.0, 0.92, 0.62, 1.0)
-const LIGHT_TEX := 64.0
 const LIGHT_COLOR := Color(1.0, 0.70, 0.36)
 
 var _lit: bool = false
 var _flame: Sprite2D
 var _sparks: Node2D
-var _light: PointLight2D
+var _light: WorldLight
 var _beam: Sprite2D
 var _frame_t := 0.0
 var _spark_t := 0.35
 var _headless := false
-static var _light_tex: Texture2D
 
 
 func _ready() -> void:
@@ -108,51 +106,23 @@ func _spawn_spark() -> void:
 func _ensure_light() -> void:
 	if _light != null:
 		return
-	var light := PointLight2D.new()
+	var light := WorldLight.new()
 	light.name = "NestLight"
 	light.position = Vector2(7, -8)
 	light.color = LIGHT_COLOR
-	light.energy = 0.0
-	light.enabled = false
-	light.shadow_enabled = true
-	light.shadow_filter = Light2D.SHADOW_FILTER_NONE
-	light.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	light.texture = _nest_light_texture()
-	light.texture_scale = (WorldClock.nest_light_radius() * 2.0) / LIGHT_TEX
+	light.follow = &"nest"
+	light.flicker = true
 	add_child(light)
 	_light = light
-
-
-func _nest_light_texture() -> Texture2D:
-	if _light_tex != null:
-		return _light_tex
-	var size := int(LIGHT_TEX)
-	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
-	var center := Vector2(size * 0.5, size * 0.5)
-	var radius := size * 0.5
-	for y in size:
-		for x in size:
-			var d := Vector2(x + 0.5, y + 0.5).distance_to(center) / radius
-			var a := clampf(1.0 - d, 0.0, 1.0)
-			a = a * a
-			img.set_pixel(x, y, Color(1.0, 0.78, 0.42, a))
-	_light_tex = ImageTexture.create_from_image(img)
-	return _light_tex
 
 
 func _sync_light(delta: float) -> void:
 	if _light == null:
 		return
-	if not _lit:
-		_light.enabled = false
-		_light.energy = 0.0
-		return
-	_light.enabled = true
-	var target_e := WorldClock.nest_light_energy()
-	var target_s := (WorldClock.nest_light_radius() * 2.0) / LIGHT_TEX
-	var k := 1.0 if delta > 10.0 else (1.0 - exp(-8.0 * delta))
-	_light.energy = lerpf(_light.energy, target_e, k)
-	_light.texture_scale = lerpf(_light.texture_scale, target_s, k)
+	_light.lit = _lit
+	if _flame != null:
+		_light.set_flame_frame(_flame.frame)
+	_light.apply(delta > 10.0)
 
 
 func _ensure_beam() -> void:
@@ -188,7 +158,11 @@ func _lean_flame() -> void:
 	if _beam != null:
 		_beam.rotation = lean * 0.35
 		_beam.visible = _lit
-		_beam.modulate.a = 0.28 if _lit else 0.0
+		if _lit:
+			var e := WorldClock.nest_light_energy()
+			_beam.modulate.a = 0.10 + 0.22 * clampf(e / 1.65, 0.0, 1.0)
+		else:
+			_beam.modulate.a = 0.0
 
 
 func _apply_flame_state() -> void:
