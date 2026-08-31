@@ -17,7 +17,7 @@ static func tether_core() -> RustCore:
 	var core := RustCore.new()
 	core.id = &"tether_core"
 	core.display_name = "Tether Core"
-	core.description = "Hookshot Tether — grappling across gaps (still cooling)."
+	core.description = "Hookshot Tether — grapple onto anchors and swing the gaps."
 	core.ability_id = AbilityIds.HOOKSHOT_TETHER
 	core.tint = Palette.TEAL
 	return core

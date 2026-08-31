@@ -1,5 +1,7 @@
 # Rustgrave 角色像素美术替换计划
 
+> **已落地**：本计划的主选型（Fantasy Knight 玩家 + Hell Beast / Hell Hound / Undead Executioner 敌人）已全部接线进游戏（`CharFrames` + `FrameAnimSprite`），CREDITS.md 已同步。以下为当时的选型规划存档。
+
 > 生成时间：2026-08-31。本文档只做素材选型与接线规划，**未改动任何现有 .gd / .tscn / project.godot / CREDITS.md**。
 > 所有新素材已通过 `godot --headless --import` 验证，导入无报错。
 
