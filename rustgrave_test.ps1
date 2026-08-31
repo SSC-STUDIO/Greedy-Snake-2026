@@ -6,7 +6,11 @@ param(
     [string]$GodotExe = "C:\Program Files\Godot\Godot_v4.7.1-stable_win64.exe",
     [string]$OutDir = (Join-Path $PSScriptRoot "screenshots"),
     # -Extended: 03 之后继续按住 D 周期跳跃横穿全关，多截 04..08 五张图（巡查右半关卡）。
-    [switch]$Extended
+    [switch]$Extended,
+    # -Ui: 巡查全部界面 —— 标题菜单 / 菜单选中态 / 操作说明 / 游戏内 HUD /
+    #      暂停菜单 / 暂停里的操作说明 / 返回标题，最后再补一张“有存档”的标题
+    #      （继续项可用）。为了让键盘导航可复现，该模式会先删除存档。
+    [switch]$Ui
 )
 
 $ErrorActionPreference = 'Stop'
@@ -51,10 +55,14 @@ public class Win32 {
     public static extern bool BringWindowToTop(IntPtr hWnd);
     [DllImport("user32.dll")]
     public static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll")]
+    public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
 
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT { public int X, Y; }
 }
 '@
 
@@ -84,7 +92,7 @@ function Find-GameWindow([int]$OwnerPid) {
     return $script:foundHwnd
 }
 
-function Save-WindowShot([IntPtr]$hWnd, [string]$Path) {
+function Get-WindowBitmap([IntPtr]$hWnd) {
     $rect = New-Object Win32+RECT
     [Win32]::GetWindowRect($hWnd, [ref]$rect) | Out-Null
     $w = $rect.Right - $rect.Left
@@ -99,9 +107,24 @@ function Save-WindowShot([IntPtr]$hWnd, [string]$Path) {
     if (-not $ok) {   # 回退:老式屏幕区域拷贝
         $gfx.CopyFromScreen($rect.Left, $rect.Top, 0, 0, $bmp.Size)
     }
+    $gfx.Dispose()
+    return $bmp
+}
+
+function Save-WindowShot([IntPtr]$hWnd, [string]$Path) {
+    $bmp = Get-WindowBitmap $hWnd
     $bmp.Save($Path, [System.Drawing.Imaging.ImageFormat]::Png)
-    $gfx.Dispose(); $bmp.Dispose()
+    $bmp.Dispose()
     Write-Host ("截图: {0} ({1:N0} KB)" -f $Path, ((Get-Item $Path).Length / 1KB))
+}
+
+# 客户区左上角在窗口截图里的偏移(边框 + 标题栏),把视口坐标换算成截图坐标。
+function Get-ClientOrigin([IntPtr]$hWnd) {
+    $rect = New-Object Win32+RECT
+    [Win32]::GetWindowRect($hWnd, [ref]$rect) | Out-Null
+    $pt = New-Object Win32+POINT
+    [Win32]::ClientToScreen($hWnd, [ref]$pt) | Out-Null
+    return @{ X = $pt.X - $rect.Left; Y = $pt.Y - $rect.Top }
 }
 
 # 确保游戏窗口在前台再注入按键,避免把按键打进别的窗口。
@@ -144,39 +167,116 @@ function Send-Key([byte]$Vk, [int]$HoldMs = 60) {
     Start-Sleep -Milliseconds $HoldMs
     Release-Key $Vk
 }
+# 方向键是扩展键:不带 KEYEVENTF_EXTENDEDKEY 的话扫描码会撞到小键盘,
+# Godot 收到的就不是 ui_up / ui_down 了。
+function Send-ArrowKey([byte]$Vk, [int]$HoldMs = 60) {
+    $scan = [byte]([Win32]::MapVirtualKey($Vk, 0))
+    [Win32]::keybd_event($Vk, $scan, 0x09, [UIntPtr]::Zero)   # SCANCODE | EXTENDEDKEY
+    Start-Sleep -Milliseconds $HoldMs
+    [Win32]::keybd_event($Vk, $scan, 0x0B, [UIntPtr]::Zero)   # + KEYUP
+}
+
+# --- 标题菜单导航:按到位为止 ---
+# 注入的第一个按键偶尔会被丢掉(窗口刚拿到焦点),在标题屏上这会让回车打在
+# “点燃余烬”上、直接进关卡,后面几张截图全废。所以这里按一下就回读一次画面:
+# 选中行的内腔是锈色(R 明显大于 B),未选中是暗紫(B 大于 R),据此确认再继续。
+# 几何常量必须与 scripts/ui/title_screen.gd + menu_item.gd 保持一致。
+$script:MenuTop = 254
+$script:MenuRowPitch = 62   # 行高 52 + VBoxContainer separation 10
+$script:MenuProbeX = 820    # 行内右侧空白处,躲开居中文字与左侧光标
+
+function Test-TitleRowSelected([IntPtr]$hWnd, [int]$Index) {
+    $origin = Get-ClientOrigin $hWnd
+    $bmp = Get-WindowBitmap $hWnd
+    try {
+        $x = $origin.X + $script:MenuProbeX
+        $y = $origin.Y + $script:MenuTop + $Index * $script:MenuRowPitch + 26
+        if ($x -ge $bmp.Width -or $y -ge $bmp.Height) { return $false }
+        $c = $bmp.GetPixel($x, $y)
+        return ($c.R - $c.B) -gt 20
+    } finally { $bmp.Dispose() }
+}
+
+function Move-TitleSelection([IntPtr]$hWnd, [int]$Index, [int]$Tries = 4) {
+    foreach ($i in 1..$Tries) {
+        if (Test-TitleRowSelected $hWnd $Index) { return }
+        Send-ArrowKey 0x28   # VK_DOWN
+        Start-Sleep -Milliseconds 450
+    }
+    if (-not (Test-TitleRowSelected $hWnd $Index)) {
+        throw "标题菜单导航失败:$Tries 次向下仍未选中第 $Index 项"
+    }
+}
+
+# 存档落在 Godot 的 user:// 目录里；界面巡查要靠它决定“继续旅程”是否灰显。
+function Get-SavePath {
+    return Join-Path $env:APPDATA 'Godot\app_userdata\Rustgrave\rustgrave_save.cfg'
+}
+function Remove-Save {
+    $p = Get-SavePath
+    if (Test-Path $p) { Remove-Item $p -Force; Write-Host "已删除存档: $p" }
+}
+# has_save() 只看文件是否存在,所以占位内容足够点亮“继续旅程”给截图看。
+function Write-StubSave {
+    $p = Get-SavePath
+    New-Item -ItemType Directory -Path (Split-Path $p) -Force | Out-Null
+    Set-Content -Path $p -Value "[meta]`nversion=1`nscene=`"res://scenes/levels/Level01_Static.tscn`"`n" -Encoding UTF8
+    Write-Host "已写入占位存档: $p"
+}
 
 # --- Step 0: 准备 ---
 if (-not (Test-Path $GodotExe)) { Write-Host "找不到 Godot: $GodotExe"; exit 1 }
 New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
 $projectDir = $PSScriptRoot
 
-# --- Step 1: 启动游戏 ---
-Write-Host "=== 启动游戏 ==="
-$proc = Start-Process -FilePath $GodotExe -ArgumentList '--path', "`"$projectDir`"" -PassThru
-
-try {
-    # --- Step 2: 等待窗口出现 ---
-    $hwnd = [IntPtr]::Zero
+# 启动一局并拿到已置前台、已归位的游戏窗口;失败直接退出码 1。
+function Start-Game {
+    Write-Host "=== 启动游戏 ==="
+    $p = Start-Process -FilePath $GodotExe -ArgumentList '--path', "`"$projectDir`"" -PassThru
+    $h = [IntPtr]::Zero
     foreach ($i in 1..40) {
         Start-Sleep -Milliseconds 500
-        $hwnd = Find-GameWindow -OwnerPid $proc.Id
-        if ($hwnd -ne [IntPtr]::Zero) { break }
-        if ($proc.HasExited) { Write-Host "游戏进程提前退出,exit=$($proc.ExitCode)"; exit 1 }
+        $h = Find-GameWindow -OwnerPid $p.Id
+        if ($h -ne [IntPtr]::Zero) { break }
+        if ($p.HasExited) { Write-Host "游戏进程提前退出,exit=$($p.ExitCode)"; exit 1 }
     }
-    if ($hwnd -eq [IntPtr]::Zero) { Write-Host "20 秒内未找到 Rustgrave 窗口"; exit 1 }
-    Write-Host ("找到窗口 HWND=0x{0:X8}" -f $hwnd.ToInt64())
-
-    [Win32]::ShowWindow($hwnd, 9) | Out-Null
+    if ($h -eq [IntPtr]::Zero) { Write-Host "20 秒内未找到 Rustgrave 窗口"; exit 1 }
+    Write-Host ("找到窗口 HWND=0x{0:X8}" -f $h.ToInt64())
+    [Win32]::ShowWindow($h, 9) | Out-Null
     Start-Sleep -Milliseconds 300
     # 挪到屏幕左上,避免窗口超出屏幕导致截图被裁。
     $rect = New-Object Win32+RECT
-    [Win32]::GetWindowRect($hwnd, [ref]$rect) | Out-Null
-    [Win32]::MoveWindow($hwnd, 10, 10, $rect.Right - $rect.Left, $rect.Bottom - $rect.Top, $true) | Out-Null
-    [Win32]::SetForegroundWindow($hwnd) | Out-Null
+    [Win32]::GetWindowRect($h, [ref]$rect) | Out-Null
+    [Win32]::MoveWindow($h, 10, 10, $rect.Right - $rect.Left, $rect.Bottom - $rect.Top, $true) | Out-Null
+    [Win32]::SetForegroundWindow($h) | Out-Null
     Start-Sleep -Milliseconds 2000   # 等标题屏余烬/keyart 稳定
+    return @{ Proc = $p; Hwnd = $h }
+}
 
+if ($Ui) { Remove-Save }
+
+$game = Start-Game
+$proc = $game.Proc
+$hwnd = $game.Hwnd
+
+try {
     # --- Step 3: 标题屏截图 ---
     Save-WindowShot $hwnd (Join-Path $OutDir '01_title.png')
+
+    # --- Step 3b (可选): 菜单导航 + 操作说明 ---
+    # 无存档时“继续旅程”灰显,向下一次会跳过它落在“操作说明”上 —— 因此
+    # -Ui 一开始就删档,导航步数才是确定的。
+    if ($Ui) {
+        Assert-Foreground $hwnd | Out-Null
+        Move-TitleSelection $hwnd 2   # 灰显的“继续旅程”会被跳过,落在“操作说明”
+        Save-WindowShot $hwnd (Join-Path $OutDir '01b_menu_controls.png')
+        Send-Key 0x0D        # Enter -> 打开操作说明
+        Start-Sleep -Milliseconds 900
+        Save-WindowShot $hwnd (Join-Path $OutDir '01c_controls.png')
+        Send-Key 0x1B        # Esc -> 关面板
+        Start-Sleep -Milliseconds 500
+        Move-TitleSelection $hwnd 0   # 回到“点燃余烬”(向下绕一圈即可)
+    }
 
     # --- Step 4: 按 Enter 开新游戏,等淡出 + 关卡加载 ---
     Assert-Foreground $hwnd | Out-Null
@@ -192,6 +292,37 @@ try {
     Send-Key 0x4A    # J 挥砍
     Start-Sleep -Milliseconds 180                        # 命中判定帧内
     Save-WindowShot $hwnd (Join-Path $OutDir '03_action.png')
+
+    # --- Step 5b (可选): 暂停菜单 -> 操作说明 -> 返回标题 ---
+    if ($Ui) {
+        Assert-Foreground $hwnd | Out-Null
+        Send-Key 0x1B        # Esc -> 暂停
+        Start-Sleep -Milliseconds 800
+        Save-WindowShot $hwnd (Join-Path $OutDir '03b_pause.png')
+        Send-ArrowKey 0x28   # 操作说明
+        Start-Sleep -Milliseconds 600
+        Send-Key 0x0D
+        Start-Sleep -Milliseconds 900
+        Save-WindowShot $hwnd (Join-Path $OutDir '03c_pause_controls.png')
+        Send-Key 0x1B        # 关面板,回到暂停菜单
+        Start-Sleep -Milliseconds 600
+        Send-ArrowKey 0x28   # 返回标题
+        Start-Sleep -Milliseconds 600
+        Send-Key 0x0D
+        Start-Sleep -Milliseconds 2000
+        Save-WindowShot $hwnd (Join-Path $OutDir '03d_title_return.png')
+
+        if (-not $proc.HasExited) { $proc.Kill() }
+        Start-Sleep -Milliseconds 800
+        # 再开一局,这次带存档,专门看“继续旅程”亮起来的样子。
+        Write-StubSave
+        $game2 = Start-Game
+        Save-WindowShot $game2.Hwnd (Join-Path $OutDir '01d_title_continue.png')
+        if (-not $game2.Proc.HasExited) { $game2.Proc.Kill() }
+        Remove-Save
+        Write-Host "=== 界面巡查完成,8 张截图已保存到 $OutDir ==="
+        exit 0
+    }
 
     # --- Step 6 (可选): 横穿全关,分段截图巡查右半关卡 ---
     # 跳跃模式: 先原地满高双跳(不顶墙,不浪费二段跳),到最高点才按 D 平移。
