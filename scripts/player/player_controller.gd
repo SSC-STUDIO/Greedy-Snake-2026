@@ -133,7 +133,8 @@ func _try_jump(body: CharacterBody2D) -> void:
 	if _coyote > 0.0:
 		_do_jump(body, false)
 		return
-	if extra_jumps_unlocked and _jumps_left > 0 and not body.is_on_floor():
+	# extra_jumps_unlocked 填地上刷新的次数；grant_air_jump() 可在空中临时加一条。
+	if _jumps_left > 0 and not body.is_on_floor():
 		_jumps_left -= 1
 		_do_jump(body, true)
 

@@ -85,3 +85,22 @@ func test_dash_grants_iframes_and_cooldown_then_recovers() -> void:
 	for i in int((ctrl.dash_cooldown - ctrl.dash_duration) * 60.0) + 1:
 		ctrl.physics_tick(body, 1.0 / 60.0, 1.0)
 	ok(not ctrl.is_dashing(), "cooldown window elapsed")
+
+
+func test_extra_jump_requires_unlock() -> void:
+	await _step(8)
+	ok(body.is_on_floor())
+	ctrl.extra_jumps_unlocked = false
+	body.position.y = -80.0
+	body.velocity.y = 20.0
+	# Burn coyote time so this is a true air jump, not a grounded one.
+	await _step(int(ctrl.coyote_time * 60.0) + 3)
+	ok(not body.is_on_floor())
+	eq(ctrl._jumps_left, 0, "no bonus charges while locked")
+	ctrl._buffer = 1.0
+	ctrl._try_jump(body)
+	ok(body.velocity.y > -40.0, "locked extra jump does not fire")
+	ctrl.grant_air_jump()
+	ctrl._buffer = 1.0
+	ctrl._try_jump(body)
+	ok(body.velocity.y < -100.0, "grant_air_jump can still give one extra")

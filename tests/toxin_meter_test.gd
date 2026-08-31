@@ -46,6 +46,24 @@ func test_purify_clears_and_overflow_never_fires_when_not_full() -> void:
 	almost(t.toxin, 0.0, 0.01)
 
 
+func test_potency_bands_map_to_fuel_tiers() -> void:
+	t.toxin = 0.0
+	eq(t.band(), &"cold")
+	almost(t.potency(), 0.0, 0.01)
+	t.toxin = 29.0
+	eq(t.band(), &"cold")
+	t.toxin = 30.0
+	eq(t.band(), &"warm")
+	almost(t.potency(), 0.5, 0.01)
+	t.toxin = 60.0
+	eq(t.band(), &"hot")
+	almost(t.potency(), 0.85, 0.01)
+	t.toxin = 100.0
+	eq(t.band(), &"overflow")
+	almost(t.potency(), 1.0, 0.01)
+	ok(t.is_full(), "overflow keeps the bonus band")
+
+
 func test_overflow_tick_cadence_while_continuously_exposed() -> void:
 	var ticks := [0]
 	t.overflow_tick.connect(func(): ticks[0] += 1)

@@ -9,7 +9,7 @@ const CHAR_ACTIONS := {
 		"death", "turn", "attack1", "attack2", "attack_combo"],
 	"spitter_hell_beast": ["idle", "attack", "death", "projectile"],
 	"scrapper_hell_hound": ["idle", "walk", "run", "jump"],
-	"gear_shield_executioner": ["idle", "idle2", "summon", "death"],
+	"gear_shield_executioner": ["idle", "idle2", "summon", "death", "attack", "skill"],
 	"fx_enemy_death": ["death"],
 }
 

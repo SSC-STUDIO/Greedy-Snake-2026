@@ -281,8 +281,13 @@ try {
     # --- Step 4: 按 Enter 开新游戏,等淡出 + 关卡加载 ---
     Assert-Foreground $hwnd | Out-Null
     Send-Key 0x0D    # VK_RETURN
-    Start-Sleep -Milliseconds 2500
+    Start-Sleep -Milliseconds 3500
     Save-WindowShot $hwnd (Join-Path $OutDir '02_level.png')
+    # 苏醒过场可跳过：Enter 快进，避免后续走位被锁。
+    Send-Key 0x0D
+    Start-Sleep -Milliseconds 400
+    Send-Key 0x0D
+    Start-Sleep -Milliseconds 600
 
     # --- Step 5: 向右移动 + 挥砍,截动作画面 ---
     Assert-Foreground $hwnd | Out-Null
@@ -330,6 +335,8 @@ try {
     # 保住满高,双跳合计 ~70px,足以从 48px 深的毒坑底爬出来。
     if ($Extended) {
         Assert-Foreground $hwnd | Out-Null
+        Send-Key 0x0D
+        Start-Sleep -Milliseconds 300
         foreach ($leg in 4..8) {
             foreach ($hop in 1..3) {
                 Send-Key 0x20 200                        # Space (地面跳,满高)

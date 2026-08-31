@@ -15,6 +15,10 @@ func is_active() -> bool:
 	return _time > 0.0
 
 
+func is_resonating() -> bool:
+	return is_active()
+
+
 func remaining() -> float:
 	return _time
 

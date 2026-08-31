@@ -28,6 +28,8 @@ var _noise_t := 0.0
 ## it stacks with the trauma shake instead of stomping it.
 var shake_offset := Vector2.ZERO
 
+## Director takeover: when directed, we lerp toward a focus point instead
+## of the player. release() hands the lens back.
 var _focused: bool = false
 var _focus_node: Node2D
 var _focus_pos: Vector2 = Vector2.ZERO
