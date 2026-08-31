@@ -84,6 +84,9 @@ func is_fading() -> bool:
 ## fade_to(scene) or fade_to(scene, duration_seconds). Always fades to black.
 ## 正在淡变时不丢第二次请求：只保留最后一个目标，当前淡出结束后切过去。
 func fade_to(scene: String, duration: float = FADE_DEFAULT) -> void:
+	# 切场必须掐掉进行中的过场，否则 lock/字幕会跟着 Autoload 进下一幕。
+	if playing:
+		abort()
 	if _fading:
 		_queued_fade_path = scene
 		_queued_fade_duration = duration

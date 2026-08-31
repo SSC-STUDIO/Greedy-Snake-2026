@@ -263,7 +263,13 @@ func apply_player(player: Node) -> void:
 	var tox := player.get_node_or_null("ToxinMeter") as ToxinMeter
 	if tox:
 		tox.toxin = clampf(float(p.get("toxin", 0.0)), 0.0, tox.max_toxin)
+		GameEvents.toxin_changed.emit(tox.toxin, tox.max_toxin)
 	if player is Player:
+		var face := int(p.get("facing", 1))
+		if face == 0:
+			face = 1
+		(player as Player).controller.facing = face
+		(player as Player).visual.scale.x = float(face)
 		var inv := (player as Player).inventory
 		inv.pouch.clear()
 		inv.sockets.clear()

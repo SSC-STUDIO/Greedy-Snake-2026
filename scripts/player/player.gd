@@ -294,7 +294,9 @@ func on_melee_active(combo_index: int) -> void:
 	var pot := toxin.potency()
 	if pot >= 0.85 and inventory.has_ability(AbilityIds.HEAT_FORGE):
 		_spawn_fire_trail()
-	if combo_index >= 2 and inventory.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.EMBER_STEP):
+	# 双槽冲击波只在共鸣窗口点亮，避免嵌核后每段三连都白嫖。
+	if combo_index >= 2 and resonance.is_active() \
+			and inventory.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.EMBER_STEP):
 		_spawn_blast()
 
 
@@ -394,6 +396,9 @@ func _on_health_changed(current: int, maximum: int) -> void:
 
 
 func _on_toxin_overflow() -> void:
+	# 过场锁死时不能走开：满溢伤害会把人钉死在毒池/台词里。
+	if cutscene_locked:
+		return
 	health.take_damage(1, self)
 
 

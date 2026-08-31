@@ -28,12 +28,9 @@ func _ready() -> void:
 		add_child(solid)
 
 
-func can_interact(actor: Node) -> bool:
-	if _melted:
-		return false
-	if actor is Player:
-		return (actor as Player).inventory.has_ability(AbilityIds.HEAT_FORGE)
-	return false
+func can_interact(_actor: Node) -> bool:
+	# 未融化时始终可聚焦，否则没窑核的人走过去连「需要熔热锻」都看不见。
+	return not _melted
 
 
 func get_prompt(actor: Node) -> String:
@@ -43,7 +40,9 @@ func get_prompt(actor: Node) -> String:
 
 
 func interact(actor: Node) -> void:
-	if not can_interact(actor):
+	if _melted:
+		return
+	if not actor is Player or not (actor as Player).inventory.has_ability(AbilityIds.HEAT_FORGE):
 		GameEvents.announcement.emit("锈门太厚。把窑核嵌进剑里。")
 		return
 	melt(actor)

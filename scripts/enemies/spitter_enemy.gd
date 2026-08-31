@@ -102,6 +102,8 @@ func _add_nozzle() -> void:
 
 
 func _on_shoot_tick() -> void:
+	if Director.is_input_locked():
+		return
 	if health.current <= 0 or _charging:
 		return
 	var player := get_tree().get_first_node_in_group("player") as Player

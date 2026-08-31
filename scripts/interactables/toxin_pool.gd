@@ -134,6 +134,9 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 过场锁输入时人走不开，继续灌毒会在台词里把骑士灌满并触发满溢。
+	if Director.is_input_locked():
+		return
 	for body in _bodies:
 		if body is Player:
 			(body as Player).toxin.expose(toxin_per_second * delta)

@@ -40,6 +40,14 @@ func _enemy_ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 过场锁玩家时敌人也停手，否则 Boss 介绍里仍会被砍/被射。
+	if Director.is_input_locked():
+		if _mobile:
+			if not is_on_floor():
+				velocity.y += GRAVITY * delta
+			velocity.x = 0.0
+			move_and_slide()
+		return
 	if not _mobile:
 		_tick_state(delta)
 		return

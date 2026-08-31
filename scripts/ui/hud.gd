@@ -130,7 +130,7 @@ func _build_stat_panel(root: Control) -> void:
 	_toxin_bar.max_value = 100.0
 	_toxin_bar.value = 0.0
 	toxin_row.add_child(_toxin_bar)
-	_toxin_label = UiKit.label("毒素 0%", &"HudToxinLabel")
+	_toxin_label = UiKit.label("毒素 冷 0%", &"HudToxinLabel")
 	_toxin_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toxin_row.add_child(_toxin_label)
 
@@ -322,7 +322,8 @@ func _on_toxin(current: float, maximum: float) -> void:
 	var t := 0.0 if maximum <= 0.0 else current / maximum
 	_toxin_ratio = t
 	_toxin_bar.value = t * 100.0
-	_toxin_label.text = "毒素 %d%%" % int(t * 100.0)
+	var band := ToxinMeter.band_for(current, maximum)
+	_toxin_label.text = "毒素 %s %d%%" % [ToxinMeter.band_label_for(band), int(t * 100.0)]
 	if t < TOXIN_ALARM_RATIO:
 		_toxin_bar.modulate = Color.WHITE
 		_toxin_label.modulate = Color.WHITE

@@ -29,13 +29,36 @@ func potency() -> float:
 
 
 func band() -> StringName:
-	if toxin >= max_toxin - 0.01:
+	return band_for(toxin, max_toxin)
+
+
+## HUD / 读档共用同一套档位，避免百分比和战斗加成各算各的。
+static func band_for(current: float, maximum: float) -> StringName:
+	if maximum <= 0.0:
+		return &"cold"
+	if current >= maximum - 0.01:
 		return &"overflow"
-	if toxin >= BAND_HOT:
+	if current >= BAND_HOT:
 		return &"hot"
-	if toxin >= BAND_WARM:
+	if current >= BAND_WARM:
 		return &"warm"
 	return &"cold"
+
+
+func band_label() -> String:
+	return band_label_for(band())
+
+
+static func band_label_for(id: StringName) -> String:
+	match id:
+		&"overflow":
+			return "溢"
+		&"hot":
+			return "炽"
+		&"warm":
+			return "温"
+		_:
+			return "冷"
 
 
 func _process(delta: float) -> void:
