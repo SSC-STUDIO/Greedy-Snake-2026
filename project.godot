@@ -18,7 +18,8 @@ config/name="Rustgrave"
 config/description="A 2D pixel-art Metroidvania of rust, weight, and ember."
 run/main_scene="res://scenes/ui/TitleScreen.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
+config/windows_native_icon="res://icon.ico"
 
 [autoload]
 
