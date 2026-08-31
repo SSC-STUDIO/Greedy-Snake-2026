@@ -1,17 +1,20 @@
 class_name GearPlatform
 extends StaticBody2D
-## Broken gear foothold. Octagon reads as a rusted cog from a distance.
+## Small hovering stone foothold (octagon collision, church slab block).
+## 悬空物件走"石造台子"皮肤家族，与接地的草顶土地明确区分。
 
-@export var radius: float = 22.0
-@export var fill: Color = Color("#8B4513")
+@export var radius: float = 16.0
+@export var fill: Color = Color("#2a1e32")
+
+const BLOCK_PATH := "res://assets/env/float_small.png"
+const FLOAT_TONE := Color(0.82, 0.8, 0.95)
+const WORLD := 16.0
 
 
 func setup(pos: Vector2, r: float) -> void:
 	position = pos
 	radius = r
 
-
-const GEAR_TEX_PATH := "res://assets/kenney_clean/tiles/box.png"
 
 func _ready() -> void:
 	collision_layer = 1
@@ -20,36 +23,31 @@ func _ready() -> void:
 	for i in 8:
 		var a := deg_to_rad(22.5 + float(i) * 45.0)
 		pts.append(Vector2(cos(a), sin(a)) * radius)
-	_build_visual(pts)
+	_build_visual()
 	var col := CollisionPolygon2D.new()
 	col.polygon = pts
 	add_child(col)
 
 
-func _build_visual(pts: PackedVector2Array) -> void:
-	var tex: Texture2D = null
-	if ResourceLoader.exists(GEAR_TEX_PATH):
-		tex = load(GEAR_TEX_PATH) as Texture2D
-	if tex == null:
-		var poly := Polygon2D.new()
-		poly.polygon = pts
-		poly.color = fill
-		add_child(poly)
+func _build_visual() -> void:
+	if ResourceLoader.exists(BLOCK_PATH):
+		var tex := load(BLOCK_PATH) as Texture2D
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# 八边形碰撞顶边在 y≈-0.92*radius；石台顶面与其对齐。
+		var s := (radius * 2.0) / float(tex.get_width())
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(-radius, -0.92 * radius)
+		spr.modulate = FLOAT_TONE
+		add_child(spr)
 		return
 	var poly := Polygon2D.new()
+	var pts := PackedVector2Array()
+	for i in 8:
+		var a := deg_to_rad(22.5 + float(i) * 45.0)
+		pts.append(Vector2(cos(a), sin(a)) * radius)
 	poly.polygon = pts
-	poly.texture = tex
-	poly.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	# UVs scaled so texture tiles roughly every 22px.
-	var uvs := PackedVector2Array()
-	for p in pts:
-		uvs.append((p + Vector2(radius, radius)) / 22.0)
-	poly.uv = uvs
-	poly.color = fill.lerp(Color.WHITE, 0.3)
+	poly.color = fill
 	add_child(poly)
-	var outline := Line2D.new()
-	outline.points = pts + PackedVector2Array([pts[0]])
-	outline.width = 2.0
-	outline.default_color = Palette.RUST_SHADOW
-	outline.closed = true
-	add_child(outline)
