@@ -64,7 +64,7 @@ func is_open() -> bool:
 
 
 func open() -> void:
-	if visible:
+	if visible or Director.choice_hold:
 		return
 	visible = true
 	_menu.active = true
@@ -78,13 +78,17 @@ func close() -> void:
 		return
 	_controls.visible = false
 	visible = false
+	Sfx.play(&"ui_back")
+	if Director.choice_hold:
+		return
 	get_tree().paused = false
 	Director.resume()
-	Sfx.play(&"ui_back")
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_cancel"):
+		return
+	if Director.choice_hold and not visible:
 		return
 	# 操作说明自己会吃掉 ui_cancel，走到这里说明它没开着。
 	if visible:

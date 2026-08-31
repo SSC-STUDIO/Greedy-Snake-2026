@@ -1,76 +1,113 @@
 class_name Caption
-extends CanvasLayer
-## 底部打字机字幕。过场专用，和 HUD 播报横幅分开，互不覆盖。
+extends Control
+## 底部打字机字幕。可排队；skip 会立刻写完当前句并进入停留，
+## 再 skip 一次就切下一句或结束。
 
-const CPS := 22.0
+signal finished
+signal line_advanced
 
-var _panel: PanelContainer
-var _label: Label
+const CHARS_PER_SEC := 22.0
+const DEFAULT_HOLD := 1.6
+
+var _queue: Array[Dictionary] = []
 var _full: String = ""
-var _shown: int = 0
-var _cps: float = CPS
-var _accum: float = 0.0
+var _shown: float = 0.0
+var _hold_left: float = 0.0
 var _typing: bool = false
+var _holding: bool = false
+var _label: Label
+var _panel: PanelContainer
 
 
 func _ready() -> void:
-	layer = 16
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	_panel = UiKit.panel(&"BannerPanel")
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel = UiKit.panel(&"HudPanel")
+	_panel.name = "CaptionPanel"
 	_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_panel.offset_left = -320.0
 	_panel.offset_right = 320.0
-	_panel.offset_top = -92.0
-	_panel.offset_bottom = -48.0
-	_panel.visible = false
+	_panel.offset_top = -86.0
+	_panel.offset_bottom = -28.0
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_panel.visible = false
 	add_child(_panel)
 	_label = UiKit.label("", &"AnnounceLabel", HORIZONTAL_ALIGNMENT_CENTER)
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_panel.add_child(_label)
 
 
-func show_line(text: String, cps: float = CPS) -> void:
-	_full = text
-	_shown = 0
-	_cps = maxf(8.0, cps)
-	_accum = 0.0
-	_typing = not text.is_empty()
-	_label.text = ""
-	_panel.visible = text != ""
-	if DisplayServer.get_name() == "headless":
-		reveal()
+func is_busy() -> bool:
+	return _typing or _holding or not _queue.is_empty()
 
 
-func reveal() -> void:
-	_shown = _full.length()
-	_label.text = _full
+func enqueue(text: String, hold: float = DEFAULT_HOLD) -> void:
+	if text == "":
+		return
+	_queue.append({"text": text, "hold": hold})
+	if not _typing and not _holding:
+		_start_next()
+
+
+func skip() -> void:
+	if _typing:
+		_shown = _full.length()
+		_label.text = _full
+		_typing = false
+		_holding = true
+		line_advanced.emit()
+		return
+	if _holding:
+		_holding = false
+		_hold_left = 0.0
+		_start_next()
+
+
+func clear() -> void:
+	_queue.clear()
 	_typing = false
-
-
-func hide_line() -> void:
-	_typing = false
+	_holding = false
 	_full = ""
 	_shown = 0
+	_hold_left = 0.0
 	_label.text = ""
 	_panel.visible = false
 
 
-func is_typing() -> bool:
-	return _typing
-
-
 func _process(delta: float) -> void:
-	if not _typing:
+	if get_tree().paused:
 		return
-	_accum += delta * _cps
-	var add := int(_accum)
-	if add <= 0:
+	if _typing:
+		_shown += CHARS_PER_SEC * delta
+		var n := mini(_full.length(), int(_shown))
+		_label.text = _full.substr(0, n)
+		if n >= _full.length():
+			_typing = false
+			_holding = true
+			line_advanced.emit()
 		return
-	_accum -= float(add)
-	_shown = mini(_full.length(), _shown + add)
-	_label.text = _full.substr(0, _shown)
-	if _shown >= _full.length():
-		_typing = false
+	if _holding:
+		_hold_left -= delta
+		if _hold_left <= 0.0:
+			_holding = false
+			_start_next()
+
+
+func _start_next() -> void:
+	if _queue.is_empty():
+		_panel.visible = false
+		_label.text = ""
+		_full = ""
+		finished.emit()
+		return
+	var item: Dictionary = _queue.pop_front()
+	_full = String(item.get("text", ""))
+	_hold_left = float(item.get("hold", DEFAULT_HOLD))
+	_shown = 0.0
+	_label.text = ""
+	_typing = true
+	_holding = false
+	_panel.visible = true

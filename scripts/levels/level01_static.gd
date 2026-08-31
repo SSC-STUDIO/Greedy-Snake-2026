@@ -1,3 +1,4 @@
+class_name Level01Static
 extends Node2D
 ## Level01 — 静态手摆关卡。
 ## 锚点、拾取物、视差背景等全部固化在 .tscn 里，可直接在 Godot 编辑器中
@@ -43,6 +44,7 @@ const SIL_TINT := Color(0.17, 0.14, 0.24, 0.95)
 const SIL_SPAN := 512.0
 
 const EAST_LIMIT := 2240
+const EAST_FLOOR_X := 1600.0
 
 var _far_layer: ParallaxLayer
 var _fog_far: ParallaxLayer
@@ -205,13 +207,24 @@ func _add_silhouette_layer(backdrop: ParallaxBackground) -> void:
 
 
 func _extend_east() -> void:
+	# 余烬步默认锁死后，毒坑不能再靠免费二段跳爬出。加一条低梁，单跳可过。
+	var beam := PLATFORM.instantiate()
+	beam.skin = "floating"
+	beam.position = Vector2(424, 300)
+	beam.size = Vector2(80, 16)
+	$Platforms.add_child(beam)
+	var pit_ledge := PLATFORM.instantiate()
+	pit_ledge.skin = "floating"
+	pit_ledge.position = Vector2(496, 336)
+	pit_ledge.size = Vector2(40, 16)
+	$Platforms.add_child(pit_ledge)
 	var wall := get_node_or_null("Platforms/WallRight") as Node2D
 	if wall:
 		wall.position.x = float(EAST_LIMIT)
 	var floor := PLATFORM.instantiate()
 	floor.skin = "ground"
-	floor.position = Vector2(1600, 320)
-	floor.size = Vector2(608, 80)
+	floor.position = Vector2(EAST_FLOOR_X, 320)
+	floor.size = Vector2(float(EAST_LIMIT) - EAST_FLOOR_X, 80)
 	floor.cap_left = false
 	floor.cap_right = false
 	$Platforms.add_child(floor)
@@ -230,15 +243,19 @@ func _extend_east() -> void:
 	var shrine := get_node_or_null("Props/PurificationShrine") as Node2D
 	if shrine:
 		shrine.position = Vector2(1464, 288)
-	_boss = BOSS.instantiate()
-	_boss.position = Vector2(1860, 320)
-	$Props.add_child(_boss)
-	_boss.slain.connect(_on_boss_slain)
+	if should_spawn_executioner():
+		_boss = BOSS.instantiate()
+		_boss.position = Vector2(1860, 320)
+		$Props.add_child(_boss)
+		_boss.slain.connect(_on_boss_slain)
 	var heart := FORGE.instantiate()
 	heart.position = Vector2(2064, 292)
-	heart.visible = false
 	heart.name = "ForgeHeart"
 	$Props.add_child(heart)
+	if should_unlock_forge():
+		heart.unlock()
+	else:
+		heart.lock()
 	var zone := Area2D.new()
 	zone.name = "BossGate"
 	zone.collision_layer = 0
@@ -281,7 +298,7 @@ func _try_wake() -> void:
 
 
 func _on_toxin_story(current: float, _maximum: float) -> void:
-	if Director.playing or SaveData.has_flag("toxin") or current <= 0.0:
+	if SaveData.has_flag("toxin") or current <= 0.0:
 		return
 	SaveData.mark_flag("toxin")
 	var pool := get_node_or_null("Props/ToxinPool")
@@ -295,7 +312,7 @@ func _on_toxin_story(current: float, _maximum: float) -> void:
 
 
 func _on_core_story(_core: Resource) -> void:
-	if Director.playing or SaveData.has_flag("core"):
+	if SaveData.has_flag("core"):
 		return
 	SaveData.mark_flag("core")
 	Director.play([
@@ -306,7 +323,7 @@ func _on_core_story(_core: Resource) -> void:
 
 
 func _on_insert_story(_ability_id: StringName) -> void:
-	if Director.playing or SaveData.has_flag("insert"):
+	if SaveData.has_flag("insert"):
 		return
 	SaveData.mark_flag("insert")
 	Director.play([
@@ -317,7 +334,7 @@ func _on_insert_story(_ability_id: StringName) -> void:
 
 
 func _on_parry_story(_bolt: Node, _by: Node) -> void:
-	if Director.playing or SaveData.has_flag("parry"):
+	if SaveData.has_flag("parry"):
 		return
 	SaveData.mark_flag("parry")
 	Director.play([
@@ -328,9 +345,9 @@ func _on_parry_story(_bolt: Node, _by: Node) -> void:
 
 
 func _on_boss_gate(body: Node) -> void:
-	if Director.playing or SaveData.has_flag("boss_intro"):
+	if SaveData.has_flag("boss_intro") or SaveData.has_flag("boss_dead"):
 		return
-	if not body is Player:
+	if not body is Player or _boss == null or not is_instance_valid(_boss):
 		return
 	SaveData.mark_flag("boss_intro")
 	Director.play([
@@ -342,10 +359,18 @@ func _on_boss_gate(body: Node) -> void:
 	])
 
 
+static func should_spawn_executioner() -> bool:
+	return not SaveData.has_flag("boss_dead")
+
+
+static func should_unlock_forge() -> bool:
+	return SaveData.has_flag("boss_dead")
+
+
 func _on_boss_slain() -> void:
-	var heart := get_node_or_null("Props/ForgeHeart") as CanvasItem
+	var heart := get_node_or_null("Props/ForgeHeart") as ForgeHeart
 	if heart:
-		heart.visible = true
+		heart.unlock()
 	if SaveData.has_flag("boss_dead"):
 		return
 	SaveData.mark_flag("boss_dead")

@@ -12,8 +12,8 @@ extends CharacterBody2D
 @onready var hookshot: HookshotTether = $HookshotTether
 @onready var resonance: Resonance = $Resonance
 
+## Director sets this during a cutscene. Input is ignored; gravity still applies.
 var cutscene_locked: bool = false
-
 
 const P_STAND_PATH := "res://assets/kenney_clean/player/p1_stand.png"
 const P_JUMP_PATH := "res://assets/kenney_clean/player/p1_jump.png"
@@ -300,6 +300,7 @@ func on_melee_active(combo_index: int) -> void:
 
 func _spawn_fire_trail() -> void:
 	var face := float(controller.facing)
+	var origin := global_position + Vector2(face * 28.0, -4.0)
 	Fx.dust_puff(global_position + Vector2(face * 18.0, -2.0), face)
 	var box := Hitbox.new()
 	box.damage = 1
@@ -312,8 +313,11 @@ func _spawn_fire_trail() -> void:
 	box_rect.size = Vector2(42, 10)
 	box_shape.shape = box_rect
 	box.add_child(box_shape)
-	box.position = Vector2(face * 28.0, -4.0)
-	add_child(box)
+	var host: Node = get_tree().current_scene
+	if host == null:
+		host = get_parent()
+	host.add_child(box)
+	box.global_position = origin
 	box.monitoring = true
 	get_tree().create_timer(1.2).timeout.connect(func() -> void:
 		if is_instance_valid(box):

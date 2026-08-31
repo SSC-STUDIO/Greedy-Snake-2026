@@ -76,6 +76,7 @@ func _ready() -> void:
 	GameEvents.player_died.connect(_on_player_died)
 	GameEvents.core_inserted.connect(func(_c, _i): _refresh_cores())
 	GameEvents.core_acquired.connect(func(_c): _refresh_cores())
+	GameEvents.sockets_changed.connect(_refresh_cores)
 	GameEvents.resonance_changed.connect(_on_resonance)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player:
@@ -242,7 +243,6 @@ func _process(delta: float) -> void:
 		_breath_time += delta
 		_vignette.modulate.a = lerpf(VIGNETTE_BREATH_MIN, VIGNETTE_BREATH_MAX,
 				0.5 + 0.5 * sin(TAU * _breath_time / VIGNETTE_BREATH_PERIOD))
-	_refresh_cores()
 
 
 ## 一颗心 = 深色插槽 + 2 倍放大的像素心。插槽让血量在明亮场景里也读得出来。

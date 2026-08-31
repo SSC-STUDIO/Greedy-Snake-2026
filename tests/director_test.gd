@@ -4,11 +4,14 @@ extends TestCase
 
 func setup() -> void:
 	Director.abort()
+	Director.resume()
+	Director.choice_hold = false
 	Engine.time_scale = 1.0
 
 
 func teardown() -> void:
 	Director.abort()
+	Director.resume()
 	Engine.time_scale = 1.0
 
 
@@ -53,3 +56,28 @@ func test_play_does_not_touch_time_scale() -> void:
 	eq(Engine.time_scale, 1.0, "play start leaves time_scale")
 	await wait_until(func() -> bool: return not Director.playing, 90)
 	eq(Engine.time_scale, 1.0, "play finish leaves time_scale")
+
+
+func test_play_queues_second_script() -> void:
+	var kinds: Array[String] = []
+	var on_step := func(_i: int, step: Dictionary) -> void:
+		kinds.append(String(step.get("kind", "")))
+	Director.step_started.connect(on_step)
+	Director.play([{"kind": "wait", "seconds": 8.0}])
+	Director.play([{"kind": "lock"}, {"kind": "unlock"}])
+	ok(Director.playing, "first script still playing")
+	ok(kinds.has("wait"), "first script started")
+	Director.skip_step()
+	var done := await wait_until(func() -> bool: return not Director.playing, 60)
+	ok(done, "both queued scripts finished")
+	ok(kinds.has("lock"), "second script ran after the first")
+	Director.step_started.disconnect(on_step)
+
+
+func test_fade_to_queues_latest_target() -> void:
+	Director.last_fade_target = ""
+	Director.fade_to("res://scenes/ui/TitleScreen.tscn")
+	Director.fade_to("res://scenes/levels/TestArena.tscn")
+	var done := await wait_until(func() -> bool: return not Director.is_fading(), 120)
+	ok(done, "fade finished")
+	eq(Director.last_fade_target, "res://scenes/levels/TestArena.tscn", "second fade_to wins")

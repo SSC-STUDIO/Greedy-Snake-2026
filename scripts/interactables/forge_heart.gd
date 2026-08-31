@@ -6,6 +6,7 @@ const TITLE_PATH := "res://scenes/ui/TitleScreen.tscn"
 const ID_REKINDLE := &"rekindle"
 const ID_SNUFF := &"snuff"
 
+var unlocked: bool = false
 var _choosing := false
 var _layer: CanvasLayer
 var _menu: MenuList
@@ -15,16 +16,40 @@ func _ready() -> void:
 	super._ready()
 	prompt = "E 触碰炉心"
 	ensure_sprite("res://assets/env/bg_altar.png", Vector2(36, 40), Vector2(-10, -8), Palette.EMBER)
+	if SaveData.has_flag("boss_dead"):
+		unlock()
+	else:
+		lock()
+
+
+func can_interact(_actor: Node) -> bool:
+	return unlocked or SaveData.has_flag("boss_dead")
+
+
+func lock() -> void:
+	unlocked = false
+	visible = false
+	monitoring = false
+	monitorable = false
+
+
+func unlock() -> void:
+	unlocked = true
+	visible = true
+	monitoring = true
+	monitorable = true
 
 
 func interact(actor: Node) -> void:
-	if _choosing or not actor is Player:
+	if _choosing or not actor is Player or not can_interact(actor):
 		return
 	_choosing = true
 	_open_choice()
 
 
 func _open_choice() -> void:
+	Director.choice_hold = true
+	Director.suspend()
 	_layer = CanvasLayer.new()
 	_layer.layer = 25
 	_layer.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -54,6 +79,8 @@ func _open_choice() -> void:
 
 
 func _on_chosen(id: StringName) -> void:
+	Director.choice_hold = false
+	Director.resume()
 	get_tree().paused = false
 	if _layer:
 		_layer.queue_free()

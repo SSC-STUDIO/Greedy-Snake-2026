@@ -1,42 +1,72 @@
 extends Node
-## 过场导演：全屏淡变包住切场景，步骤数组驱动短过场。
-## 不改 Engine.time_scale（那是 Juice 的领地），不设 tree.paused。
-## process_mode ALWAYS：暂停菜单打开时挂起步进，关闭后接着演。
+## Director autoload: fade transitions + sequenced cutscenes.
+## Never touches Engine.time_scale. Pause hangs us via suspend() / tree.paused,
+## not by us setting paused ourselves.
 
 signal finished
+signal step_started(index: int, step: Dictionary)
+signal step_finished(index: int, step: Dictionary)
+
+const FADE_DEFAULT := 0.45
+const PLAY_QUEUE_MAX := 3
 
 var playing: bool = false
+## 结局选择层打开时为 true：暂停菜单忽略 Esc，关掉后也不解 tree.paused。
+var choice_hold: bool = false
+## 最近一次 fade_to 实际采用的目标（含排队覆盖）。测试可读。
+var last_fade_target: String = ""
 
 var _locked: bool = false
 var _suspended: bool = false
-var _steps: Array = []
-var _index: int = 0
-var _busy: bool = false
-var _skip: bool = false
-var _wait_left: float = 0.0
-var _caption_phase: int = 0
-var _caption_hold: float = 0.0
+var _queue: Array = []
+var _script_queue: Array = []
+var _index: int = -1
+var _waiting: bool = false
+var _wait_kind: String = ""
+var _step_timer: float = 0.0
 var _fading: bool = false
-var _headless: bool = false
+var _queued_fade_path: String = ""
+var _queued_fade_duration: float = FADE_DEFAULT
 var _fade_layer: CanvasLayer
-var _fade_rect: ColorRect
+var _fade: ColorRect
+var _caption_layer: CanvasLayer
 var _caption: Caption
 var _fade_tween: Tween
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_headless = DisplayServer.get_name() == "headless"
 	_build_overlay()
+
+
+func _build_overlay() -> void:
+	_fade_layer = CanvasLayer.new()
+	_fade_layer.name = "DirectorFade"
+	_fade_layer.layer = 100
+	_fade_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_fade_layer)
+	_fade = ColorRect.new()
+	_fade.name = "Fade"
+	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade.color = Color(0, 0, 0, 0)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade_layer.add_child(_fade)
+
+	_caption_layer = CanvasLayer.new()
+	_caption_layer.name = "DirectorCaption"
+	_caption_layer.layer = 12
+	add_child(_caption_layer)
+	_caption = Caption.new()
+	_caption.name = "Caption"
+	_caption_layer.add_child(_caption)
+
+
+func caption() -> Caption:
+	return _caption
 
 
 func is_input_locked() -> bool:
 	return _locked
-
-
-func set_input_locked(v: bool) -> void:
-	_locked = v
-	_apply_player_lock()
 
 
 func suspend() -> void:
@@ -47,196 +77,263 @@ func resume() -> void:
 	_suspended = false
 
 
-func abort() -> void:
-	_steps.clear()
-	_index = 0
-	_busy = false
-	_skip = false
-	_wait_left = 0.0
-	_caption_phase = 0
-	playing = false
-	_locked = false
-	_apply_player_lock()
-	if _caption:
-		_caption.hide_line()
-	var cam := _camera()
-	if cam:
-		cam.release()
+func is_fading() -> bool:
+	return _fading
+
+
+## fade_to(scene) or fade_to(scene, duration_seconds). Always fades to black.
+## 正在淡变时不丢第二次请求：只保留最后一个目标，当前淡出结束后切过去。
+func fade_to(scene: String, duration: float = FADE_DEFAULT) -> void:
+	if _fading:
+		_queued_fade_path = scene
+		_queued_fade_duration = duration
+		return
+	_fading = true
+	_fade.color = Color(0, 0, 0, _fade.color.a)
+	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	if DisplayServer.get_name() == "headless":
+		# 留一帧给紧随其后的第二次 fade_to 排队，避免测试里同步跑完。
+		await get_tree().process_frame
+		_on_fade_out_done(scene, duration)
+		return
+	if _fade_tween != null and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_fade_tween = _fade_layer.create_tween()
+	_fade_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_fade_tween.tween_property(_fade, "color:a", 1.0, maxf(0.05, duration))
+	_fade_tween.tween_callback(_on_fade_out_done.bind(scene, duration))
+
+
+func fade_in(duration: float = FADE_DEFAULT) -> void:
+	if _fade_tween != null and _fade_tween.is_valid():
+		_fade_tween.kill()
+	_fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	if _fade.color.a < 0.01:
+		_fade.color.a = 1.0
+	if DisplayServer.get_name() == "headless":
+		_fade.color.a = 0.0
+		_on_fade_in_done()
+		return
+	_fade_tween = _fade_layer.create_tween()
+	_fade_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_fade_tween.tween_property(_fade, "color:a", 0.0, maxf(0.05, duration))
+	_fade_tween.tween_callback(_on_fade_in_done)
 
 
 func play(script: Array) -> void:
 	if playing:
+		if _script_queue.size() < PLAY_QUEUE_MAX:
+			_script_queue.append(script.duplicate())
 		return
-	_steps = script.duplicate()
-	_index = 0
-	_busy = false
-	_skip = false
+	_queue = script.duplicate()
+	_index = -1
 	playing = true
-	_locked = true
-	_apply_player_lock()
-	if _steps.is_empty():
-		_finish()
+	_waiting = false
+	_wait_kind = ""
+	_advance()
 
 
 func skip_step() -> void:
-	if playing and not _suspended:
-		_skip = true
-
-
-func fade_to(scene_path: String, duration: float = 0.55) -> void:
-	if _fading:
+	if not playing or _suspended or get_tree().paused:
 		return
-	_fading = true
-	abort()
-	await _tween_fade(1.0, duration)
-	if scene_path != "":
-		get_tree().change_scene_to_file(scene_path)
-		await get_tree().process_frame
-		await get_tree().process_frame
-	await _tween_fade(0.0, duration * 0.85)
-	_fading = false
+	if _wait_kind == "caption" and _caption != null and _caption.is_busy():
+		_caption.skip()
+		if _caption.is_busy():
+			_caption.skip()
+		return
+	if _waiting:
+		_step_timer = 0.0
+		_complete_wait()
 
 
-func fade_in(duration: float = 0.45) -> void:
-	await _tween_fade(0.0, duration)
+func abort() -> void:
+	_set_lock(false)
+	var cam := _camera()
+	if cam != null:
+		cam.release()
+	if _caption != null:
+		_caption.clear()
+	_queue.clear()
+	_script_queue.clear()
+	_index = -1
+	_waiting = false
+	_wait_kind = ""
+	var was := playing
+	playing = false
+	if was:
+		finished.emit()
 
 
-func _build_overlay() -> void:
-	_fade_layer = CanvasLayer.new()
-	_fade_layer.layer = 92
-	_fade_layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_fade_layer)
-	_fade_rect = ColorRect.new()
-	_fade_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade_rect.color = Color(0.02, 0.01, 0.03, 0.0)
-	_fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_fade_layer.add_child(_fade_rect)
-	_caption = Caption.new()
-	add_child(_caption)
+func _unhandled_input(event: InputEvent) -> void:
+	if not playing or _suspended or get_tree().paused:
+		return
+	if event.is_action_pressed("ui_accept"):
+		skip_step()
+		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
-	if Input.is_action_just_pressed("ui_accept") and playing and not _suspended:
-		_skip = true
-	if not playing:
-		return
 	if _suspended or get_tree().paused:
 		return
-	if _busy:
-		_tick_busy(delta)
+	if not playing or not _waiting:
 		return
-	_run_next()
-
-
-func _tick_busy(delta: float) -> void:
-	if _caption_phase == 1:
-		if _skip:
-			_caption.reveal()
-			_skip = false
-		if not _caption.is_typing():
-			_caption_phase = 2
-			_wait_left = _caption_hold
+	if _wait_kind == "caption":
+		if _caption == null or not _caption.is_busy():
+			_complete_wait()
 		return
-	if _wait_left > 0.0:
-		if _skip:
-			_wait_left = 0.0
-			_skip = false
-		else:
-			_wait_left = maxf(0.0, _wait_left - delta)
-		if _wait_left <= 0.0:
-			if _caption_phase == 2:
-				_caption.hide_line()
-				_caption_phase = 0
-			_busy = false
+	_step_timer -= delta
+	if _step_timer <= 0.0:
+		_complete_wait()
 
 
-func _run_next() -> void:
-	if _index >= _steps.size():
-		_finish()
-		return
-	var step: Dictionary = _steps[_index]
+func _advance() -> void:
 	_index += 1
-	var kind := StringName(step.get("kind", ""))
+	if _index >= _queue.size():
+		_finish_play()
+		return
+	var step := _as_step(_queue[_index])
+	step_started.emit(_index, step)
+	_run_step(step)
+
+
+func _as_step(raw) -> Dictionary:
+	if raw is Dictionary:
+		return raw
+	return {"kind": String(raw)}
+
+
+func _kind_of(step: Dictionary) -> String:
+	return String(step.get("kind", step.get("op", "")))
+
+
+func _seconds_of(step: Dictionary, fallback: float = 0.3) -> float:
+	return float(step.get("seconds", step.get("sec", fallback)))
+
+
+func _run_step(step: Dictionary) -> void:
+	var kind := _kind_of(step)
 	match kind:
-		&"lock":
-			_locked = true
-			_apply_player_lock()
-		&"unlock":
-			_locked = false
-			_apply_player_lock()
-		&"wait":
-			_busy = true
-			_wait_left = float(step.get("seconds", 0.3))
-		&"caption":
-			_busy = true
-			_caption_phase = 1
-			_caption_hold = float(step.get("hold", 1.5))
-			_caption.show_line(String(step.get("text", "")), float(step.get("cps", 22.0)))
-			if _headless:
-				_caption.reveal()
-		&"cam_focus":
+		"lock":
+			_set_lock(true)
+			_finish_step(step)
+			_advance()
+		"unlock":
+			_set_lock(false)
+			_finish_step(step)
+			_advance()
+		"wait":
+			_begin_wait(_seconds_of(step), "wait")
+		"caption":
+			if _caption != null:
+				_caption.enqueue(String(step.get("text", "")),
+						float(step.get("hold", Caption.DEFAULT_HOLD)))
+			_begin_wait(0.0, "caption")
+		"cam_focus":
 			var cam := _camera()
-			var duration := float(step.get("duration", 0.55))
-			if cam:
-				cam.focus(step.get("target"), float(step.get("zoom", GameCamera.ZOOM)), duration)
-			_busy = true
-			_wait_left = duration
-		&"cam_release":
+			var dur := float(step.get("duration", 0.8))
+			if cam != null:
+				cam.focus(step.get("target"), float(step.get("zoom", GameCamera.ZOOM)), dur)
+			_begin_wait(dur, "cam")
+		"cam_release":
 			var cam := _camera()
-			if cam:
+			var dur := float(step.get("duration", 0.35))
+			if cam != null:
 				cam.release()
-		&"sfx":
-			Sfx.play(StringName(step.get("key", "ui_select")))
-		&"anim":
-			var node: Variant = step.get("node")
-			var anim := String(step.get("anim", "idle"))
-			if node is FrameAnimSprite:
-				(node as FrameAnimSprite).play(anim, true)
-		&"fade_out":
-			_busy = true
-			_wait_left = float(step.get("duration", 0.45))
-			_tween_fade(1.0, _wait_left)
-		&"fade_in":
-			_busy = true
-			_wait_left = float(step.get("duration", 0.45))
-			_tween_fade(0.0, _wait_left)
+			_begin_wait(dur, "cam")
+		"sfx":
+			Sfx.play(StringName(step.get("id", "ui_select")))
+			_finish_step(step)
+			_advance()
+		"anim":
+			_play_anim(step)
+			_begin_wait(_seconds_of(step, 0.2), "anim")
 		_:
-			pass
+			_finish_step(step)
+			_advance()
 
 
-func _finish() -> void:
+func _begin_wait(sec: float, kind: String) -> void:
+	_waiting = true
+	_wait_kind = kind
+	_step_timer = maxf(0.0, sec)
+
+
+func _complete_wait() -> void:
+	if not playing:
+		return
+	_waiting = false
+	_wait_kind = ""
+	if _index >= 0 and _index < _queue.size():
+		_finish_step(_as_step(_queue[_index]))
+	_advance()
+
+
+func _finish_step(step: Dictionary) -> void:
+	step_finished.emit(_index, step)
+
+
+func _finish_play() -> void:
 	playing = false
-	_busy = false
-	_locked = false
-	_apply_player_lock()
-	if _caption:
-		_caption.hide_line()
+	_waiting = false
+	_wait_kind = ""
+	_set_lock(false)
 	finished.emit()
+	if not _script_queue.is_empty() and not playing:
+		var next: Array = _script_queue.pop_front()
+		play(next)
 
 
-func _apply_player_lock() -> void:
+func _on_fade_out_done(scene: String, duration: float) -> void:
+	var target := scene
+	var dur := duration
+	if _queued_fade_path != "":
+		target = _queued_fade_path
+		dur = _queued_fade_duration
+		_queued_fade_path = ""
+	last_fade_target = target
+	if target != "" and not _is_test_runner():
+		get_tree().change_scene_to_file(target)
+	fade_in(dur)
+
+
+func _on_fade_in_done() -> void:
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fading = false
+	if _queued_fade_path != "":
+		var next := _queued_fade_path
+		var next_dur := _queued_fade_duration
+		_queued_fade_path = ""
+		fade_to(next, next_dur)
+
+
+func _is_test_runner() -> bool:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return false
+	return String(scene.scene_file_path).ends_with("run_tests.tscn")
+
+
+func _set_lock(locked: bool) -> void:
+	_locked = locked
 	if not is_inside_tree():
 		return
-	for node in get_tree().get_nodes_in_group("player"):
-		if node is Player:
-			(node as Player).cutscene_locked = _locked
+	var player := get_tree().get_first_node_in_group("player") as Player
+	if player != null:
+		player.cutscene_locked = locked
 
 
 func _camera() -> GameCamera:
-	for node in get_tree().get_nodes_in_group("game_camera"):
-		if node is GameCamera:
-			return node as GameCamera
-	return null
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group("game_camera") as GameCamera
 
 
-func _tween_fade(alpha: float, duration: float) -> void:
-	if _fade_rect == null:
+func _play_anim(step: Dictionary) -> void:
+	var node = step.get("node")
+	var anim := String(step.get("name", ""))
+	if node == null or anim == "" or not is_instance_valid(node):
 		return
-	if _headless or duration <= 0.01:
-		_fade_rect.color.a = alpha
-		return
-	if _fade_tween != null and _fade_tween.is_valid():
-		_fade_tween.kill()
-	_fade_tween = create_tween()
-	_fade_tween.tween_property(_fade_rect, "color:a", alpha, maxf(0.05, duration))
-	await _fade_tween.finished
+	if node is FrameAnimSprite:
+		(node as FrameAnimSprite).play(anim, true)
+	elif node.has_method("play"):
+		node.play(anim)

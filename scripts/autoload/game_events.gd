@@ -7,6 +7,7 @@ signal parried(projectile: Node, by_actor: Node)
 signal toxin_changed(current: float, maximum: float)
 signal core_acquired(core: Resource)
 signal core_inserted(core: Resource, socket_index: int)
+signal sockets_changed
 signal ability_unlocked(ability_id: StringName)
 signal interact_prompt(text: String)
 signal player_health_changed(current: int, maximum: int)

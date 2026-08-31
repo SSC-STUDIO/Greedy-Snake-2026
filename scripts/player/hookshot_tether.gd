@@ -62,25 +62,46 @@ func try_fire(player: Player) -> bool:
 
 
 func _try_melt_hook(player: Player) -> bool:
+	var gate := _pick_melt_gate(player)
+	if gate == null:
+		return false
+	gate.melt(player)
+	Fx.hit_sparks(gate.global_position)
+	return true
+
+
+func _pick_melt_gate(player: Player) -> RustyGate:
 	var origin := player.global_position + ROPE_ORIGIN
-	var reach := max_range * (1.2 if player.toxin.potency() >= 0.5 else 1.0)
+	var aim := _aim_dir(player)
+	var reach := _hook_reach(player)
+	var best: RustyGate = null
+	var best_score := -1.0
 	for node in get_tree().get_nodes_in_group("rusty_gate"):
 		var gate := node as RustyGate
 		if gate == null or not is_instance_valid(gate):
 			continue
-		if origin.distance_to(gate.global_position) > reach:
+		var to := gate.global_position - origin
+		var dist := to.length()
+		if dist > reach or dist < 8.0:
 			continue
-		gate.melt(player)
-		Fx.hit_sparks(gate.global_position)
-		return true
-	for node in get_tree().get_nodes_in_group("enemies"):
-		if node is GearShieldEnemy and origin.distance_to((node as Node2D).global_position) <= reach:
-			var guard := node as GearShieldEnemy
-			if guard.has_method("_enter_stagger"):
-				guard._enter_stagger()
-				Fx.hit_sparks(guard.global_position)
-				return true
-	return false
+		var dir := to / dist
+		var score := dir.dot(aim)
+		if score < AIM_DOT_MIN:
+			continue
+		if not _has_line_of_sight(origin, gate.global_position, gate):
+			continue
+		if score > best_score:
+			best_score = score
+			best = gate
+	return best
+
+
+func _hook_reach(player: Player) -> float:
+	return max_range * (1.2 if player.toxin.potency() >= 0.5 else 1.0)
+
+
+func _aim_dir(player: Player) -> Vector2:
+	return Vector2(signf(player.visual.scale.x), -0.35).normalized()
 
 
 ## 每物理帧由 Player 在 controller 之后调用：直接接管速度。
@@ -126,7 +147,8 @@ func _release() -> void:
 
 func _pick_anchor(player: Player) -> Node2D:
 	var origin := player.global_position + ROPE_ORIGIN
-	var aim := Vector2(signf(player.visual.scale.x), -0.35).normalized()
+	var aim := _aim_dir(player)
+	var reach := _hook_reach(player)
 	var best: Node2D = null
 	var best_score := -1.0
 	for node in get_tree().get_nodes_in_group("hook_anchor"):
@@ -135,16 +157,13 @@ func _pick_anchor(player: Player) -> Node2D:
 			continue
 		var to := anchor.global_position - origin
 		var dist := to.length()
-		var reach := max_range
-		if player.toxin.potency() >= 0.5:
-			reach *= 1.2
 		if dist > reach or dist < 8.0:
 			continue
 		var dir := to / dist
 		var score := dir.dot(aim)
 		if score < AIM_DOT_MIN:
 			continue
-		if not _has_line_of_sight(origin, anchor.global_position):
+		if not _has_line_of_sight(origin, anchor.global_position, anchor):
 			continue
 		if score > best_score:
 			best_score = score
@@ -152,11 +171,19 @@ func _pick_anchor(player: Player) -> Node2D:
 	return best
 
 
-func _has_line_of_sight(from: Vector2, to: Vector2) -> bool:
+func _has_line_of_sight(from: Vector2, to: Vector2, target: Node = null) -> bool:
 	# 只查世界层（mask=1），玩家/敌人/锚点都不会挡道。
+	# 命中目标自身（锈门的 Solid 也在 layer 1）仍算视线通。
 	var query := PhysicsRayQueryParameters2D.create(from, to, 1)
 	var hit := get_world_2d().direct_space_state.intersect_ray(query)
-	return hit.is_empty()
+	if hit.is_empty():
+		return true
+	if target == null:
+		return false
+	var collider: Variant = hit.get("collider")
+	if collider == target:
+		return true
+	return collider is Node and target.is_ancestor_of(collider)
 
 
 func _on_game_hit(_attacker: Node, target: Node, _amount: int) -> void:

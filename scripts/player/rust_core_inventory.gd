@@ -36,6 +36,7 @@ func insert_into_socket(index: int) -> bool:
 	sockets[index] = core
 	sockets_changed.emit()
 	pouch_changed.emit()
+	GameEvents.sockets_changed.emit()
 	GameEvents.core_inserted.emit(core, index)
 	GameEvents.ability_unlocked.emit(core.ability_id)
 	GameEvents.announcement.emit(
