@@ -56,8 +56,10 @@ godot --path "C:\Users\Administrator\OneDrive\Documents\My-Program\Rustgrave"
 - 熔热锻：镶上后可融化锈门；钩锁：钩住锚点的真实拉索运动
 - 存档与余烬巢重生
 - 平滑镜头 + 按移动方向的水平 look-ahead；打击停顿/震屏等打击感反馈
-- HUD：生命、毒素、插座、提示；标题屏 keyart
-- Kenney CC0 音效集（挥砍/受击/弹反/拾取等，见 `scripts/autoload/sfx.gd`）
+- 像素 UI：`assets/ui/theme_rust.tres` 统一字体/配色/9-slice 面板，字体为 Fusion Pixel（中英全覆盖）
+- 标题屏菜单（开始/继续/操作说明/退出，键鼠导航 + 余烬粒子）、暂停菜单、操作说明面板、死亡覆盖层
+- HUD：心槽血量、分段毒素槽、剑核/袋中、交互提示、播报横幅、低血量血雾
+- Kenney CC0 音效集（挥砍/受击/弹反/拾取/UI，见 `scripts/autoload/sfx.gd`）
 
 **只在文档里（尚未做成关卡/完整技能）**
 
@@ -86,7 +88,10 @@ Rustgrave/
   scripts/           分模块 GDScript（autoload / player / enemies / combat / ...）
   assets/characters/ 切好帧的角色像素动画（CharFrames 目录约定）
   assets/env/        环境贴图裁切件（Gothicvania）
+  assets/fonts/      像素字体（Fusion Pixel / Jacquard 24，均 OFL）
+  assets/ui/         程序化生成的像素 UI 套件 + theme_rust.tres（见 tools/gen_ui_kit.py）
   assets/external/   原始素材包与 CREDITS.md
+  icon.png/.ico      游戏图标（见 tools/gen_icon.py）
   tests/             零依赖单测/集成测试
 ```
 
@@ -100,6 +105,9 @@ Rustgrave/
 - **玩家角色**：Nauris Amatnieks (aamatniekss) — Fantasy Knight（免费商用许可）
 - **齿轮盾卫**：Kronovi (DarkPixel) — Undead Executioner（免费商用许可）
 - **音效**：Kenney（CC0）；**特效帧**：CodeManu Free Pixel Effects Pack、tbbk sword slash（CC0）
+- **字体**：Fusion Pixel Font（TakWolf，OFL 1.1，正文全字号）、Jacquard 24（Tyler Finck，OFL 1.1，仅离线烘 RUSTGRAVE 标题牌）
+- **UI 套件**：本项目用 PIL 程序化绘制（`tools/gen_ui_kit.py`），不是 AI 生图
+- **游戏图标**：同上程序化绘制（`tools/gen_icon.py`），16x16 栅格起稿后整数倍放大
 - **标题屏 keyart**：本项目 AI 生成（唯一保留的 AI 图；游戏内角色/环境均为像素素材）
 
 ## 调色（基础色板）
