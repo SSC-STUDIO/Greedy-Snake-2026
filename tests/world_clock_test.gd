@@ -133,8 +133,8 @@ func test_night_tint_stays_playable() -> void:
 	WorldClock.set_time(0.80)
 	WorldClock.set_weather(WorldClock.Weather.FOG, true)
 	var night := WorldClock.mood_tint()
-	ok(night.r >= 0.50 and night.g >= 0.50 and night.b >= 0.50, "night is not a black frame")
-	ok(WorldClock.mood_luminance() >= 0.50, "night luminance stays playable")
+	ok(night.r >= 0.28 and night.g >= 0.28 and night.b >= 0.28, "night is not a black frame")
+	ok(WorldClock.mood_luminance() >= 0.30, "fog night stays above a black frame")
 	ok(night != Color.BLACK)
 	WorldClock.set_time(0.30)
 	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
@@ -163,8 +163,8 @@ func test_parallax_follows_clock_tint() -> void:
 	var tint := host.get_node_or_null("MoodTint") as CanvasModulate
 	ok(tint != null)
 	if tint != null:
-		ok(tint.color.r >= 0.50 and tint.color.g >= 0.50 and tint.color.b >= 0.50,
-				"MoodTint night stays in the playable band")
+		ok(tint.color.r >= 0.28 and tint.color.g >= 0.28 and tint.color.b >= 0.28,
+				"MoodTint night is a dark corridor, not a black frame")
 		ok(tint.color.a >= 0.99)
 	ok(host.get_node_or_null("WeatherFx") != null, "rain layer is attached")
 
@@ -267,6 +267,22 @@ func test_ember_wind_has_particle_weight() -> void:
 	almost(WorldClock.ember_wind_opacity(), 1.0, 0.001)
 	WorldClock.set_zone(WorldClock.Zone.INDOORS)
 	almost(WorldClock.ember_wind_opacity(), 0.0, 0.001, "embers stay outside")
+
+
+func test_isolate_does_not_unhide_flash_overlay() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "JuiceFlash"
+	add_child(layer)
+	var rect := ColorRect.new()
+	rect.name = "Flash"
+	rect.color = Color(1, 1, 1, 1)
+	rect.modulate.a = 0.0
+	layer.add_child(rect)
+	WorldClock.isolate_ui_layer(layer)
+	almost(rect.modulate.a, 0.0, 0.001, "isolate must not un-hide Juice flash")
+	almost(rect.modulate.r, 1.0, 0.001)
+	almost(rect.modulate.g, 1.0, 0.001)
+	almost(rect.modulate.b, 1.0, 0.001)
 
 
 func test_hud_stays_readable_at_night() -> void:

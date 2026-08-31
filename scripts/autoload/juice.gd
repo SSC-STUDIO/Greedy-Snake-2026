@@ -91,11 +91,15 @@ func _build_flash_layer() -> void:
 	_flash_layer.layer = 90
 	add_child(_flash_layer)
 	_flash_rect = ColorRect.new()
+	_flash_rect.name = "Flash"
 	_flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_flash_rect.color = Color(1, 1, 1, 0)
 	_flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_flash_rect.modulate.a = 0.0
 	_flash_layer.add_child(_flash_rect)
 	WorldClock.isolate_ui_layer(_flash_layer)
+	# isolate 只该洗 RGB；再钉一次 alpha，避免以后隔离逻辑改回 Color.WHITE。
+	_flash_rect.modulate.a = 0.0
 
 
 func _update_shake_offset() -> void:

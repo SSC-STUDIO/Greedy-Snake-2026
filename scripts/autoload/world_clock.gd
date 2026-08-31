@@ -1,5 +1,6 @@
 extends Node
-## WorldClock autoload: cemetery day/night + a small gothic weather machine.
+## WorldClock autoload: cemetery day/night + weather + light energy.
+## Publishes mood_tint / nest_light_* / moon_fill / indoor_fill. No Light nodes.
 ## Do not give this script a class_name — the autoload name is the API.
 ##
 ## Full cycle is 20 real minutes (day → night ≈ 10). Pause, Director playback,
@@ -26,13 +27,14 @@ const WEATHER_HOLD_MAX := 110.0
 const BLEND_MIN := 3.0
 const BLEND_MAX := 8.0
 
-## Playable luminance floor for MoodTint (never a black frame).
-const NIGHT_TINT := Color(0.64, 0.60, 0.78)
+## Outdoor night is a cold corridor so WorldLight pools can carve.
+## Floor stays above a black frame; HUD isolate keeps UI readable.
+const NIGHT_TINT := Color(0.36, 0.34, 0.48)
 const DAY_TINT := Color(0.955, 0.92, 1.0)
 const DAWN_TINT := Color(0.86, 0.82, 0.94)
-const DUSK_TINT := Color(0.80, 0.70, 0.76)
-## Indoor lock: warm furnace, never as dark as outdoor night.
-const INDOOR_TINT := Color(0.90, 0.78, 0.66)
+const DUSK_TINT := Color(0.70, 0.60, 0.68)
+## Indoor: warmer than outdoor night. Readability comes from the warm pool.
+const INDOOR_TINT := Color(0.66, 0.52, 0.42)
 const RUST_RAIN_INTERVAL := 1.6
 const RUST_RAIN_EXPOSE := 8.0
 const BREEZE_BASE := 0.22
@@ -194,7 +196,10 @@ func isolate_ui_layer(layer: CanvasLayer) -> void:
 		RenderingServer.canvas_set_modulate(layer.get_canvas(), Color.WHITE)
 	for child in layer.get_children():
 		if child is CanvasItem:
-			(child as CanvasItem).modulate = Color.WHITE
+			var item := child as CanvasItem
+			# 只洗 RGB。Juice 的全屏闪白层启动时 modulate.a = 0；
+			# 若写成 Color.WHITE 会把它重新点亮，标题屏/关卡立刻整屏惨白。
+			item.modulate = Color(1.0, 1.0, 1.0, item.modulate.a)
 
 
 func hold_for_menu() -> void:
@@ -329,9 +334,9 @@ func mood_tint() -> Color:
 func _indoor_tint() -> Color:
 	var b := _weather_mul(_blend_weather())
 	var c := Color(INDOOR_TINT.r * b.r, INDOOR_TINT.g * b.g, INDOOR_TINT.b * b.b, 1.0)
-	c.r = maxf(c.r, 0.78)
-	c.g = maxf(c.g, 0.68)
-	c.b = maxf(c.b, 0.56)
+	c.r = maxf(c.r, 0.52)
+	c.g = maxf(c.g, 0.42)
+	c.b = maxf(c.b, 0.34)
 	return c
 
 
@@ -379,11 +384,11 @@ func sky_modulate() -> Color:
 func nest_light_energy() -> float:
 	match phase:
 		Phase.NIGHT:
-			return 1.05
+			return 1.65
 		Phase.DUSK:
-			return 0.70
+			return 0.95
 		Phase.DAWN:
-			return 0.34
+			return 0.40
 		_:
 			return 0.14
 
@@ -391,13 +396,43 @@ func nest_light_energy() -> float:
 func nest_light_radius() -> float:
 	match phase:
 		Phase.NIGHT:
-			return 88.0
+			return 120.0
 		Phase.DUSK:
-			return 72.0
+			return 96.0
 		Phase.DAWN:
-			return 56.0
+			return 72.0
 		_:
-			return 48.0
+			return 52.0
+
+
+func moon_fill_energy() -> float:
+	if menu_hold or zone == Zone.INDOORS:
+		return 0.0
+	match phase:
+		Phase.NIGHT:
+			return 0.14
+		Phase.DUSK:
+			return 0.07
+		Phase.DAWN:
+			return 0.03
+		_:
+			return 0.0
+
+
+func indoor_fill_energy() -> float:
+	return 0.55
+
+
+func indoor_fill_radius() -> float:
+	return 180.0
+
+
+func heart_light_energy() -> float:
+	return 0.45
+
+
+func heart_light_radius() -> float:
+	return 64.0
 
 
 func weather_weight(kind: int) -> float:
