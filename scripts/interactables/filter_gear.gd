@@ -2,35 +2,17 @@ class_name FilterGear
 extends Interactable
 ## Consumable Filter-Gear. Knocks a chunk off the toxin meter.
 
+const FILTER_TEX_PATH := "res://assets/env/rust_core.png"
 
-const FILTER_TEX_PATH := "res://assets/kenney_clean/interactables/boxCoin.png"
 
 func _ready() -> void:
 	super._ready()
 	prompt = "E 使用滤芯齿轮"
-	ensure_rect(Vector2(12, 12), Palette.TEAL)
-	_try_replace_fill_with_sprite(FILTER_TEX_PATH, Palette.TEAL)
-
-
-func _try_replace_fill_with_sprite(path: String, tint: Color) -> void:
-	if not ResourceLoader.exists(path):
-		return
-	var fill := get_node_or_null("Fill") as ColorRect
-	if fill == null:
-		return
-	var tex: Texture2D = load(path) as Texture2D
-	if tex == null:
-		return
-	fill.visible = false
-	var spr := Sprite2D.new()
-	spr.name = "KenneyIcon"
-	spr.texture = tex
-	spr.centered = true
-	spr.position = fill.position + fill.size * 0.5
-	spr.modulate = tint.lerp(Color.WHITE, 0.35)
-	# Scale 70px icon down to ~12px rect.
-	spr.scale = Vector2(0.22, 0.22)
-	add_child(spr)
+	# 齿轮核贴图（原生 12x12）等比放大，染青绿区分于拾取用的橙色核。
+	ensure_sprite(FILTER_TEX_PATH, Vector2(14, 14), Vector2(-1, -2), Palette.TEAL)
+	var spr := get_node_or_null("Fill") as CanvasItem
+	if spr != null and spr is Sprite2D:
+		spr.modulate = Color(0.6, 1.05, 0.9)
 
 
 func interact(actor: Node) -> void:

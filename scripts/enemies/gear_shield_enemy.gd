@@ -33,6 +33,9 @@ var _anchor_x: float = 0.0
 var _shield_facing: int = -1
 var _blocking: bool = false
 var _flicker_tween: Tween
+## 格挡/蓄力指示的目标：有 AI 贴图时是机体 Sprite（贴图自带盾牌），
+## 否则回退为占位 Shield 多边形。
+var _indicator: CanvasItem
 
 @onready var health: Health = $Health
 @onready var visual: Node2D = $Visual
@@ -53,9 +56,10 @@ func _ready() -> void:
 	_build_visual()
 
 
-## 三级回退：AI 厚涂贴图 → 场景内 ColorRect 占位（Kenney 无对应素材）。
-## 贴图自带机体与齿轮盾；Shield 多边形保留为格挡/蓄力指示层。
+## 两级回退：AI 厚涂贴图 → 场景内 ColorRect/Polygon2D 占位（headless/缺素材）。
+## 贴图自带机体与齿轮盾，Shield 占位多边形随之隐藏；格挡/蓄力改为整体染色。
 func _build_visual() -> void:
+	_indicator = shield
 	if not ResourceLoader.exists(AI_TEX_PATH):
 		return
 	var spr := Sprite2D.new()
@@ -66,13 +70,14 @@ func _build_visual() -> void:
 	spr.position = Vector2(0, -32)
 	# 原图面朝左；Visual 的 scale.x=1 约定为面朝右（盾在 +x 侧），先水平翻转。
 	spr.flip_h = true
-	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	visual.add_child(spr)
-	# 排到最前，让 Shield 指示层画在贴图上方。
 	visual.move_child(spr, 0)
 	for c in visual.get_children():
 		if c is ColorRect:
 			c.visible = false
+	shield.visible = false
+	_indicator = spr
 
 
 func _physics_process(delta: float) -> void:
@@ -189,7 +194,11 @@ func _set_blocking(b: bool) -> void:
 	if _blocking == b:
 		return
 	_blocking = b
-	shield.modulate.a = 1.0 if b else 0.35
+	if _indicator == shield:
+		shield.modulate.a = 1.0 if b else 0.35
+	else:
+		# 贴图机体：格挡时压向冷钢色，收盾恢复原色。
+		_indicator.modulate = Color(0.82, 0.95, 1.08) if b else Color.WHITE
 
 
 func _update_visual() -> void:
@@ -201,16 +210,16 @@ func _flash_shield() -> void:
 	if _flicker_tween != null and _flicker_tween.is_valid():
 		_flicker_tween.kill()
 	_flicker_tween = create_tween()
-	_flicker_tween.tween_property(shield, "modulate", Color(0.9, 0.6, 0.3, 1.0), 0.04)
-	_flicker_tween.tween_property(shield, "modulate", Color.WHITE, 0.1)
+	_flicker_tween.tween_property(_indicator, "modulate", Color(0.9, 0.6, 0.3, 1.0), 0.04)
+	_flicker_tween.tween_property(_indicator, "modulate", Color.WHITE, 0.1)
 
 
 func _flicker_charge() -> void:
 	if _flicker_tween != null and _flicker_tween.is_valid():
 		_flicker_tween.kill()
 	_flicker_tween = create_tween()
-	_flicker_tween.tween_property(shield, "modulate", Palette.TOXIC, charge_time * 0.5)
-	_flicker_tween.tween_property(shield, "modulate", Palette.EMBER, charge_time * 0.5)
+	_flicker_tween.tween_property(_indicator, "modulate", Palette.TOXIC, charge_time * 0.5)
+	_flicker_tween.tween_property(_indicator, "modulate", Palette.EMBER, charge_time * 0.5)
 
 
 func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:

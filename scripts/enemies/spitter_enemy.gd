@@ -30,7 +30,6 @@ var _visual_tween: Tween
 
 
 const FLY_TEX_PATH := "res://assets/kenney_clean/enemies/flyFly1.png"
-const SLIME_TEX_PATH := "res://assets/kenney_clean/enemies/slimeWalk1.png"
 ## AI 生成的喷吐者（64px 高，面朝左，紧裁切）。
 const AI_TEX_PATH := "res://assets/kenney_clean/enemies_ai/spitter.png"
 

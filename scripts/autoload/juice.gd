@@ -40,6 +40,7 @@ func _process(_delta: float) -> void:
 		_priority = 0
 	if not _headless:
 		_update_shake_offset()
+		DisplayServer.window_set_title("Rustgrave")
 
 
 func hit_stop(duration_ms: int, time_scale: float = 0.05) -> void:

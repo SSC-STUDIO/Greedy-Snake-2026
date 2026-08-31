@@ -33,6 +33,37 @@ func ensure_rect(size: Vector2, color: Color, offset: Vector2 = Vector2.ZERO) ->
 		fill.color = color
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(fill)
+	_ensure_collision(size, offset)
+
+
+## Prefer a Gothicvania sprite; ColorRect only if the file is missing.
+## `region`（可选）：只取贴图的一个子矩形，避免为了塞进 size 而整图挤压变形。
+func ensure_sprite(path: String, size: Vector2, offset: Vector2 = Vector2.ZERO, fallback: Color = Color(0.28, 0.24, 0.34), region: Rect2 = Rect2()) -> void:
+	if get_node_or_null("Fill") != null:
+		_ensure_collision(size, offset)
+		return
+	if ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		if tex != null:
+			var spr := Sprite2D.new()
+			spr.name = "Fill"
+			spr.texture = tex
+			spr.centered = false
+			spr.position = offset
+			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var src := Vector2(float(tex.get_width()), float(tex.get_height()))
+			if region.has_area():
+				spr.region_enabled = true
+				spr.region_rect = region
+				src = region.size
+			spr.scale = Vector2(size.x / src.x, size.y / src.y)
+			add_child(spr)
+			_ensure_collision(size, offset)
+			return
+	ensure_rect(size, fallback, offset)
+
+
+func _ensure_collision(size: Vector2, offset: Vector2) -> void:
 	if get_node_or_null("CollisionShape2D") == null:
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()

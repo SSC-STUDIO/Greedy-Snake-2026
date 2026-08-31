@@ -13,7 +13,10 @@ func _ready() -> void:
 	if core == null:
 		core = AbilityCatalog.tether_core()
 	prompt = "E 拾取 %s" % core.display_name
-	ensure_rect(Vector2(10, 10), core.tint)
+	ensure_sprite("res://assets/env/rust_core.png", Vector2(12, 12), Vector2(-1, -1), core.tint)
+	var spr := get_node_or_null("Fill") as CanvasItem
+	if spr:
+		spr.modulate = Color(1, 1, 1)
 	_bob()
 
 

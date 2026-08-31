@@ -9,7 +9,7 @@ func _ready() -> void:
 	super._ready()
 	add_to_group("persistent")
 	prompt = ""
-	ensure_rect(Vector2(16, 64), Palette.IRON)
+	ensure_sprite("res://assets/env/door_arch.png", Vector2(32, 64), Vector2(-8, 0), Palette.IRON)
 	if get_node_or_null("Solid") == null:
 		var solid := StaticBody2D.new()
 		solid.name = "Solid"
@@ -35,7 +35,7 @@ func open_door() -> void:
 	var solid := get_node_or_null("Solid") as StaticBody2D
 	if solid:
 		solid.collision_layer = 0
-	var fill := get_node_or_null("Fill") as ColorRect
+	var fill := get_node_or_null("Fill") as CanvasItem
 	if fill:
 		fill.modulate.a = 0.22
 	GameEvents.announcement.emit("闸门锈死在开启位置")
@@ -52,6 +52,6 @@ func apply_persistent_state(state: Dictionary) -> void:
 		var solid := get_node_or_null("Solid") as StaticBody2D
 		if solid:
 			solid.collision_layer = 0
-		var fill := get_node_or_null("Fill") as ColorRect
+		var fill := get_node_or_null("Fill") as CanvasItem
 		if fill:
 			fill.modulate.a = 0.22

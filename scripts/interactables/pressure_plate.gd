@@ -11,7 +11,8 @@ var _count: int = 0
 func _ready() -> void:
 	super._ready()
 	prompt = ""
-	ensure_rect(Vector2(28, 6), Palette.RUST_MID)
+	# 教堂石板唇沿（原生 32x10）：一块平放的踏板，而不是被压扁的墓碑。
+	ensure_sprite("res://assets/env/plate_stone.png", Vector2(32, 10), Vector2(-4, -2), Palette.RUST_MID)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
@@ -37,7 +38,7 @@ func _on_body_exited(body: Node2D) -> void:
 
 
 func _set_pressed(down: bool) -> void:
-	var fill := get_node_or_null("Fill") as ColorRect
+	var fill := get_node_or_null("Fill") as Node2D
 	if fill:
-		fill.position.y = 3.0 if down else 0.0
-		fill.color = Palette.EMBER if down else Palette.RUST_MID
+		fill.position.y = 3.0 if down else -2.0
+		fill.modulate = Color(1.25, 0.95, 0.7) if down else Color.WHITE

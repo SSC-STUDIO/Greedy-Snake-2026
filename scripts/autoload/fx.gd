@@ -10,6 +10,7 @@ extends Node2D
 
 const WEAPONHIT_SHEET_PATH := "res://assets/kenney_clean/vfx/10_weaponhit_spritesheet.png"
 const BUBBLES_SHEET_PATH := "res://assets/kenney_clean/vfx/20_magicbubbles_spritesheet.png"
+const BRIGHTFIRE_SHEET_PATH := "res://assets/kenney_clean/vfx/9_brightfire_spritesheet.png"
 
 ## One-shot particles live under this autoload, which sits early in the tree
 ## (autoloads come before the current scene), so z_index must lift them above
@@ -21,6 +22,7 @@ const EMBER_FIELD_NAME := "FxEmberField"
 var _headless := false
 var _weaponhit_sheet: Texture2D = null
 var _bubbles_sheet: Texture2D = null
+var _brightfire_sheet: Texture2D = null
 
 
 func _ready() -> void:
@@ -32,6 +34,8 @@ func _ready() -> void:
 		_weaponhit_sheet = load(WEAPONHIT_SHEET_PATH) as Texture2D
 	if ResourceLoader.exists(BUBBLES_SHEET_PATH):
 		_bubbles_sheet = load(BUBBLES_SHEET_PATH) as Texture2D
+	if ResourceLoader.exists(BRIGHTFIRE_SHEET_PATH):
+		_brightfire_sheet = load(BRIGHTFIRE_SHEET_PATH) as Texture2D
 
 
 ## Persistent embers drifting around a living actor (the ember knight keeps
@@ -44,6 +48,7 @@ func attach_ember(target: Node2D) -> void:
 		return
 	var field := EmberField.new()
 	field.name = EMBER_FIELD_NAME
+	field.sheet = _brightfire_sheet
 	target.add_child(field)
 
 
@@ -91,15 +96,18 @@ func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
 		return
 	var bubble := ToxinBubble.new(_bubbles_sheet)
 	bubble.position = rect.position + Vector2(randf() * rect.size.x, randf() * rect.size.y)
-	bubble.modulate = Palette.EMBER.lerp(Palette.TOXIC, 0.55)
+	bubble.modulate = Color(0.45, 0.78, 0.55, 0.75)
 	parent.add_child(bubble)
 
 
 ## Spawns and owns up to six drifting embers around the target's body.
 ## Actor origins sit near the feet, so embers spread upward and sideways.
 class EmberField extends Node2D:
-	const MAX_EMBERS := 6
-	const SPAWN_INTERVAL := 0.45
+	const MAX_EMBERS := 3
+	const SPAWN_INTERVAL := 0.7
+
+	## brightfire 帧动画表（可为 null → EmberBit 回退为色块方形）。
+	var sheet: Texture2D = null
 
 	var _accum := 0.25
 
@@ -108,22 +116,33 @@ class EmberField extends Node2D:
 		_accum += delta
 		if _accum >= SPAWN_INTERVAL and get_child_count() < MAX_EMBERS:
 			_accum = 0.0
-			var bit := EmberBit.new()
-			bit.position = Vector2(randf_range(-13.0, 13.0), randf_range(-26.0, 4.0))
+			var bit := EmberBit.new(sheet)
+			bit.position = Vector2(randf_range(-8.0, 8.0), randf_range(-40.0, -12.0))
 			add_child(bit)
 
 
-## One rising, swaying, fading orange square (2-3 px).
+## One rising, swaying, fading ember. With the brightfire sheet available it
+## plays a tiny flame-lick animation; otherwise an orange square (2-3 px).
 class EmberBit extends Node2D:
+	## brightfire: 8x8 grid of 100px frames, 61 frames populated.
+	const SHEET_HFRAMES := 8
+	const SHEET_VFRAMES := 8
+	const SHEET_FRAME_COUNT := 61
+	const FRAME_STEP := 0.09
+
 	var _age := 0.0
 	var _lifetime := 2.0
 	var _rise := 8.0
 	var _sway_amp := 6.0
 	var _sway_freq := 2.0
 	var _phase := 0.0
+	var _sheet: Texture2D = null
+	var _sprite: Sprite2D = null
+	var _frame_start := 0
 
 
-	func _init() -> void:
+	func _init(sheet: Texture2D = null) -> void:
+		_sheet = sheet
 		_lifetime = randf_range(1.5, 3.0)
 		_rise = randf_range(5.0, 12.0)
 		_sway_amp = randf_range(4.0, 10.0)
@@ -132,6 +151,19 @@ class EmberBit extends Node2D:
 
 
 	func _ready() -> void:
+		if _sheet != null:
+			_sprite = Sprite2D.new()
+			_sprite.texture = _sheet
+			_sprite.hframes = SHEET_HFRAMES
+			_sprite.vframes = SHEET_VFRAMES
+			_frame_start = randi_range(0, SHEET_FRAME_COUNT - 1)
+			_sprite.frame = _frame_start
+			# 100px 帧里的火苗 ~20px 高；缩到 ~5px 的余烬尺度。
+			var s := randf_range(0.035, 0.055)
+			_sprite.scale = Vector2(s, s)
+			_sprite.modulate = Color(1.0, 0.62, 0.38, 0.55)
+			add_child(_sprite)
+			return
 		var half := randf_range(1.0, 1.5)
 		var poly := Polygon2D.new()
 		poly.polygon = PackedVector2Array([
@@ -149,6 +181,8 @@ class EmberBit extends Node2D:
 			return
 		position.y -= _rise * delta
 		position.x += sin(_age * _sway_freq + _phase) * _sway_amp * delta
+		if _sprite != null:
+			_sprite.frame = (_frame_start + int(_age / FRAME_STEP)) % SHEET_FRAME_COUNT
 		var k := _age / _lifetime
 		modulate.a = minf(k * 8.0, 1.0) * (1.0 - k)
 
@@ -285,7 +319,7 @@ class ToxinBubble extends Sprite2D:
 		_lifetime = randf_range(0.9, 1.6)
 		_rise = randf_range(7.0, 14.0)
 		_phase = randf() * TAU
-		var s := randf_range(0.1, 0.18)
+		var s := randf_range(0.06, 0.1)
 		scale = Vector2(s, s)
 
 

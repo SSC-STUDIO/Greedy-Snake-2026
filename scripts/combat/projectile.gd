@@ -9,15 +9,33 @@ var damage: int = 1
 var deflected: bool = false
 var lifetime: float = 4.5
 
+const BOLT_PATH := "res://assets/env/fireball_1.png"
+
 @onready var _fill: ColorRect = $Fill
+var _sprite: Sprite2D
 
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 	collision_layer = 16
-	collision_mask = 1 | 8 | 32 # world, player_hitbox, hurtbox
+	collision_mask = 1 | 8 | 32
+	_setup_sprite()
 	_update_visual()
+
+
+func _setup_sprite() -> void:
+	if not ResourceLoader.exists(BOLT_PATH):
+		return
+	if _fill:
+		_fill.visible = false
+	_sprite = Sprite2D.new()
+	_sprite.name = "BoltSprite"
+	_sprite.texture = load(BOLT_PATH) as Texture2D
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.centered = true
+	_sprite.scale = Vector2(0.28, 0.28)
+	add_child(_sprite)
 
 
 func setup(origin: Vector2, direction: Vector2, speed: float, p_team: StringName, p_source: Node2D) -> void:
@@ -49,6 +67,8 @@ func deflect(by: Node2D) -> void:
 
 func _physics_process(delta: float) -> void:
 	global_position += velocity * delta
+	if velocity.length_squared() > 4.0:
+		rotation = velocity.angle()
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()
@@ -85,6 +105,8 @@ func _on_area_entered(area: Area2D) -> void:
 
 
 func _update_visual() -> void:
-	if _fill == null:
-		return
-	_fill.color = Palette.TEAL if deflected else Palette.TOXIC
+	var tint := Color(0.72, 0.42, 0.28) if deflected else Color(0.78, 0.38, 0.22)
+	if _sprite:
+		_sprite.modulate = tint
+	elif _fill:
+		_fill.color = Palette.TEAL if deflected else Palette.TOXIC

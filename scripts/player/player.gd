@@ -15,9 +15,6 @@ extends CharacterBody2D
 const P_STAND_PATH := "res://assets/kenney_clean/player/p1_stand.png"
 const P_JUMP_PATH := "res://assets/kenney_clean/player/p1_jump.png"
 const P_HURT_PATH := "res://assets/kenney_clean/player/p1_hurt.png"
-const P_WALK_FMT := "res://assets/kenney_clean/player/p1_walk%02d.png"
-const WALK_FRAME_COUNT := 11
-const WALK_FPS := 8.0
 
 ## AI 生成的余烬骑士贴图（紧贴内容裁切，96px 高，脚底在图片底边）。
 ## 厚涂风：idle + jump + fall + hurt + 三段斩击（windup/active/parry/recovery）。
@@ -40,6 +37,9 @@ const AI_SWORD_ANCHOR := Vector2(10.0, -52.0)
 ## 行走的代码 bob：在地面移动时给精灵一个 ~2px 的 Y 方向 sin 摆动。
 const WALK_BOB_AMPLITUDE := 1.5
 const WALK_BOB_FREQ := 7.0
+## 判定帧前冲（世界单位/秒），克制到不破坏沉重移动手感。
+const SLASH_LUNGE := 78.0
+const AFTERIMAGE_LIFE := 0.16
 ## 受击红闪（纯表现）：染红后 tween 回白，~120ms。
 const HIT_FLASH_COLOR := Color(1.9, 0.35, 0.35)
 const HIT_FLASH_SECONDS := 0.12
@@ -158,9 +158,12 @@ func _update_kenney_sprite(delta: float) -> void:
 	elif is_slashing and slash_idx < _slash_textures.size():
 		tex = _slash_textures[slash_idx]
 	elif controller.is_dashing() or not is_on_floor():
-		# 上升/冲刺用 jump，下落用 fall。
 		var key := "fall" if velocity.y > 30.0 and not is_on_floor() else "jump"
 		tex = _sprites.get(key, _sprites.get("jump", tex)) as Texture2D
+	var sword := visual.get_node_or_null("Sword") as Node2D
+	if sword:
+		# AI slash poses already paint the blade; hide the polygon sword.
+		sword.visible = _slash_textures.is_empty()
 	# else: on floor, not slashing, not dashing — show idle (with walk-bob below).
 	if tex != null and _sprite_root.texture != tex:
 		_sprite_root.texture = tex
@@ -179,12 +182,33 @@ func _update_kenney_sprite(delta: float) -> void:
 ## 检测 MeleeCombat 进入 ACTIVE 的上升沿，生成一次性挥砍弧光（纯视觉）。
 func _poll_slash_arc(face: float) -> void:
 	var active_now := melee.phase_name() == "active"
-	if active_now and not _melee_active_prev and SlashArc.sheet_available():
-		var arc := SlashArc.new()
-		arc.flip_h = face < 0.0
-		arc.position = Vector2(24.0 * face, -22.0)
-		add_child(arc)
+	if active_now and not _melee_active_prev:
+		velocity.x += face * SLASH_LUNGE
+		_spawn_afterimages(face)
+		if SlashArc.sheet_available():
+			var arc := SlashArc.new()
+			arc.flip_h = face < 0.0
+			arc.position = Vector2(24.0 * face, -22.0)
+			add_child(arc)
 	_melee_active_prev = active_now
+
+
+func _spawn_afterimages(_face: float) -> void:
+	if _sprite_root == null or _sprite_root.texture == null:
+		return
+	for i in 2:
+		var ghost := Sprite2D.new()
+		ghost.texture = _sprite_root.texture
+		ghost.centered = true
+		ghost.texture_filter = _sprite_root.texture_filter
+		ghost.global_position = _sprite_root.global_position + Vector2(-8.0 * float(i + 1) * visual.scale.x, 0)
+		ghost.scale = _sprite_root.scale * visual.scale
+		ghost.modulate = Color(1.0, 0.75, 0.45, 0.42 - 0.12 * float(i))
+		ghost.z_index = visual.z_index - 1
+		get_parent().add_child(ghost)
+		var tw := ghost.create_tween()
+		tw.tween_property(ghost, "modulate:a", 0.0, AFTERIMAGE_LIFE)
+		tw.tween_callback(ghost.queue_free)
 
 
 ## 受击红闪：target 为本玩家时把精灵短暂染红后 tween 回白。
