@@ -3,7 +3,8 @@
 ## Kenney
 - Source: https://kenney.nl/ (Platformer Assets, Audio packs)
 - License: CC0 (see kenney/LICENSE.md)
-- Used: player stand/jump/hurt/duck, walk cycle (p1_walk01-11), tiles, HUD hearts, enemies, audio SFX
+- Used: player stand/jump/hurt (headless fallback sprites), tiles, HUD hearts,
+  flyFly1 (spitter fallback), audio SFX
 - Audio SFX (renamed copies in assets/kenney_clean/audio/, sources in kenney/"Audio (295 files)"):
   - swing.ogg <= RPG sounds/knifeSlice.ogg
   - hit_flesh.ogg <= RPG sounds/chop.ogg
