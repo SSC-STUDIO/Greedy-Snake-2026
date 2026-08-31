@@ -27,6 +27,12 @@ func _ready() -> void:
 	var col := CollisionPolygon2D.new()
 	col.polygon = pts
 	add_child(col)
+	var occluder := LightOccluder2D.new()
+	occluder.name = "LightOccluder"
+	var occ := OccluderPolygon2D.new()
+	occ.polygon = pts
+	occluder.occluder = occ
+	add_child(occluder)
 
 
 func _build_visual() -> void:

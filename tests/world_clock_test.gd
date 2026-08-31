@@ -311,4 +311,62 @@ func test_hud_stays_readable_at_night() -> void:
 		eq(cap.modulate, Color.WHITE, "caption stays off MoodTint")
 
 
+func test_outdoor_breeze_is_alive() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	WorldClock._snap_wind_speed()
+	ok(WorldClock.wind_speed > 0.12, "haze still has a standing breeze")
+	ok(WorldClock.is_breeze_active())
+	ok(absf(WorldClock.sway_radians()) > 0.001)
+
+
+func test_indoor_wind_dies() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	WorldClock._snap_wind_speed()
+	ok(WorldClock.wind_speed > 0.3)
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	WorldClock.advance(2.0)
+	almost(WorldClock.wind_speed, 0.0, 0.03, "indoor wind fades out")
+	almost(WorldClock.sway_radians(), 0.0, 0.01)
+
+
+func test_rain_wind_stronger_than_fog() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_weather(WorldClock.Weather.FOG, true)
+	WorldClock._snap_wind_speed()
+	var fog := WorldClock.wind_speed
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	WorldClock._snap_wind_speed()
+	ok(WorldClock.wind_speed > fog + 0.12, "rain lifts the breeze")
+
+
+func test_frozen_clock_holds_gust() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.advance(1.5)
+	var g0 := WorldClock.gust
+	var h0 := WorldClock.wind_heading
+	get_tree().paused = true
+	WorldClock._process(4.0)
+	almost(WorldClock.gust, g0, 0.0001, "paused gust does not walk")
+	almost(WorldClock.wind_heading, h0, 0.0001)
+	get_tree().paused = false
+
+
+func test_save_roundtrip_zone_and_heading() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	ok(SaveData.save_game("res://scenes/levels/Level01_Static.tscn", player))
+	WorldClock.reset()
+	eq(WorldClock.zone, WorldClock.Zone.OUTDOORS)
+	ok(SaveData.load_game())
+	eq(WorldClock.zone, WorldClock.Zone.INDOORS, "load restores indoor")
+	almost(WorldClock.wind_heading, 1.0, 0.01, "load restores heading")
+
+
 const CYCLE_CROSS := 30.0

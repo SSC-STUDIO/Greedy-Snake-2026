@@ -175,3 +175,22 @@ func test_lit_nest_light_uses_platform_occluder() -> void:
 			eq(shape.size, plat.size, "collision size unchanged by occluder")
 			eq(col.position, plat.size * 0.5, "collision offset unchanged")
 	eq(occ.occluder.polygon[2], Vector2(plat.size.x, plat.size.y))
+
+
+func test_unlit_has_no_warm_shaft() -> void:
+	var nest := EmberNest.new()
+	add_child(nest)
+	await flush(1)
+	var beam := nest.get_node_or_null("WarmShaft") as Sprite2D
+	ok(beam != null)
+	if beam != null:
+		ok(not beam.visible, "unlit nest has no volume shaft")
+	WorldClock.wind_heading = 1.0
+	WorldClock._snap_wind_speed()
+	nest.apply_persistent_state({"lit": true})
+	var flame := nest.get_node_or_null("Flame") as Sprite2D
+	ok(flame != null and flame.visible)
+	if flame != null:
+		ok(absf(flame.rotation) > 0.0001, "lit flame leans with the wind")
+	if beam != null:
+		ok(beam.visible, "lit nest shows a warm shaft")

@@ -61,16 +61,20 @@ func build(host: Node2D) -> void:
 		var wx := WeatherFx.new()
 		wx.name = "WeatherFx"
 		host.add_child(wx)
+	if host.get_node_or_null("CineFx") == null:
+		var cine := CineFx.new()
+		cine.name = "CineFx"
+		host.add_child(cine)
 
 
 func _process(delta: float) -> void:
-	# 极缓的天空/雾漂移：月亮云层向左蹭，两层雾对向流动，画面不再死板。
+	var drift := WorldClock.wind_vector().x
 	if _far_layer != null:
-		_far_layer.motion_offset.x -= 1.1 * delta
+		_far_layer.motion_offset.x += drift * 8.0 * delta
 	if _fog_far != null:
-		_fog_far.motion_offset.x += 2.6 * delta
+		_fog_far.motion_offset.x += drift * 18.0 * delta
 	if _fog_near != null:
-		_fog_near.motion_offset.x -= 4.0 * delta
+		_fog_near.motion_offset.x += drift * 32.0 * delta
 	_follow_atmosphere(delta)
 
 

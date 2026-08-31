@@ -5,7 +5,6 @@ extends CanvasLayer
 
 const DROP_COUNT := 52
 const FALL_SPEED := 240.0
-const WIND := 36.0
 const EMBER_COUNT := 20
 const EMBER_PATH := "res://assets/ui/ember_motes.png"
 const EMBER_FRAMES := 8
@@ -65,7 +64,7 @@ func _process(delta: float) -> void:
 		for spr in _drops:
 			var p := spr.position
 			p.y += FALL_SPEED * delta
-			p.x -= WIND * delta
+			p.x += rain_wind_x() * delta
 			if p.y > 728.0:
 				p.y = -8.0
 				p.x = randf() * 1280.0
@@ -87,7 +86,7 @@ func _tick_embers(delta: float) -> void:
 	var vis := _ember_alpha * 0.28
 	for spr in _embers:
 		var p := spr.position
-		p.x -= EMBER_DRIFT * delta
+		p.x += rain_wind_x() * (EMBER_DRIFT / 36.0) * delta
 		p.y += sin(p.x * 0.04 + p.y * 0.01) * 10.0 * delta
 		if p.x < -10.0:
 			p.x = 1290.0
@@ -100,6 +99,13 @@ func _tick_embers(delta: float) -> void:
 		if spr.hframes > 1 and randf() < delta * 6.0:
 			spr.frame = (spr.frame + 1) % spr.hframes
 		spr.modulate = Color(1.0, 0.62, 0.38, vis)
+
+
+func rain_wind_x() -> float:
+	var v := WorldClock.wind_vector().x
+	if absf(v) < 0.02:
+		return -36.0
+	return v * 90.0
 
 
 func _load_ember_tex() -> Texture2D:

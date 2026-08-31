@@ -18,6 +18,7 @@ var _lit: bool = false
 var _flame: Sprite2D
 var _sparks: Node2D
 var _light: PointLight2D
+var _beam: Sprite2D
 var _frame_t := 0.0
 var _spark_t := 0.35
 var _headless := false
@@ -33,6 +34,7 @@ func _ready() -> void:
 	_headless = DisplayServer.get_name() == "headless"
 	_ensure_flame()
 	_ensure_light()
+	_ensure_beam()
 	_apply_flame_state()
 	if not WorldClock.phase_changed.is_connected(_on_atmosphere):
 		WorldClock.phase_changed.connect(_on_atmosphere)
@@ -76,6 +78,7 @@ func _on_atmosphere(_phase: int) -> void:
 func _process(delta: float) -> void:
 	if _lit:
 		_sync_light(delta)
+		_lean_flame()
 	if _flame == null or not _lit:
 		return
 	_frame_t += delta
@@ -152,16 +155,55 @@ func _sync_light(delta: float) -> void:
 	_light.texture_scale = lerpf(_light.texture_scale, target_s, k)
 
 
+func _ensure_beam() -> void:
+	if _beam != null:
+		return
+	var beam := Sprite2D.new()
+	beam.name = "WarmShaft"
+	beam.centered = true
+	beam.position = Vector2(7, -48)
+	beam.texture = _shaft_tex()
+	beam.modulate = Color(1.0, 0.72, 0.38, 0.0)
+	beam.visible = false
+	beam.z_index = 0
+	add_child(beam)
+	_beam = beam
+
+
+func _shaft_tex() -> Texture2D:
+	var img := Image.create(10, 72, false, Image.FORMAT_RGBA8)
+	for y in 72:
+		for x in 10:
+			var cx := absf(float(x) - 4.5) / 5.0
+			var along := 1.0 - float(y) / 72.0
+			var a := clampf((1.0 - cx) * (1.0 - cx) * along * 0.7, 0.0, 0.7)
+			img.set_pixel(x, y, Color(1.0, 0.72, 0.36, a))
+	return ImageTexture.create_from_image(img)
+
+
+func _lean_flame() -> void:
+	var lean := WorldClock.sway_radians() * 0.55 if _lit else 0.0
+	if _flame != null:
+		_flame.rotation = lean
+	if _beam != null:
+		_beam.rotation = lean * 0.35
+		_beam.visible = _lit
+		_beam.modulate.a = 0.28 if _lit else 0.0
+
+
 func _apply_flame_state() -> void:
 	if _flame != null:
 		_flame.visible = _lit
 		_flame.modulate = LIT_MOD
+		if not _lit:
+			_flame.rotation = 0.0
 	if _sparks != null:
 		_sparks.visible = _lit
 		if not _lit:
 			for child in _sparks.get_children():
 				child.queue_free()
 	_sync_light(999.0)
+	_lean_flame()
 
 
 func can_interact(_actor: Node) -> bool:

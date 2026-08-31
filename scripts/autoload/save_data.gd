@@ -92,6 +92,8 @@ func save_game(scene_path: String, player: Node) -> bool:
 	data["atmosphere"] = atmosphere
 	cfg.set_value("atmosphere", "time_of_day", float(atmosphere.get("time_of_day", WorldClock.DEFAULT_TIME)))
 	cfg.set_value("atmosphere", "weather", String(atmosphere.get("weather", "haze")))
+	cfg.set_value("atmosphere", "zone", String(atmosphere.get("zone", "outdoors")))
+	cfg.set_value("atmosphere", "wind_heading", float(atmosphere.get("wind_heading", -1.0)))
 	var err := cfg.save(save_path)
 	if err != OK:
 		push_warning("SaveData: failed to save to %s (err %d)" % [save_path, err])
@@ -140,6 +142,8 @@ func load_game() -> bool:
 	var atmosphere := {
 		"time_of_day": float(cfg.get_value("atmosphere", "time_of_day", WorldClock.DEFAULT_TIME)),
 		"weather": String(cfg.get_value("atmosphere", "weather", "haze")),
+		"zone": String(cfg.get_value("atmosphere", "zone", "outdoors")),
+		"wind_heading": float(cfg.get_value("atmosphere", "wind_heading", -1.0)),
 	}
 	data["atmosphere"] = atmosphere
 	WorldClock.apply_snapshot(atmosphere)

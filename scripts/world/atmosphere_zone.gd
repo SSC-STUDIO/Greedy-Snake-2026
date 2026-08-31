@@ -19,11 +19,10 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body != null and body.is_in_group("player"):
-		WorldClock.set_zone(zone)
+		WorldClock.enter_zone(zone)
 
 
 func _on_body_exited(body: Node) -> void:
 	if body == null or not body.is_in_group("player"):
 		return
-	if WorldClock.zone == zone:
-		WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.leave_zone()
