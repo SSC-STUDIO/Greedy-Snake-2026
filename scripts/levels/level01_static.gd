@@ -225,10 +225,11 @@ func _extend_east() -> void:
 	var wall := get_node_or_null("Platforms/WallRight") as Node2D
 	if wall:
 		wall.position.x = float(EAST_LIMIT)
+	var floor_rect := east_floor_rect()
 	var floor := PLATFORM.instantiate()
 	floor.skin = "ground"
-	floor.position = Vector2(EAST_FLOOR_X, 320)
-	floor.size = Vector2(float(EAST_LIMIT) - EAST_FLOOR_X, 80)
+	floor.position = floor_rect.position
+	floor.size = floor_rect.size
 	floor.cap_left = false
 	floor.cap_right = false
 	$Platforms.add_child(floor)

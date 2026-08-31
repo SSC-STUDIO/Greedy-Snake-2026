@@ -27,4 +27,4 @@ Please provide the code in clean, commented modules.
 | 近战 + 弹反 | `scripts/combat/melee_combat.gd`，弹反窗口 = 挥砍 active 帧 |
 | IInteractable | `scripts/interactables/interactable.gd` 基类 + `interact()` |
 | Camera look-ahead | `scripts/camera/game_camera.gd` |
-| 主场景 | `scenes/levels/TestArena.tscn` |
+| 主场景 | `scenes/ui/TitleScreen.tscn`（进 `Level01_Static.tscn`） |

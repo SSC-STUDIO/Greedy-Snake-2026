@@ -72,6 +72,7 @@ godot --path "C:\Users\Administrator\OneDrive\Documents\My-Program\Rustgrave"
 
 | 文件 | 内容 |
 | --- | --- |
+| `docs/architecture.md` | 代码结构速查（Autoload、Level01 拆分、玩家子节点） |
 | `docs/GDD.md` | 完整中文设计文档 |
 | `docs/gdd-prompt.md` | 第二步 GDD 英文 Prompt 原文 |
 | `docs/visual-prompt.md` | 第一步视觉 Prompt（可喂 Midjourney/SD） |
