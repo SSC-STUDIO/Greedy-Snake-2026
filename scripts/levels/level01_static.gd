@@ -207,16 +207,20 @@ func _add_silhouette_layer(backdrop: ParallaxBackground) -> void:
 
 
 func _extend_east() -> void:
-	# 余烬步默认锁死后，毒坑不能再靠免费二段跳爬出。加一条低梁，单跳可过。
+	# 毒坑两级踏脚。旧坐标把低梁贴在地面行人头顶（424,300），
+	# 小台埋进 GroundRight 土层（496,336）。单跳约 37px（v=-268,g=980），
+	# 低台离地 64px、高台再高 36px，coyote 单跳能从低接到高。
 	var beam := PLATFORM.instantiate()
+	beam.name = "PitStepHigh"
 	beam.skin = "floating"
-	beam.position = Vector2(424, 300)
-	beam.size = Vector2(80, 16)
+	beam.position = Vector2(548, 220)
+	beam.size = Vector2(64, 16)
 	$Platforms.add_child(beam)
 	var pit_ledge := PLATFORM.instantiate()
+	pit_ledge.name = "PitStepLow"
 	pit_ledge.skin = "floating"
-	pit_ledge.position = Vector2(496, 336)
-	pit_ledge.size = Vector2(40, 16)
+	pit_ledge.position = Vector2(496, 256)
+	pit_ledge.size = Vector2(48, 16)
 	$Platforms.add_child(pit_ledge)
 	var wall := get_node_or_null("Platforms/WallRight") as Node2D
 	if wall:
