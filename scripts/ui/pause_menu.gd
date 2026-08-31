@@ -69,6 +69,7 @@ func open() -> void:
 	visible = true
 	_menu.active = true
 	get_tree().paused = true
+	Director.suspend()
 	Sfx.play(&"ui_select")
 
 
@@ -78,6 +79,7 @@ func close() -> void:
 	_controls.visible = false
 	visible = false
 	get_tree().paused = false
+	Director.resume()
 	Sfx.play(&"ui_back")
 
 
@@ -101,4 +103,5 @@ func _on_chosen(id: StringName) -> void:
 			_controls.open()
 		ID_TITLE:
 			get_tree().paused = false
-			get_tree().change_scene_to_file(TITLE_PATH)
+			Director.resume()
+			Director.fade_to(TITLE_PATH)

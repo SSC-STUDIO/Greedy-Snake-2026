@@ -10,6 +10,9 @@ extends CharacterBody2D
 @onready var sensor: InteractionSensor = $InteractionSensor
 @onready var visual: Node2D = $Visual
 @onready var hookshot: HookshotTether = $HookshotTether
+@onready var resonance: Resonance = $Resonance
+
+var cutscene_locked: bool = false
 
 
 const P_STAND_PATH := "res://assets/kenney_clean/player/p1_stand.png"
@@ -67,6 +70,10 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if health.is_invincible() and health.current <= 0:
+		return
+	controller.extra_jumps_unlocked = inventory.has_ability(AbilityIds.EMBER_STEP)
+	if cutscene_locked:
+		_tick_cutscene_idle(delta)
 		return
 	health.invincible = controller.is_invincible()
 	var move_scale := 0.42 if melee.is_busy() else 1.0
@@ -274,7 +281,78 @@ func collect_core(core: RustCore) -> void:
 	inventory.add_to_pouch(core)
 
 
+func _tick_cutscene_idle(delta: float) -> void:
+	if not is_on_floor():
+		velocity.y += float(ProjectSettings.get_setting("physics/2d/default_gravity")) * delta
+	velocity.x = move_toward(velocity.x, 0.0, 420.0 * delta)
+	move_and_slide()
+	visual.scale.x = float(controller.facing)
+	_update_visual(delta)
+
+
+func on_melee_active(combo_index: int) -> void:
+	var pot := toxin.potency()
+	if pot >= 0.85 and inventory.has_ability(AbilityIds.HEAT_FORGE):
+		_spawn_fire_trail()
+	if combo_index >= 2 and inventory.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.EMBER_STEP):
+		_spawn_blast()
+
+
+func _spawn_fire_trail() -> void:
+	var face := float(controller.facing)
+	Fx.dust_puff(global_position + Vector2(face * 18.0, -2.0), face)
+	var box := Hitbox.new()
+	box.damage = 1
+	box.team = &"player"
+	box.monitoring = true
+	box.collision_layer = 8
+	box.collision_mask = 32
+	var box_shape := CollisionShape2D.new()
+	var box_rect := RectangleShape2D.new()
+	box_rect.size = Vector2(42, 10)
+	box_shape.shape = box_rect
+	box.add_child(box_shape)
+	box.position = Vector2(face * 28.0, -4.0)
+	add_child(box)
+	box.monitoring = true
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		if is_instance_valid(box):
+			box.queue_free()
+	)
+
+
+func _spawn_blast() -> void:
+	var face := float(controller.facing)
+	var origin := global_position + Vector2(face * 22.0, -8.0)
+	Fx.dust_puff(origin, face)
+	Fx.hit_sparks(origin)
+	var box := Hitbox.new()
+	box.damage = 1
+	box.team = &"player"
+	box.knockback = Vector2(face * 80.0, -30.0)
+	box.monitoring = true
+	box.collision_layer = 8
+	box.collision_mask = 32
+	var box_shape := CollisionShape2D.new()
+	var box_rect := RectangleShape2D.new()
+	box_rect.size = Vector2(48, 20)
+	box_shape.shape = box_rect
+	box.add_child(box_shape)
+	get_parent().add_child(box)
+	box.global_position = origin
+	box.monitoring = true
+	for node in get_tree().get_nodes_in_group("pressure_plate"):
+		if node is PressurePlate and (node as Node2D).global_position.distance_to(origin) < 56.0:
+			(node as PressurePlate).slam()
+	get_tree().create_timer(0.18).timeout.connect(func() -> void:
+		if is_instance_valid(box):
+			box.queue_free()
+	)
+
+
 func _poll_interact() -> void:
+	if cutscene_locked:
+		return
 	var focus := sensor.get_focus()
 	if focus:
 		GameEvents.interact_prompt.emit(focus.get_prompt(self))
@@ -285,6 +363,8 @@ func _poll_interact() -> void:
 
 
 func _poll_sockets() -> void:
+	if cutscene_locked:
+		return
 	if Input.is_action_just_pressed("socket_1"):
 		inventory.insert_into_socket(0)
 	elif Input.is_action_just_pressed("socket_2"):
@@ -292,6 +372,8 @@ func _poll_sockets() -> void:
 
 
 func _poll_hookshot() -> void:
+	if cutscene_locked:
+		return
 	if not Input.is_action_just_pressed("hookshot"):
 		return
 	if not inventory.has_ability(AbilityIds.HOOKSHOT_TETHER):
@@ -323,7 +405,6 @@ func _on_died() -> void:
 		var nest := get_tree().current_scene.get_node_or_null(nest_path)
 		var spawn: Vector2 = nest.global_position if nest != null and is_instance_valid(nest) else global_position
 		GameEvents.player_respawned.emit()
-		# Rebuild the level with the player dropped back at the last lit Ember Nest.
 		SaveData.respawn(get_tree().current_scene.scene_file_path, spawn)
 	else:
-		get_tree().reload_current_scene()
+		Director.fade_to(get_tree().current_scene.scene_file_path)

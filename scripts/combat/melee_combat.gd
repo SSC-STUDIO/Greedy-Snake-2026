@@ -55,6 +55,11 @@ func try_deflect(bolt: Projectile) -> bool:
 	var host := get_parent()
 	var actor: Node2D = (host as Node2D) if host is Node2D else self
 	bolt.deflect(actor)
+	if host is Player:
+		var knight := host as Player
+		knight.toxin.purify(0.12)
+		knight.resonance.pulse()
+		knight.controller.grant_air_jump()
 	GameEvents.parried.emit(bolt, actor)
 	GameEvents.announcement.emit("弹反！")
 	Sfx.play(&"parry")
@@ -82,6 +87,8 @@ func tick(delta: float) -> void:
 	match _state:
 		State.IDLE:
 			_rest_sword(delta)
+			if _host_locked():
+				return
 			if Input.is_action_just_pressed("attack"):
 				start_swing()
 		State.WINDUP:
@@ -152,16 +159,30 @@ func _begin_active() -> void:
 	_state = State.ACTIVE
 	_timer = float(COMBO_ACTIVE[_combo_index])
 	if hitbox:
-		hitbox.damage = int(COMBO_DAMAGE[_combo_index])
-		hitbox.already_hit.clear()
-		hitbox.monitoring = true
-		# Finisher is a heavy committed swing — the enemy gets shoved harder.
+		var bonus := 0
 		var face := 1.0
 		var host := get_parent()
+		var pot := 0.0
 		if host is Player:
-			face = float((host as Player).controller.facing)
+			var knight := host as Player
+			face = float(knight.controller.facing)
+			pot = knight.toxin.potency()
+			if pot >= 0.5:
+				bonus = 1
+		hitbox.damage = int(COMBO_DAMAGE[_combo_index]) + bonus
+		hitbox.already_hit.clear()
+		hitbox.monitoring = true
 		var power := 150.0 if _combo_index >= 2 else 90.0
+		if pot >= 0.85 and _combo_index >= 2:
+			power *= 1.35
 		hitbox.knockback = Vector2(face * power, -40.0 if _combo_index >= 2 else -24.0)
+		if host is Player:
+			(host as Player).on_melee_active(_combo_index)
+
+
+func _host_locked() -> bool:
+	var host := get_parent()
+	return host is Player and (host as Player).cutscene_locked
 
 
 func _begin_recovery() -> void:

@@ -23,6 +23,16 @@ static func tether_core() -> RustCore:
 	return core
 
 
+static func ember_core() -> RustCore:
+	var core := RustCore.new()
+	core.id = &"ember_core"
+	core.display_name = "Ember Core"
+	core.description = "Ember Step — a second jump paid for in cinder."
+	core.ability_id = AbilityIds.EMBER_STEP
+	core.tint = Palette.EMBER
+	return core
+
+
 ## Rehydrate a core from its id (used by SaveData load). Returns null for
 ## ids this catalog doesn't know about so old/new saves degrade gracefully.
 static func for_id(id: StringName) -> RustCore:
@@ -31,5 +41,7 @@ static func for_id(id: StringName) -> RustCore:
 			return kiln_core()
 		&"tether_core":
 			return tether_core()
+		&"ember_core":
+			return ember_core()
 	return null
 

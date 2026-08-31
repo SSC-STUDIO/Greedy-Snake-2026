@@ -16,7 +16,7 @@ signal jumped(is_extra: bool)
 @export_group("Jump")
 @export var jump_velocity: float = -268.0
 @export var extra_jumps: int = 1
-@export var extra_jumps_unlocked: bool = true
+@export var extra_jumps_unlocked: bool = false
 @export var extra_jump_scale: float = 0.92
 @export var fall_gravity_scale: float = 1.85
 @export var jump_cut_gravity_scale: float = 2.15
@@ -54,6 +54,10 @@ func set_commit_lock(locked: bool) -> void:
 	_commit_lock = locked
 
 
+func grant_air_jump() -> void:
+	_jumps_left = maxi(_jumps_left, 1)
+
+
 func physics_tick(body: CharacterBody2D, delta: float, move_scale: float) -> void:
 	if _dash_cd > 0.0:
 		_dash_cd = maxf(0.0, _dash_cd - delta)
@@ -75,7 +79,10 @@ func physics_tick(body: CharacterBody2D, delta: float, move_scale: float) -> voi
 
 	if is_dashing():
 		_dash_timer = maxf(0.0, _dash_timer - delta)
-		body.velocity.x = _dash_dir * dash_speed
+		var speed := dash_speed
+		if body is Player and (body as Player).toxin.potency() >= 0.5:
+			speed *= 1.12
+		body.velocity.x = _dash_dir * speed
 		body.velocity.y = 0.0
 		return
 
@@ -158,10 +165,13 @@ func _try_dash(body: CharacterBody2D) -> void:
 	else:
 		_dash_dir = float(facing)
 
+	var speed := dash_speed
+	if body is Player and (body as Player).toxin.potency() >= 0.5:
+		speed *= 1.12
 	_dash_timer = dash_duration
 	_dash_cd = dash_cooldown
 	_iframe = iframe_duration
-	body.velocity.x = _dash_dir * dash_speed
+	body.velocity.x = _dash_dir * speed
 	body.velocity.y = 0.0
 	dashed.emit()
 	GameEvents.dash_performed.emit()

@@ -92,7 +92,8 @@ func _build_menu() -> void:
 	add_child(_menu)
 
 	_menu.add_item(ID_NEW, "点 燃 余 烬")
-	_menu.add_item(ID_CONTINUE, "继 续 旅 程", not SaveData.has_save())
+	var cont := "回 看 余 烬" if SaveData.peek_ending() != "" else "继 续 旅 程"
+	_menu.add_item(ID_CONTINUE, cont, not SaveData.has_save())
 	_menu.add_item(ID_CONTROLS, "操 作 说 明")
 	_menu.add_item(ID_QUIT, "离 开 锈 墓")
 	_menu.chosen.connect(_on_chosen)
@@ -169,8 +170,4 @@ func _start(continue_game: bool) -> void:
 	else:
 		SaveData.delete_save()
 	Sfx.play(&"gate")
-	var tween := create_tween()
-	tween.tween_property(_fade, "color:a", 1.0, FADE_OUT)
-	tween.tween_callback(func() -> void:
-		get_tree().change_scene_to_file(LEVEL_PATH)
-	)
+	Director.fade_to(LEVEL_PATH, FADE_OUT)

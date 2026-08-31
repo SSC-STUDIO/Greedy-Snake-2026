@@ -28,6 +28,12 @@ var _noise_t := 0.0
 ## it stacks with the trauma shake instead of stomping it.
 var shake_offset := Vector2.ZERO
 
+var _focused: bool = false
+var _focus_node: Node2D
+var _focus_pos: Vector2 = Vector2.ZERO
+var _focus_zoom: float = ZOOM
+var _focus_speed: float = 4.0
+
 
 func _ready() -> void:
 	make_current()
@@ -59,7 +65,34 @@ func add_trauma(strength: float) -> void:
 	_trauma = clampf(maxf(_trauma, strength), 0.0, 1.0)
 
 
+func focus(target: Variant, zoom: float = ZOOM, duration: float = 0.55) -> void:
+	_focused = true
+	_focus_zoom = zoom
+	_focus_speed = 1.0 / maxf(duration, 0.08)
+	if target is Node2D:
+		_focus_node = target
+		_focus_pos = (target as Node2D).global_position
+	elif target is Vector2:
+		_focus_node = null
+		_focus_pos = target
+
+
+func release() -> void:
+	_focused = false
+	_focus_node = null
+	zoom = Vector2(ZOOM, ZOOM)
+
+
 func _physics_process(delta: float) -> void:
+	if _focused:
+		if _focus_node != null and is_instance_valid(_focus_node):
+			_focus_pos = _focus_node.global_position
+		global_position = global_position.lerp(_focus_pos + Vector2(0, vertical_offset),
+				1.0 - exp(-_focus_speed * delta))
+		var z := lerpf(zoom.x, _focus_zoom, 1.0 - exp(-_focus_speed * delta))
+		zoom = Vector2(z, z)
+		_apply_shake(delta)
+		return
 	var target := get_tree().get_first_node_in_group("player") as Player
 	if target == null:
 		return

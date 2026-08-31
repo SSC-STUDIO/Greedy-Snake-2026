@@ -6,6 +6,11 @@ extends Node2D
 const PLAYER := preload("res://scenes/player/Player.tscn")
 const CAMERA := preload("res://scenes/camera/GameCamera.tscn")
 const HUD := preload("res://scenes/ui/HUD.tscn")
+const PLATFORM := preload("res://scenes/world/Platform.tscn")
+const ANCHOR := preload("res://scenes/interactables/HookAnchor.tscn")
+const PICKUP := preload("res://scenes/interactables/CorePickup.tscn")
+const BOSS := preload("res://scenes/enemies/ExecutionerBoss.tscn")
+const FORGE := preload("res://scenes/interactables/ForgeHeart.tscn")
 
 const DECOR_TREE_1 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/tree-1.png"
 const DECOR_TREE_2 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/tree-2.png"
@@ -37,17 +42,23 @@ const SIL_PATTERN := [
 const SIL_TINT := Color(0.17, 0.14, 0.24, 0.95)
 const SIL_SPAN := 512.0
 
+const EAST_LIMIT := 2240
+
 var _far_layer: ParallaxLayer
 var _fog_far: ParallaxLayer
 var _fog_near: ParallaxLayer
+var _player: Player
+var _boss: ExecutionerBoss
 
 
 func _ready() -> void:
+	_extend_east()
 	_spawn_decor()
 	_build_parallax_extras()
 	_spawn_actors()
 	_wire_props()
-	GameEvents.announcement.emit("锈墓・壹 — 腐液回廊")
+	_bind_story()
+	call_deferred("_try_wake")
 
 
 func _process(delta: float) -> void:
@@ -69,23 +80,24 @@ func _wire_props() -> void:
 
 
 func _spawn_actors() -> void:
-	var player: Player = PLAYER.instantiate()
-	player.position = DEFAULT_SPAWN
-	add_child(player)
+	_player = PLAYER.instantiate()
+	_player.position = DEFAULT_SPAWN
+	add_child(_player)
 
 	if SaveData.has_save():
 		SaveData.load_game()
 		if SaveData.pending_spawn != Vector2.INF:
-			player.position = SaveData.consume_pending_spawn()
+			_player.position = SaveData.consume_pending_spawn()
 		elif SaveData.data.has("player") and (SaveData.data["player"] as Dictionary).has("pos"):
-			player.position = SaveData.data["player"]["pos"]
-		SaveData.apply_player(player)
+			_player.position = SaveData.data["player"]["pos"]
+		SaveData.apply_player(_player)
 		SaveData.apply_world(self)
 		SaveData.apply_consumed(self)
 
 	var cam: GameCamera = CAMERA.instantiate()
 	add_child(cam)
-	cam.global_position = player.global_position + Vector2(0, -18)
+	cam.limit_right = EAST_LIMIT
+	cam.global_position = _player.global_position + Vector2(0, -18)
 
 	var hud: CanvasLayer = HUD.instantiate()
 	add_child(hud)
@@ -190,3 +202,157 @@ func _add_silhouette_layer(backdrop: ParallaxBackground) -> void:
 		backdrop.add_child(layer)
 	else:
 		layer.free()
+
+
+func _extend_east() -> void:
+	var wall := get_node_or_null("Platforms/WallRight") as Node2D
+	if wall:
+		wall.position.x = float(EAST_LIMIT)
+	var floor := PLATFORM.instantiate()
+	floor.skin = "ground"
+	floor.position = Vector2(1600, 320)
+	floor.size = Vector2(608, 80)
+	floor.cap_left = false
+	floor.cap_right = false
+	$Platforms.add_child(floor)
+	var ledge := PLATFORM.instantiate()
+	ledge.skin = "floating"
+	ledge.position = Vector2(1528, 112)
+	ledge.size = Vector2(80, 16)
+	$Platforms.add_child(ledge)
+	var hook := ANCHOR.instantiate()
+	hook.position = Vector2(1568, 48)
+	$Hooks.add_child(hook)
+	var ember := PICKUP.instantiate() as CorePickup
+	ember.position = Vector2(1568, 96)
+	ember.core = AbilityCatalog.ember_core()
+	$Pickups.add_child(ember)
+	var shrine := get_node_or_null("Props/PurificationShrine") as Node2D
+	if shrine:
+		shrine.position = Vector2(1464, 288)
+	_boss = BOSS.instantiate()
+	_boss.position = Vector2(1860, 320)
+	$Props.add_child(_boss)
+	_boss.slain.connect(_on_boss_slain)
+	var heart := FORGE.instantiate()
+	heart.position = Vector2(2064, 292)
+	heart.visible = false
+	heart.name = "ForgeHeart"
+	$Props.add_child(heart)
+	var zone := Area2D.new()
+	zone.name = "BossGate"
+	zone.collision_layer = 0
+	zone.collision_mask = 2
+	zone.monitoring = true
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(40, 80)
+	shape.shape = rect
+	zone.add_child(shape)
+	zone.position = Vector2(1688, 280)
+	add_child(zone)
+	zone.body_entered.connect(_on_boss_gate)
+
+
+func _bind_story() -> void:
+	GameEvents.toxin_changed.connect(_on_toxin_story)
+	GameEvents.core_acquired.connect(_on_core_story)
+	GameEvents.ability_unlocked.connect(_on_insert_story)
+	GameEvents.parried.connect(_on_parry_story)
+
+
+func _try_wake() -> void:
+	if SaveData.has_pending_spawn() or SaveData.has_flag("wake"):
+		if not Director.playing:
+			GameEvents.announcement.emit("锈墓・壹 — 腐液回廊")
+		return
+	SaveData.mark_flag("wake")
+	var nest := get_node_or_null("Props/EmberNest")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "cam_focus", "target": nest, "duration": 0.2},
+		{"kind": "wait", "seconds": 0.25},
+		{"kind": "caption", "text": "炉灭之后，循环变成了锈。", "hold": 1.5},
+		{"kind": "cam_focus", "target": _player, "duration": 0.55},
+		{"kind": "wait", "seconds": 0.2},
+		{"kind": "cam_release"},
+		{"kind": "unlock"},
+	])
+
+
+func _on_toxin_story(current: float, _maximum: float) -> void:
+	if Director.playing or SaveData.has_flag("toxin") or current <= 0.0:
+		return
+	SaveData.mark_flag("toxin")
+	var pool := get_node_or_null("Props/ToxinPool")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "cam_focus", "target": pool, "duration": 0.4},
+		{"kind": "caption", "text": "它吃肺，也吃记忆。也吃你的剑。", "hold": 1.6},
+		{"kind": "cam_release"},
+		{"kind": "unlock"},
+	])
+
+
+func _on_core_story(_core: Resource) -> void:
+	if Director.playing or SaveData.has_flag("core"):
+		return
+	SaveData.mark_flag("core")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "caption", "text": "前人的残响。嵌进剑里，它才肯说话。", "hold": 1.5},
+		{"kind": "unlock"},
+	])
+
+
+func _on_insert_story(_ability_id: StringName) -> void:
+	if Director.playing or SaveData.has_flag("insert"):
+		return
+	SaveData.mark_flag("insert")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "caption", "text": "剑身热了一下。插座咬住了这枚核。", "hold": 1.4},
+		{"kind": "unlock"},
+	])
+
+
+func _on_parry_story(_bolt: Node, _by: Node) -> void:
+	if Director.playing or SaveData.has_flag("parry"):
+		return
+	SaveData.mark_flag("parry")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "caption", "text": "打回去的不只是弹。锈也被你炼过了。", "hold": 1.6},
+		{"kind": "unlock"},
+	])
+
+
+func _on_boss_gate(body: Node) -> void:
+	if Director.playing or SaveData.has_flag("boss_intro"):
+		return
+	if not body is Player:
+		return
+	SaveData.mark_flag("boss_intro")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "cam_focus", "target": _boss, "duration": 0.55},
+		{"kind": "caption", "text": "炉约的刽子手还守着残芯。", "hold": 1.6},
+		{"kind": "cam_release"},
+		{"kind": "unlock"},
+	])
+
+
+func _on_boss_slain() -> void:
+	var heart := get_node_or_null("Props/ForgeHeart") as CanvasItem
+	if heart:
+		heart.visible = true
+	if SaveData.has_flag("boss_dead"):
+		return
+	SaveData.mark_flag("boss_dead")
+	Director.play([
+		{"kind": "lock"},
+		{"kind": "cam_focus", "target": heart, "duration": 0.7},
+		{"kind": "caption", "text": "残芯还在跳。你可以把剑送进去。", "hold": 1.7},
+		{"kind": "cam_release"},
+		{"kind": "unlock"},
+	])

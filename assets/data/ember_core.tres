@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RustCore" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/rust_core.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"ember_core"
+display_name = "Ember Core"
+description = "Ember Step — a second jump paid for in cinder."
+ability_id = &"ember_step"
+tint = Color(1, 0.756863, 0.290196, 1)

@@ -18,3 +18,5 @@ signal rusty_gate_melted
 signal swing_started(combo_index: int)
 signal dash_performed
 signal jumped(is_extra: bool)
+signal resonance_changed(active: bool)
+signal ending_chosen(kind: StringName)

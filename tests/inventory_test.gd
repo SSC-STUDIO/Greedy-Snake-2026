@@ -36,5 +36,18 @@ func test_out_of_range_socket_is_safe() -> void:
 func test_catalog_cores_carry_expected_ids() -> void:
 	eq(AbilityCatalog.kiln_core().ability_id, AbilityIds.HEAT_FORGE)
 	eq(AbilityCatalog.tether_core().ability_id, AbilityIds.HOOKSHOT_TETHER)
+	eq(AbilityCatalog.ember_core().ability_id, AbilityIds.EMBER_STEP)
 	eq(AbilityIds.display_name(AbilityIds.HEAT_FORGE), "Heat Forge")
 	ok(String(AbilityIds.display_name(&"unknown_x")).length() > 0)
+
+
+func test_has_pair_is_unordered() -> void:
+	var inv := RustCoreInventory.new()
+	add_child(inv)
+	inv.add_to_pouch(AbilityCatalog.kiln_core())
+	inv.add_to_pouch(AbilityCatalog.ember_core())
+	ok(inv.insert_into_socket(0))
+	ok(inv.insert_into_socket(1))
+	ok(inv.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.EMBER_STEP))
+	ok(inv.has_pair(AbilityIds.EMBER_STEP, AbilityIds.HEAT_FORGE), "order does not matter")
+	ok(not inv.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.HOOKSHOT_TETHER))

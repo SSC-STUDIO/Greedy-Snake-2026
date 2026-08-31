@@ -48,6 +48,9 @@ func _process(delta: float) -> void:
 func try_fire(player: Player) -> bool:
 	if is_active() or _cooldown_left > 0.0:
 		return false
+	if player.inventory.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.HOOKSHOT_TETHER):
+		if _try_melt_hook(player):
+			return true
 	var anchor := _pick_anchor(player)
 	if anchor == null:
 		return false
@@ -56,6 +59,28 @@ func try_fire(player: Player) -> bool:
 	Sfx.play(&"gate")
 	Fx.hit_sparks(anchor.global_position)
 	return true
+
+
+func _try_melt_hook(player: Player) -> bool:
+	var origin := player.global_position + ROPE_ORIGIN
+	var reach := max_range * (1.2 if player.toxin.potency() >= 0.5 else 1.0)
+	for node in get_tree().get_nodes_in_group("rusty_gate"):
+		var gate := node as RustyGate
+		if gate == null or not is_instance_valid(gate):
+			continue
+		if origin.distance_to(gate.global_position) > reach:
+			continue
+		gate.melt(player)
+		Fx.hit_sparks(gate.global_position)
+		return true
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node is GearShieldEnemy and origin.distance_to((node as Node2D).global_position) <= reach:
+			var guard := node as GearShieldEnemy
+			if guard.has_method("_enter_stagger"):
+				guard._enter_stagger()
+				Fx.hit_sparks(guard.global_position)
+				return true
+	return false
 
 
 ## 每物理帧由 Player 在 controller 之后调用：直接接管速度。
@@ -81,13 +106,22 @@ func _pop_off(player: CharacterBody2D, to_anchor: Vector2) -> void:
 	player.velocity.y = release_pop
 	Fx.dust_puff(player.global_position + Vector2(0.0, -40.0))
 	Sfx.play(&"jump")
+	if player is Player:
+		var knight := player as Player
+		if knight.inventory.has_pair(AbilityIds.HOOKSHOT_TETHER, AbilityIds.EMBER_STEP):
+			knight.controller.grant_air_jump()
+			player.velocity.y = knight.controller.jump_velocity * knight.controller.extra_jump_scale
 	_release()
 
 
 func _release() -> void:
 	_anchor = null
 	_rope.visible = false
-	_cooldown_left = cooldown
+	var cd := cooldown
+	var host := get_parent()
+	if host is Player and (host as Player).resonance.is_active():
+		cd *= 0.5
+	_cooldown_left = cd
 
 
 func _pick_anchor(player: Player) -> Node2D:
@@ -101,7 +135,10 @@ func _pick_anchor(player: Player) -> Node2D:
 			continue
 		var to := anchor.global_position - origin
 		var dist := to.length()
-		if dist > max_range or dist < 8.0:
+		var reach := max_range
+		if player.toxin.potency() >= 0.5:
+			reach *= 1.2
+		if dist > reach or dist < 8.0:
 			continue
 		var dir := to / dist
 		var score := dir.dot(aim)

@@ -59,6 +59,10 @@ func has_ability(ability_id: StringName) -> bool:
 	return false
 
 
+func has_pair(a: StringName, b: StringName) -> bool:
+	return has_ability(a) and has_ability(b)
+
+
 func socket_core(index: int) -> RustCore:
 	if index < 0 or index >= sockets.size():
 		return null

@@ -1,8 +1,12 @@
 class_name ToxinMeter
 extends Node
 ## Orange sludge fills this meter. At full, the host starts taking overflow damage.
+## Toxin is also dirty fuel: potency() drives combat/mobility bonuses.
 
 signal overflow_tick
+
+const BAND_WARM := 30.0
+const BAND_HOT := 60.0
 
 @export var max_toxin: float = 100.0
 @export var drain_per_second: float = 8.0
@@ -11,6 +15,27 @@ signal overflow_tick
 var toxin: float = 0.0
 var _overflow_clock: float = 0.0
 var _exposing: bool = false
+
+
+## 0 = cold, 0.5 = warm, 0.85 = hot, 1.0 = overflow. Overflow keeps the bonus.
+func potency() -> float:
+	if toxin >= max_toxin - 0.01:
+		return 1.0
+	if toxin >= BAND_HOT:
+		return 0.85
+	if toxin >= BAND_WARM:
+		return 0.5
+	return 0.0
+
+
+func band() -> StringName:
+	if toxin >= max_toxin - 0.01:
+		return &"overflow"
+	if toxin >= BAND_HOT:
+		return &"hot"
+	if toxin >= BAND_WARM:
+		return &"warm"
+	return &"cold"
 
 
 func _process(delta: float) -> void:

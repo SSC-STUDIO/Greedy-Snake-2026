@@ -33,6 +33,11 @@ var consumed: PackedStringArray = []
 ## paths so levels can recompute the spawn even before replaying world state.
 var lit_nests: PackedStringArray = []
 
+## One-shot story beats already shown (wake, first toxin, first parry…).
+var flags: PackedStringArray = []
+## "rekindle" / "snuff" once the forge heart is chosen.
+var ending: String = ""
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -80,6 +85,8 @@ func save_game(scene_path: String, player: Node) -> bool:
 		cfg.set_value("world", key, world[key])
 	cfg.set_value("consumed", "paths", Array(consumed))
 	cfg.set_value("lit_nests", "paths", Array(lit_nests))
+	cfg.set_value("story", "flags", Array(flags))
+	cfg.set_value("meta", "ending", ending)
 	var err := cfg.save(save_path)
 	if err != OK:
 		push_warning("SaveData: failed to save to %s (err %d)" % [save_path, err])
@@ -121,6 +128,10 @@ func load_game() -> bool:
 	lit_nests.clear()
 	for p in cfg.get_value("lit_nests", "paths", []):
 		lit_nests.append(String(p))
+	flags.clear()
+	for f in cfg.get_value("story", "flags", []):
+		flags.append(String(f))
+	ending = String(cfg.get_value("meta", "ending", ""))
 	return true
 
 
@@ -130,6 +141,8 @@ func delete_save() -> void:
 	data = {}
 	consumed.clear()
 	lit_nests.clear()
+	flags.clear()
+	ending = ""
 
 
 ## Record that a one-shot interactable at `path` has been consumed (picked up,
@@ -160,6 +173,26 @@ func register_lit_nest(path: String) -> void:
 
 func last_lit_nest() -> String:
 	return lit_nests[lit_nests.size() - 1] if not lit_nests.is_empty() else ""
+
+
+func mark_flag(id: String) -> void:
+	if not flags.has(id):
+		flags.append(id)
+
+
+func has_flag(id: String) -> bool:
+	return flags.has(id)
+
+
+func peek_ending() -> String:
+	if ending != "":
+		return ending
+	if not has_save():
+		return ""
+	var cfg := ConfigFile.new()
+	if cfg.load(save_path) != OK:
+		return ""
+	return String(cfg.get_value("meta", "ending", ""))
 
 ## Pull a player node's live state into the data dict.
 func _collect_player(player: Node) -> Dictionary:
@@ -255,7 +288,7 @@ func apply_player(player: Node) -> void:
 ## Record the scene we should boot into and the spawn point, then reload there.
 func respawn(scene_path: String, spawn: Vector2) -> void:
 	pending_spawn = spawn
-	get_tree().change_scene_to_file(scene_path)
+	Director.fade_to(scene_path)
 
 
 func consume_pending_spawn() -> Vector2:

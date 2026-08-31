@@ -73,4 +73,20 @@ func test_consumed_paths_mark_and_query() -> void:
 func test_unknown_core_id_rehydrates_to_null() -> void:
 	ok(AbilityCatalog.for_id(&"kiln_core") != null)
 	ok(AbilityCatalog.for_id(&"tether_core") != null)
+	ok(AbilityCatalog.for_id(&"ember_core") != null)
 	ok(AbilityCatalog.for_id(&"nonexistent") == null, "unknown ids degrade to null")
+
+
+func test_ember_core_survives_roundtrip() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var player := await spawn_player(arena)
+	player.inventory.add_to_pouch(AbilityCatalog.ember_core())
+	player.inventory.insert_into_socket(0)
+	ok(SaveData.save_game("res://scenes/levels/Level01_Static.tscn", player))
+	ok(SaveData.load_game())
+	eq(SaveData.data["player"]["sockets"], ["ember_core", ""])
+	player.inventory.sockets[0] = null
+	SaveData.apply_player(player)
+	ok(player.inventory.has_ability(AbilityIds.EMBER_STEP))

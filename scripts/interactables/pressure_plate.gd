@@ -10,6 +10,7 @@ var _count: int = 0
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("pressure_plate")
 	prompt = ""
 	# 教堂石板唇沿（原生 32x10）：一块平放的踏板，而不是被压扁的墓碑。
 	ensure_sprite("res://assets/env/plate_stone.png", Vector2(32, 10), Vector2(-4, -2), Palette.RUST_MID)
@@ -19,6 +20,17 @@ func _ready() -> void:
 
 func can_interact(_actor: Node) -> bool:
 	return false
+
+
+func slam() -> void:
+	if _count == 0:
+		activated.emit()
+		_set_pressed(true)
+		get_tree().create_timer(0.45).timeout.connect(func() -> void:
+			if _count == 0:
+				deactivated.emit()
+				_set_pressed(false)
+		)
 
 
 func _on_body_entered(body: Node2D) -> void:

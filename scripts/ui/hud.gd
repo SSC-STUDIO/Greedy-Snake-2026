@@ -59,6 +59,8 @@ var _low_hp := false
 var _vignette_tween: Tween
 var _time := 0.0
 var _breath_time := 0.0
+var _announce_queue: Array[String] = []
+var _resonating := false
 
 
 func _ready() -> void:
@@ -74,6 +76,7 @@ func _ready() -> void:
 	GameEvents.player_died.connect(_on_player_died)
 	GameEvents.core_inserted.connect(func(_c, _i): _refresh_cores())
 	GameEvents.core_acquired.connect(func(_c): _refresh_cores())
+	GameEvents.resonance_changed.connect(_on_resonance)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player:
 		_on_hp(player.health.current, player.health.max_hp)
@@ -217,13 +220,20 @@ func _process(delta: float) -> void:
 	if _announce_time > 0.0:
 		_announce_time -= delta
 		if _announce_time <= 0.0:
-			_hide_banner()
+			if not _announce_queue.is_empty():
+				_show_announce(_announce_queue.pop_front())
+			else:
+				_hide_banner()
 	if _hint_time > 0.0:
 		_hint_time -= delta
 		_hint.modulate.a = clampf(_hint_time / 1.6, 0.0, 0.7)
 		if _hint_time <= 0.0:
 			_hint.visible = false
-	if _toxin_ratio >= TOXIN_ALARM_RATIO:
+	if _resonating:
+		var glow := 0.55 + 0.45 * sin(TAU * _time / 0.35)
+		_toxin_bar.modulate = Color(1.35, 0.82 + glow * 0.15, 0.38)
+		_toxin_label.modulate = Color(1.25, 0.88, 0.5)
+	elif _toxin_ratio >= TOXIN_ALARM_RATIO:
 		var pulse := lerpf(TOXIN_PULSE_MIN, TOXIN_PULSE_MAX,
 				0.5 + 0.5 * sin(TAU * _time / TOXIN_PULSE_PERIOD))
 		_toxin_bar.modulate = Color(pulse, pulse, pulse)
@@ -324,10 +334,27 @@ func _on_prompt(text: String) -> void:
 
 
 func _on_announce(text: String) -> void:
+	if text == "":
+		return
+	if _announce_time > 0.0 and _announce_label.text != "":
+		if _announce_queue.size() < 2:
+			_announce_queue.append(text)
+		return
+	_show_announce(text)
+
+
+func _show_announce(text: String) -> void:
 	_announce_label.text = text
 	_announce_time = ANNOUNCE_HOLD
 	var tween := create_tween()
 	tween.tween_property(_banner, "modulate:a", 1.0, ANNOUNCE_FADE)
+
+
+func _on_resonance(active: bool) -> void:
+	_resonating = active
+	if not active and _toxin_ratio < TOXIN_ALARM_RATIO:
+		_toxin_bar.modulate = Color.WHITE
+		_toxin_label.modulate = Color.WHITE
 
 
 func _hide_banner() -> void:

@@ -8,6 +8,7 @@ const GATE_TEX_PATH := "res://assets/env/door_arch.png"
 
 func _ready() -> void:
 	super._ready()
+	add_to_group("rusty_gate")
 	prompt = "需要熔热锻"
 	ensure_sprite(GATE_TEX_PATH, Vector2(32, 64), Vector2(-8, 0), Palette.RUST_LIGHT)
 	var spr := get_node_or_null("Fill") as CanvasItem
@@ -44,6 +45,12 @@ func get_prompt(actor: Node) -> String:
 func interact(actor: Node) -> void:
 	if not can_interact(actor):
 		GameEvents.announcement.emit("锈门太厚。把窑核嵌进剑里。")
+		return
+	melt(actor)
+
+
+func melt(_actor: Node) -> void:
+	if _melted:
 		return
 	_melted = true
 	SaveData.mark_consumed(String(get_path()))
