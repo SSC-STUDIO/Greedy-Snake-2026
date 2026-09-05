@@ -268,7 +268,9 @@ func _supplement_captures() -> void:
 	await _capture(size, "pit_submerged")
 	_fixture("forge", true)
 	await _frames(10)
-	var hud := _presentation.get_node("UiHost/HUD") as CanvasLayer
+	var hud := _presentation.find_child("HUD", true, false) as CanvasLayer
+	if hud == null:
+		hud = _world.find_child("HUD", true, false) as CanvasLayer
 	var pause := hud.get_node("PauseMenu") as PauseMenu
 	pause.open()
 	await _frames(5)
