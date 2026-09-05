@@ -51,17 +51,17 @@ func advance(delta: float) -> void:
 
 
 func _apply(blend: float) -> void:
-	var ambient := WorldClock.outdoor_tint().lerp(WorldClock.indoor_tint(), indoor_weight)
+	var ambient: Color = WorldClock.outdoor_tint().lerp(WorldClock.indoor_tint(), indoor_weight)
 	if _world_tint != null:
 		_world_tint.color = _world_tint.color.lerp(ambient, blend)
 	# Separate CanvasLayers need their own tint; background never outranks actors.
-	var distant := ambient.lerp(Color(0.40, 0.44, 0.55), 0.44)
+	var distant: Color = ambient.darkened(0.24)
 	if _backdrop_tint != null:
 		_backdrop_tint.color = _backdrop_tint.color.lerp(distant, blend)
 	if _foreground_tint != null:
 		_foreground_tint.color = _foreground_tint.color.lerp(ambient, blend)
 	if _moon_fill != null:
-		var target := WorldClock.outdoor_moon_energy() * (1.0 - indoor_weight)
+		var target: float = WorldClock.outdoor_moon_energy() * (1.0 - indoor_weight)
 		_moon_fill.energy = lerpf(_moon_fill.energy, target, blend)
 		_moon_fill.enabled = _moon_fill.energy > 0.001
 

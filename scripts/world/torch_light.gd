@@ -44,6 +44,7 @@ func _setup_light() -> void:
 	_light.texture_scale = light_radius / 32.0
 	_light.position = Vector2(0.0, -8.0)
 	add_child(_light)
+	_light.shadow_enabled = false
 
 
 func _process(delta: float) -> void:

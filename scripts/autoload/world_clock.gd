@@ -29,12 +29,12 @@ const BLEND_MAX := 8.0
 
 ## Outdoor night is a cold corridor so WorldLight pools can carve.
 ## Floor stays above a black frame; HUD isolate keeps UI readable.
-const NIGHT_TINT := Color(0.52, 0.50, 0.62)
+const NIGHT_TINT := Color(0.36, 0.34, 0.48)
 const DAY_TINT := Color(0.82, 0.80, 0.88)
 const DAWN_TINT := Color(0.78, 0.74, 0.86)
 const DUSK_TINT := Color(0.70, 0.60, 0.68)
 ## Indoor: warmer than outdoor night. Readability comes from the warm pool.
-const INDOOR_TINT := Color(0.70, 0.62, 0.54)
+const INDOOR_TINT := Color(0.66, 0.52, 0.42)
 const RUST_RAIN_INTERVAL := 1.6
 const RUST_RAIN_EXPOSE := 8.0
 const BREEZE_BASE := 0.28
@@ -340,12 +340,14 @@ func hud_line() -> String:
 func mood_tint() -> Color:
 	if zone == Zone.INDOORS:
 		return _indoor_tint()
-	return outdoor_tint()
+	var a := _phase_tint(phase)
+	var b := _weather_mul(_blend_weather())
+	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
 
 
 func outdoor_tint() -> Color:
 	var a := _phase_tint(phase)
-	var b := _weather_mul(previous_weather).lerp(_weather_mul(weather), weather_blend)
+	var b := _weather_mul(_blend_weather())
 	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
 
 
@@ -354,7 +356,7 @@ func indoor_tint() -> Color:
 
 
 func _indoor_tint() -> Color:
-	var b := _weather_mul(previous_weather).lerp(_weather_mul(weather), weather_blend)
+	var b := _weather_mul(_blend_weather())
 	var c := Color(INDOOR_TINT.r * b.r, INDOOR_TINT.g * b.g, INDOOR_TINT.b * b.b, 1.0)
 	c.r = maxf(c.r, 0.52)
 	c.g = maxf(c.g, 0.42)
@@ -436,21 +438,19 @@ func nest_light_radius() -> float:
 
 
 func moon_fill_energy() -> float:
-	if menu_hold or zone == Zone.INDOORS:
-		return 0.0
 	return outdoor_moon_energy()
 
 
 func outdoor_moon_energy() -> float:
-	if menu_hold:
+	if menu_hold or zone == Zone.INDOORS:
 		return 0.0
 	match phase:
 		Phase.NIGHT:
-			return 0.14
+			return 0.23 * lerpf(1.0, 0.58, rain_opacity())
 		Phase.DUSK:
-			return 0.07
+			return 0.11 * lerpf(1.0, 0.58, rain_opacity())
 		Phase.DAWN:
-			return 0.03
+			return 0.05 * lerpf(1.0, 0.58, rain_opacity())
 		_:
 			return 0.0
 

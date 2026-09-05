@@ -16,11 +16,6 @@ const INDOOR_OUTDOOR_RADIUS := 72.0
 @export var lit: bool = false
 ## 0 = use the follow default cap. Hosts may tighten further.
 @export var radius_cap: float = 0.0
-@export var base_energy: float = 0.55
-@export var base_radius: float = 64.0
-@export var casts_shadow := true
-var _bound_follow: StringName = &"__unbound"
-var _atmosphere: WorldAtmosphere
 
 var _flame_frame: int = 0
 static var _radial_tight: Texture2D
@@ -28,10 +23,9 @@ static var _radial_soft: Texture2D
 
 
 func _ready() -> void:
-	shadow_enabled = casts_shadow
+	shadow_enabled = true
 	shadow_filter = Light2D.SHADOW_FILTER_NONE
 	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	_atmosphere = WorldAtmosphere.for_node(self)
 	_bind_presentation()
 	apply(true)
 
@@ -60,28 +54,22 @@ func apply(snap: bool = false) -> void:
 
 
 func _bind_presentation() -> void:
-	if _bound_follow == follow:
-		return
-	_bound_follow = follow
-	# Keep the blend operation stable while crossing a zone boundary.
-	blend_mode = Light2D.BLEND_MODE_ADD
-	if follow == &"indoor":
-		height = 0.32
-		texture = _soft_texture()
-	elif follow == &"heart":
-		height = 0.22
-		texture = _tight_texture()
-	else:
-		height = 0.40
-		texture = _tight_texture()
-
-
-func _indoor_weight() -> float:
-	if not is_instance_valid(_atmosphere):
-		_atmosphere = WorldAtmosphere.for_node(self)
-	if _atmosphere != null:
-		return _atmosphere.indoor_weight
-	return 1.0 if WorldClock.zone == WorldClock.Zone.INDOORS else 0.0
+	match follow:
+		&"indoor":
+			# Keep one blend operation throughout the doorway transition; only
+			# energy and radius change as the atmosphere settles.
+			blend_mode = Light2D.BLEND_MODE_MIX
+			height = 0.32
+			texture = _soft_texture()
+		&"heart":
+			blend_mode = Light2D.BLEND_MODE_ADD
+			height = 0.22
+			texture = _tight_texture()
+		_:
+			blend_mode = Light2D.BLEND_MODE_ADD
+			# height 0 wraps every occluder; 0.40 keeps a readable nest shadow.
+			height = 0.40
+			texture = _tight_texture()
 
 
 func _target_energy() -> float:
@@ -91,11 +79,9 @@ func _target_energy() -> float:
 		&"nest":
 			return WorldClock.nest_light_energy()
 		&"indoor":
-			return WorldClock.indoor_fill_energy()
+			return 0.85 if WorldClock.zone == WorldClock.Zone.INDOORS else 0.30
 		&"heart":
 			return WorldClock.heart_light_energy()
-		&"torch":
-			return base_energy
 		_:
 			return energy
 
@@ -104,15 +90,13 @@ func _present_energy() -> float:
 	if not lit:
 		return 0.0
 	var e := _target_energy()
-	if follow == &"indoor":
-		return e * lerpf(0.40, 0.82, _indoor_weight())
-	if follow == &"nest":
-		# Ambient now keeps enemies readable; the brightest source stays bounded.
-		return minf(e * 0.82, 1.65)
-	if follow == &"torch":
-		var outdoor := 0.58 if WorldClock.phase == WorldClock.Phase.DAY else 0.82
-		return e * lerpf(outdoor, 1.0, _indoor_weight())
-	return e
+	if follow != &"nest":
+		return e
+	# ADD sits on CanvasModulate. Day luminance ~0.83 turns raw 1.35 into a white clip;
+	# night already carves. Keep a readable day pool (>= 1.0) without the blowout.
+	var lum := WorldClock.mood_luminance()
+	var dayish := clampf((lum - 0.38) / 0.46, 0.0, 1.0)
+	return e * lerpf(1.0, 0.82, dayish)
 
 
 func _target_radius() -> float:
@@ -123,8 +107,6 @@ func _target_radius() -> float:
 			return WorldClock.indoor_fill_radius()
 		&"heart":
 			return WorldClock.heart_light_radius()
-		&"torch":
-			return base_radius
 		_:
 			return TEX_SIZE * texture_scale * 0.5
 
@@ -140,8 +122,8 @@ func _present_radius() -> float:
 				cap = HEART_RADIUS_MAX
 	if cap > 0.0:
 		r = minf(r, cap)
-	if follow == &"indoor":
-		r = lerpf(minf(r, INDOOR_OUTDOOR_RADIUS), r, _indoor_weight())
+	if follow == &"indoor" and WorldClock.zone != WorldClock.Zone.INDOORS:
+		r = minf(r, INDOOR_OUTDOOR_RADIUS)
 	return r
 
 
@@ -169,5 +151,5 @@ func _make_radial(power: float) -> Texture2D:
 			var d := Vector2(x + 0.5, y + 0.5).distance_to(center) / radius
 			var a := clampf(1.0 - d, 0.0, 1.0)
 			a = pow(a, power)
-			img.set_pixel(x, y, Color(1.0, 1.0, 1.0, a))
+			img.set_pixel(x, y, Color(1.0, 0.78, 0.42, a))
 	return ImageTexture.create_from_image(img)

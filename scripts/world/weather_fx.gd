@@ -5,12 +5,12 @@ extends CanvasLayer
 ## Alpha follows WorldClock; indoor / title / menu hide particles.
 
 const DROP_COUNT := 52
-const FALL_SPEED := 120.0
-const GRAVITY := 260.0
+const FALL_SPEED := 240.0
+const GRAVITY := 520.0
 const EMBER_COUNT := 20
 const EMBER_PATH := "res://assets/ui/ember_motes.png"
 const EMBER_FRAMES := 8
-const EMBER_DRIFT := 39.0
+const EMBER_DRIFT := 78.0
 const PHASE_FALL := 0
 const PHASE_BOUNCE := 1
 const WET_CELL := 24.0
@@ -46,21 +46,18 @@ var _span_y: PackedFloat32Array = PackedFloat32Array()
 var _water_x0: PackedFloat32Array = PackedFloat32Array()
 var _water_x1: PackedFloat32Array = PackedFloat32Array()
 var _water_y: PackedFloat32Array = PackedFloat32Array()
-var _surfaces_dirty := false
+var _span_t := 0.0
 var _headless := false
 var _drops_hidden := false
 var _embers_hidden := false
 var _hit_y := 0.0
 var _wind_x := 0.0
 var _view_ok := false
+var _view_size := Vector2(640.0, 360.0)
+var _surfaces_dirty := false
 var _cam_origin := Vector2.ZERO
 var _cam_zoom := Vector2.ONE
-var _vp_half := Vector2(320.0, 180.0)
-var _view_size := Vector2(640.0, 360.0)
-var _screen_inverse := Transform2D.IDENTITY
-var _drop_positions: Array[Vector2] = []
-var _ember_positions: Array[Vector2] = []
-var _atmosphere: WorldAtmosphere
+var _vp_half := Vector2(640.0, 360.0)
 var _pool_splash: Array[SplashSpeck] = []
 var _pool_water: Array[WaterSpeck] = []
 var _pool_ripple: Array[WaterRipple] = []
@@ -68,25 +65,16 @@ var _pool_wet: Array[Sprite2D] = []
 var _wet_dead: Array[int] = []
 
 
-func _exit_tree() -> void:
-	# Pooled particles are detached, so freeing the level cannot own them.
-	for pool in [_pool_splash, _pool_water, _pool_ripple, _pool_wet]:
-		for particle in pool:
-			if is_instance_valid(particle) and not particle.is_inside_tree():
-				particle.free()
-		pool.clear()
-
-
 func _ready() -> void:
 	layer = 4
 	follow_viewport_enabled = false
 	_headless = DisplayServer.get_name() == "headless"
-	_atmosphere = WorldAtmosphere.for_node(self)
 	_ensure_ground_fx()
 	_rebuild_spans()
-	get_tree().node_added.connect(_on_terrain_changed)
-	get_tree().node_removed.connect(_on_terrain_changed)
-	_cache_view()
+	var host := get_parent()
+	if host != null:
+		host.child_entered_tree.connect(_on_host_child_changed)
+		host.child_exiting_tree.connect(_on_host_child_changed)
 	if _headless:
 		set_process(false)
 		return
@@ -100,12 +88,11 @@ func _ready() -> void:
 		spr.texture = _tex
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		spr.centered = true
-		spr.position = Vector2(randf() * _view_size.x, randf() * _view_size.y)
+		spr.position = Vector2(randf() * 1280.0, randf() * 720.0)
 		spr.modulate = Color(0.78, 0.84, 0.92, 0.0)
 		spr.visible = false
 		add_child(spr)
 		_drops.append(spr)
-		_drop_positions.append(spr.position)
 		_drop_vy[i] = FALL_SPEED
 		_drop_phase[i] = PHASE_FALL
 	_ember_tex = _load_ember_tex()
@@ -117,13 +104,12 @@ func _ready() -> void:
 			spr.frame = randi() % EMBER_FRAMES
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		spr.centered = true
-		spr.position = Vector2(randf() * _view_size.x, randf_range(_view_size.y * 0.55, _view_size.y * 0.95))
+		spr.position = Vector2(randf() * 1280.0, 400.0 + randf() * 280.0)
 		spr.modulate = Color(1.0, 0.62, 0.38, 0.0)
-		spr.scale = Vector2.ONE
+		spr.scale = Vector2(0.85, 0.85)
 		spr.visible = false
 		add_child(spr)
 		_embers.append(spr)
-		_ember_positions.append(spr.position)
 	_drops_hidden = true
 	_embers_hidden = true
 	_prewarm_pools()
@@ -168,7 +154,9 @@ func _process(delta: float) -> void:
 	_alpha = move_toward(_alpha, target, delta / 4.5)
 	var rust := WorldClock.rust_rain_mix() if WorldClock.weather_fx_allowed() else 0.0
 	var rain_col := Color(0.78, 0.84, 0.92).lerp(Color(0.80, 0.48, 0.34), clampf(rust, 0.0, 1.0))
-	if _surfaces_dirty:
+	_span_t += delta
+	if _span_t >= 0.45:
+		_span_t = 0.0
 		_rebuild_spans()
 	if _alpha <= 0.001 and target <= 0.0:
 		if not _drops_hidden:
@@ -181,7 +169,7 @@ func _process(delta: float) -> void:
 			for spr in _drops:
 				spr.visible = true
 			_drops_hidden = false
-		var vis := _alpha * 0.58 * _outdoor_visibility()
+		var vis := _alpha * 0.58
 		for i in _drops.size():
 			_tick_drop(i, delta, rain_col, vis)
 	_tick_embers(delta)
@@ -191,7 +179,7 @@ func _process(delta: float) -> void:
 
 func _tick_drop(i: int, delta: float, rain_col: Color, vis: float) -> void:
 	var spr := _drops[i]
-	var p := _drop_positions[i]
+	var p := spr.position
 	if _drop_phase[i] == PHASE_BOUNCE:
 		_drop_vy[i] += GRAVITY * delta
 	p.y += _drop_vy[i] * delta
@@ -205,7 +193,7 @@ func _tick_drop(i: int, delta: float, rain_col: Color, vis: float) -> void:
 				_on_water_hit(Vector2(world.x, hy))
 				if randf() < WATER_BOUNCE_SHARE:
 					_drop_phase[i] = PHASE_BOUNCE
-					_drop_vy[i] = -randf_range(14.0, 26.0)
+					_drop_vy[i] = -randf_range(28.0, 52.0)
 					p.y -= 1.0
 				else:
 					_recycle_drop(i, spr)
@@ -214,7 +202,7 @@ func _tick_drop(i: int, delta: float, rain_col: Color, vis: float) -> void:
 				_on_ground_hit(Vector2(world.x, hy))
 				if randf() < BOUNCE_SHARE:
 					_drop_phase[i] = PHASE_BOUNCE
-					_drop_vy[i] = -randf_range(44.0, 70.0)
+					_drop_vy[i] = -randf_range(88.0, 140.0)
 					p.y -= 2.0
 				else:
 					_recycle_drop(i, spr)
@@ -222,14 +210,11 @@ func _tick_drop(i: int, delta: float, rain_col: Color, vis: float) -> void:
 		else:
 			_recycle_drop(i, spr)
 			return
-	elif p.y > _view_size.y + 4.0:
+	elif p.y > 728.0:
 		_recycle_drop(i, spr)
 		return
-	elif p.x < -4.0:
-		p.x = _view_size.x + 4.0
-	elif p.x > _view_size.x + 4.0:
-		p.x = -4.0
-	_drop_positions[i] = p
+	elif p.x < -8.0:
+		p.x = 1288.0
 	spr.position.x = roundf(p.x)
 	spr.position.y = roundf(p.y)
 	var a := vis
@@ -244,8 +229,7 @@ func _tick_drop(i: int, delta: float, rain_col: Color, vis: float) -> void:
 func _recycle_drop(i: int, spr: Sprite2D) -> void:
 	_drop_phase[i] = PHASE_FALL
 	_drop_vy[i] = FALL_SPEED
-	spr.position = Vector2(randf() * _view_size.x, -4.0)
-	_drop_positions[i] = spr.position
+	spr.position = Vector2(randf() * 1280.0, -8.0)
 
 
 func _on_ground_hit(world: Vector2) -> void:
@@ -390,22 +374,18 @@ func _tick_embers(delta: float) -> void:
 		for spr in _embers:
 			spr.visible = true
 		_embers_hidden = false
-	var vis := _ember_alpha * 0.28 * _outdoor_visibility()
-	for i in _embers.size():
-		var spr := _embers[i]
-		var p := _ember_positions[i]
+	var vis := _ember_alpha * 0.28
+	for spr in _embers:
+		var p := spr.position
 		p.x += _wind_x * (EMBER_DRIFT / 36.0) * delta
 		p.y += sin(p.x * 0.04 + p.y * 0.01) * 10.0 * delta
-		if p.x < -5.0:
-			p.x = _view_size.x + 5.0
-			p.y = randf_range(_view_size.y * 0.55, _view_size.y * 0.95)
-		elif p.y < _view_size.y * 0.52:
-			p.y = _view_size.y * 0.95
-		elif p.y > _view_size.y + 5.0:
-			p.y = randf_range(_view_size.y * 0.55, _view_size.y * 0.67)
-		if p.x > _view_size.x + 5.0:
-			p.x = -5.0
-		_ember_positions[i] = p
+		if p.x < -10.0:
+			p.x = 1290.0
+			p.y = 400.0 + randf() * 280.0
+		elif p.y < 380.0:
+			p.y = 680.0
+		elif p.y > 730.0:
+			p.y = 400.0 + randf() * 80.0
 		spr.position.x = roundf(p.x)
 		spr.position.y = roundf(p.y)
 		if spr.hframes > 1 and randf() < delta * 6.0:
@@ -416,14 +396,8 @@ func _tick_embers(delta: float) -> void:
 func rain_wind_x() -> float:
 	var v := WorldClock.wind_vector().x
 	if absf(v) < 0.02:
-		return -18.0
-	return v * 75.0
-
-
-func _outdoor_visibility() -> float:
-	if is_instance_valid(_atmosphere):
-		return 1.0 - _atmosphere.indoor_weight
-	return 1.0
+		return -36.0
+	return v * 150.0
 
 
 func _ensure_ground_fx() -> Node2D:
@@ -460,35 +434,34 @@ func _ensure_ground_fx() -> Node2D:
 func _cache_view() -> void:
 	_wind_x = rain_wind_x()
 	var vp := get_viewport()
-	_view_size = vp.get_visible_rect().size
-	_screen_inverse = vp.get_canvas_transform().affine_inverse()
 	var cam := vp.get_camera_2d() if vp != null else null
 	if cam == null:
 		_view_ok = false
+		_view_size = vp.get_visible_rect().size if vp != null else Vector2(640.0, 360.0)
 		return
 	_view_ok = true
 	_cam_origin = cam.get_screen_center_position()
 	_cam_zoom = cam.zoom
 	if _cam_zoom.x == 0.0:
 		_cam_zoom = Vector2.ONE
-	_vp_half = vp.get_visible_rect().size * 0.5
+	_view_size = vp.get_visible_rect().size
+	_vp_half = _view_size * 0.5
 
 
 func _screen_to_world(screen: Vector2) -> Vector2:
-	return get_viewport().get_canvas_transform().affine_inverse() * screen if not _view_ok else _screen_inverse * screen
-
-
-func invalidate_surfaces() -> void:
-	_surfaces_dirty = true
-
-
-func _on_terrain_changed(node: Node) -> void:
-	if node is SolidPlatform or node is GearPlatform or node is ToxinPool:
-		invalidate_surfaces()
+	if not _view_ok:
+		var vp := get_viewport()
+		var cam := vp.get_camera_2d() if vp != null else null
+		if cam == null:
+			return vp.get_canvas_transform().affine_inverse() * screen if vp != null else screen
+		var zoom := cam.zoom
+		if zoom.x == 0.0:
+			zoom = Vector2.ONE
+		return cam.get_screen_center_position() + (screen - vp.get_visible_rect().size * 0.5) / zoom
+	return _cam_origin + (screen - _vp_half) / _cam_zoom
 
 
 func _rebuild_spans() -> void:
-	_surfaces_dirty = false
 	_span_x0.clear()
 	_span_x1.clear()
 	_span_y.clear()
@@ -509,6 +482,11 @@ func _rebuild_spans() -> void:
 		_water_x0.append(DEFAULT_TOXIN.position.x)
 		_water_x1.append(DEFAULT_TOXIN.end.x)
 		_water_y.append(DEFAULT_TOXIN.position.y)
+	_surfaces_dirty = false
+
+
+func _on_host_child_changed(_node: Node) -> void:
+	_surfaces_dirty = true
 
 
 func _collect_ground(n: Node) -> void:
@@ -523,11 +501,6 @@ func _collect_ground(n: Node) -> void:
 		_span_x0.append(p.global_position.x)
 		_span_x1.append(p.global_position.x + p.size.x)
 		_span_y.append(p.global_position.y)
-	elif n is GearPlatform:
-		var p := n as GearPlatform
-		_span_x0.append(p.global_position.x - p.radius * 0.38)
-		_span_x1.append(p.global_position.x + p.radius * 0.38)
-		_span_y.append(p.global_position.y - p.radius * 0.92)
 	_try_append_water(n)
 	for child in n.get_children():
 		_collect_ground(child)
@@ -733,10 +706,14 @@ func _make_ember_tex() -> Texture2D:
 
 
 func _make_drop_tex() -> Texture2D:
-	var img := Image.create(1, 3, false, Image.FORMAT_RGBA8)
+	var img := Image.create(2, 6, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
 	img.set_pixel(0, 0, Color(0.70, 0.78, 0.88, 0.25))
-	img.set_pixel(0, 1, Color(0.88, 0.92, 0.97, 0.70))
-	img.set_pixel(0, 2, Color(0.78, 0.84, 0.92, 0.28))
+	img.set_pixel(1, 1, Color(0.82, 0.88, 0.94, 0.55))
+	img.set_pixel(0, 2, Color(0.88, 0.92, 0.97, 0.70))
+	img.set_pixel(1, 3, Color(0.85, 0.90, 0.96, 0.50))
+	img.set_pixel(0, 4, Color(0.78, 0.84, 0.92, 0.28))
+	img.set_pixel(1, 5, Color(0.72, 0.80, 0.90, 0.12))
 	return ImageTexture.create_from_image(img)
 
 
