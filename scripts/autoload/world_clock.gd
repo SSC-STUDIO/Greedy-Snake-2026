@@ -29,12 +29,12 @@ const BLEND_MAX := 8.0
 
 ## Outdoor night is a cold corridor so WorldLight pools can carve.
 ## Floor stays above a black frame; HUD isolate keeps UI readable.
-const NIGHT_TINT := Color(0.36, 0.34, 0.48)
+const NIGHT_TINT := Color(0.52, 0.50, 0.62)
 const DAY_TINT := Color(0.82, 0.80, 0.88)
 const DAWN_TINT := Color(0.78, 0.74, 0.86)
 const DUSK_TINT := Color(0.70, 0.60, 0.68)
 ## Indoor: warmer than outdoor night. Readability comes from the warm pool.
-const INDOOR_TINT := Color(0.66, 0.52, 0.42)
+const INDOOR_TINT := Color(0.70, 0.62, 0.54)
 const RUST_RAIN_INTERVAL := 1.6
 const RUST_RAIN_EXPOSE := 8.0
 const BREEZE_BASE := 0.28
@@ -64,6 +64,8 @@ var _heading_target: float = -1.0
 var _heading_hold: float = 48.0
 var _gust_t: float = 0.0
 var _rng := RandomNumberGenerator.new()
+## Per-visit sky plate. Rolled on boot and again each time a level bakes the sky.
+var _sky_seed: int = 1
 
 
 func _ready() -> void:
@@ -72,6 +74,18 @@ func _ready() -> void:
 	phase = phase_at(time_of_day)
 	_weather_hold = _rng.randf_range(WEATHER_HOLD_MIN, WEATHER_HOLD_MAX)
 	_blend_duration = _rng.randf_range(BLEND_MIN, BLEND_MAX)
+	roll_sky_seed()
+
+
+func sky_seed() -> int:
+	return _sky_seed
+
+
+func roll_sky_seed() -> int:
+	_sky_seed = _rng.randi()
+	if _sky_seed == 0:
+		_sky_seed = 1
+	return _sky_seed
 
 
 func _process(delta: float) -> void:
@@ -326,13 +340,21 @@ func hud_line() -> String:
 func mood_tint() -> Color:
 	if zone == Zone.INDOORS:
 		return _indoor_tint()
+	return outdoor_tint()
+
+
+func outdoor_tint() -> Color:
 	var a := _phase_tint(phase)
-	var b := _weather_mul(_blend_weather())
+	var b := _weather_mul(previous_weather).lerp(_weather_mul(weather), weather_blend)
 	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
 
 
+func indoor_tint() -> Color:
+	return _indoor_tint()
+
+
 func _indoor_tint() -> Color:
-	var b := _weather_mul(_blend_weather())
+	var b := _weather_mul(previous_weather).lerp(_weather_mul(weather), weather_blend)
 	var c := Color(INDOOR_TINT.r * b.r, INDOOR_TINT.g * b.g, INDOOR_TINT.b * b.b, 1.0)
 	c.r = maxf(c.r, 0.52)
 	c.g = maxf(c.g, 0.42)
@@ -381,32 +403,46 @@ func sky_modulate() -> Color:
 			return Color(1, 1, 1)
 
 
+func nest_rain_mul() -> float:
+	## Outdoor rain soaks shrine fire. Indoor / menu already report rain 0.
+	var rain := rain_opacity()
+	if rain <= 0.0:
+		return 1.0
+	return lerpf(1.0, 0.26, rain)
+
+
 func nest_light_energy() -> float:
+	var e := 1.35
 	match phase:
 		Phase.NIGHT:
-			return 2.60
+			e = 2.60
 		Phase.DUSK:
-			return 1.90
+			e = 1.90
 		Phase.DAWN:
-			return 1.55
-		_:
-			return 1.35
+			e = 1.55
+	return e * nest_rain_mul()
 
 
 func nest_light_radius() -> float:
+	var r := 140.0
 	match phase:
 		Phase.NIGHT:
-			return 210.0
+			r = 210.0
 		Phase.DUSK:
-			return 170.0
+			r = 170.0
 		Phase.DAWN:
-			return 155.0
-		_:
-			return 140.0
+			r = 155.0
+	return r * lerpf(1.0, 0.40, rain_opacity())
 
 
 func moon_fill_energy() -> float:
 	if menu_hold or zone == Zone.INDOORS:
+		return 0.0
+	return outdoor_moon_energy()
+
+
+func outdoor_moon_energy() -> float:
+	if menu_hold:
 		return 0.0
 	match phase:
 		Phase.NIGHT:

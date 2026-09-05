@@ -144,6 +144,10 @@ func test_night_tint_stays_playable() -> void:
 	ok(WorldClock.nest_light_energy() >= 1.0, "day nest glow is a visible pool")
 	WorldClock.set_time(0.80)
 	ok(WorldClock.nest_light_energy() >= 2.0, "night nest glow is the bright setting")
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	ok(WorldClock.nest_light_energy() < 1.0, "outdoor rain soaks the shrine fire")
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	ok(WorldClock.nest_light_energy() >= 2.0, "rain stop restores night nest glow")
 
 
 func test_parallax_follows_clock_tint() -> void:
@@ -367,6 +371,17 @@ func test_frozen_clock_holds_gust() -> void:
 	almost(WorldClock.gust, g0, 0.0001, "paused gust does not walk")
 	almost(WorldClock.wind_heading, h0, 0.0001)
 	get_tree().paused = false
+
+
+func test_sky_seed_rolls_per_visit() -> void:
+	var a := WorldClock.roll_sky_seed()
+	ok(a != 0, "sky seed is usable")
+	eq(WorldClock.sky_seed(), a, "sky_seed() matches the last roll")
+	var b := WorldClock.roll_sky_seed()
+	if b == a:
+		b = WorldClock.roll_sky_seed()
+	ok(b != 0)
+	eq(WorldClock.sky_seed(), b)
 
 
 func test_save_roundtrip_zone_and_heading() -> void:

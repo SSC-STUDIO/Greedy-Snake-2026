@@ -23,11 +23,11 @@ func test_outdoor_night_luminance_is_a_corridor() -> void:
 	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
 	WorldClock.set_time(0.80)
 	var lum := WorldClock.mood_luminance()
-	ok(lum >= 0.30 and lum <= 0.40, "haze night sits in the carve band")
+	ok(lum >= 0.48 and lum <= 0.60, "night ambient preserves actor and landing contrast")
 	WorldClock.set_weather(WorldClock.Weather.FOG, true)
-	ok(WorldClock.mood_luminance() >= 0.28, "fog night is darker but not black")
+	ok(WorldClock.mood_luminance() >= 0.45, "fog night retains a playable visibility floor")
 	var c := WorldClock.mood_tint()
-	ok(c.r >= 0.28 and c.g >= 0.28 and c.b >= 0.28)
+	ok(c.r >= 0.42 and c.g >= 0.42 and c.b >= 0.42)
 
 
 func test_moon_fill_is_weaker_than_nest() -> void:
@@ -94,7 +94,7 @@ func test_forge_shelter_has_warm_pool() -> void:
 	ok(pool.lit)
 	await flush(1)
 	ok(pool.enabled)
-	almost(pool.energy, WorldClock.indoor_fill_energy(), 0.02)
+	ok(pool.energy > 0.0 and pool.energy < WorldClock.indoor_fill_energy(), "outdoor doorway spill stays secondary")
 
 
 func test_heart_light_follows_lock() -> void:

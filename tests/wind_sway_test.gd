@@ -1,5 +1,5 @@
 extends TestCase
-## WindSway follows WorldClock heading; stones do not get a pivot.
+## WindSway follows WorldClock heading; hardness decides who leans.
 
 
 func setup() -> void:
@@ -36,20 +36,164 @@ func test_sway_flips_with_heading() -> void:
 	almost(WorldClock.sway_radians(), 0.0, 0.01, "indoor trees do not lean")
 
 
+func test_hardness_rules() -> void:
+	eq(Level01Env.hardness_of(Level01Env.DECOR_TREE_1), Level01Env.Hardness.TREE)
+	eq(Level01Env.hardness_of(Level01Env.DECOR_BUSH_L), Level01Env.Hardness.BUSH)
+	eq(Level01Env.hardness_of(Level01Env.DECOR_STONE_1), Level01Env.Hardness.STONE)
+	eq(Level01Env.hardness_of(Level01Env.DECOR_STATUE), Level01Env.Hardness.STONE)
+	eq(Level01Env.hardness_of("res://props/rusty_gate.png"), Level01Env.Hardness.STEEL)
+	eq(Level01Env.hardness_of("res://props/arena_door.png"), Level01Env.Hardness.STEEL)
+	eq(Level01Env.hardness_of("res://world/gear_platform.png"), Level01Env.Hardness.STEEL)
+	almost(Level01Env.sway_amplitude(Level01Env.DECOR_STONE_1), 0.0, 0.001)
+	almost(Level01Env.sway_amplitude(Level01Env.DECOR_STATUE), 0.0, 0.001)
+	almost(Level01Env.sway_amplitude("res://props/iron_fence.png"), 0.0, 0.001)
+	ok(Level01Env.sway_amplitude(Level01Env.DECOR_TREE_1) > 0.0, "trees lean")
+	ok(Level01Env.sway_amplitude(Level01Env.DECOR_BUSH_L) \
+			> Level01Env.sway_amplitude(Level01Env.DECOR_TREE_1),
+			"bushes lean more than trees")
+
+
 func test_plant_sways_trees_not_stones() -> void:
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	WorldClock._snap_wind_speed()
 	var layer := Node2D.new()
 	add_child(layer)
 	var tree := Level01Env.plant(layer, Level01Env.DECOR_TREE_1, Vector2(0, 80), 0.5)
+	var bush := Level01Env.plant(layer, Level01Env.DECOR_BUSH_L, Vector2(40, 80), 0.65)
 	var stone := Level01Env.plant(layer, Level01Env.DECOR_STONE_1, Vector2(80, 80), 1.0)
+	var statue := Level01Env.plant(layer, Level01Env.DECOR_STATUE, Vector2(120, 80), 0.82)
 	if tree == null or stone == null:
 		ok(true, "gothic assets missing in this checkout — skip plant assert")
 		return
 	ok(tree.get_parent() != layer, "foliage sits on a foot pivot")
-	var found := false
-	for child in tree.get_parent().get_children():
-		if child is WindSway:
-			found = true
-	ok(found, "tree pivot has WindSway")
+	var tree_sway := Level01Env.find_sway(tree.get_parent())
+	ok(tree_sway != null, "tree pivot has WindSway")
+	ok(bush != null, "bush planted")
+	var bush_sway := Level01Env.find_sway(bush.get_parent()) if bush != null else null
+	ok(bush_sway != null, "bush pivot has WindSway")
+	if tree_sway != null and bush_sway != null:
+		ok(bush_sway.amplitude > tree_sway.amplitude, "bush amplitude > tree")
+		tree_sway.phase = 0.0
+		bush_sway.phase = 0.0
+		tree_sway._apply()
+		bush_sway._apply()
+		ok(absf(bush.get_parent().rotation) > absf(tree.get_parent().rotation),
+				"bush leans farther than the tree")
 	ok(stone.get_parent() == layer, "stone stays a raw sprite")
-	for child in stone.get_children():
-		ok(not (child is WindSway), "stone has no sway child")
+	ok(Level01Env.find_sway(stone) == null, "stone has no sway child")
+	almost(stone.rotation, 0.0, 0.0001, "stone rotation stays 0")
+	if statue != null:
+		ok(statue.get_parent() == layer, "statue stays a raw sprite")
+		ok(Level01Env.find_sway(statue) == null, "statue has no WindSway")
+		almost(statue.rotation, 0.0, 0.0001, "statue rotation stays 0")
+
+
+func test_hard_plant_lands_on_opaque_bottom() -> void:
+	var layer := Node2D.new()
+	add_child(layer)
+	var feet := Vector2(16, 80)
+	var img := Image.create(12, 20, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for y in 12:
+		for x in 12:
+			img.set_pixel(x, y, Color(0.5, 0.45, 0.4, 1))
+	var pad := ImageTexture.create_from_image(img)
+	var spr := Level01Env.plant_texture(layer, pad, "stone-pad.png", feet, 2.0)
+	ok(spr != null, "padded stone planted")
+	almost(spr.position.y, feet.y - 24.0, 0.01, "sprite top uses opaque height, not pad")
+	almost(Level01Env.sprite_opaque_bottom_y(spr), feet.y, 0.01,
+			"opaque pixel bottom sits on feet.y")
+	var stone := Level01Env.plant(layer, Level01Env.DECOR_STONE_1, Vector2(40, 80), 1.0)
+	var statue := Level01Env.plant(layer, Level01Env.DECOR_STATUE, Vector2(80, 80), 0.82)
+	if stone == null or statue == null:
+		ok(true, "gothic assets missing — skip real-asset land assert")
+		return
+	almost(Level01Env.sprite_opaque_bottom_y(stone), 80.0, 0.01, "stone opaque bottom on feet")
+	almost(Level01Env.sprite_opaque_bottom_y(statue), 80.0, 0.01, "statue opaque bottom on feet")
+
+
+func test_play_decor_feet_sit_on_ground() -> void:
+	eq(Level01Static.GROUND_TOP, 320.0)
+	ok(Level01Static.PLAY_DECOR.size() >= 8, "grave props are listed")
+	for item in Level01Static.PLAY_DECOR:
+		var path := String(item[0])
+		var feet: Vector2 = item[1]
+		almost(feet.y, Level01Static.GROUND_TOP, 0.01,
+				"%s feet.y is the ground top" % path.get_file())
+		ok(_on_standable_ground(feet), "%s x=%.0f sits on a standable span" % [path.get_file(), feet.x])
+
+
+func test_play_decor_hard_props_do_not_sway() -> void:
+	var layer := Node2D.new()
+	add_child(layer)
+	var hard_n := 0
+	for item in Level01Static.PLAY_DECOR:
+		var path := String(item[0])
+		if Level01Env.is_foliage(path):
+			continue
+		hard_n += 1
+		almost(float(item[2]), 1.0, 0.001, "%s scale is 1" % path.get_file())
+		almost(Level01Env.sway_amplitude(path), 0.0, 0.001,
+				"%s sway amplitude is 0" % path.get_file())
+		var spr := Level01Env.plant(layer, path, item[1] as Vector2, float(item[2]))
+		if spr == null:
+			continue
+		ok(spr.get_parent() == layer, "%s stays a raw sprite" % path.get_file())
+		ok(Level01Env.find_sway(spr) == null, "%s has no WindSway" % path.get_file())
+		almost(spr.scale.x, 1.0, 0.001, "%s planted scale.x is 1" % path.get_file())
+		almost(spr.rotation, 0.0, 0.0001, "%s rotation stays 0" % path.get_file())
+	ok(hard_n >= 4, "play layer still nails stones / the statue")
+
+
+func test_silhouette_is_background_foliage() -> void:
+	ok(Level01Parallax.SIL_PATTERN.size() >= 3, "near strip still has silhouettes")
+	for item in Level01Parallax.SIL_PATTERN:
+		var path := String(item[0])
+		var feet_y := float(item[2])
+		ok(Level01Env.is_foliage(path), "%s is foliage, not a climbable stone" % path.get_file())
+		ok(Level01Env.hardness_of(path) != Level01Env.Hardness.STONE)
+		ok(feet_y >= Level01Parallax.SIL_FEET_MIN and feet_y <= Level01Parallax.SIL_FEET_MAX,
+				"%s feet_y=%.1f sits on the hill/ground band" % [path.get_file(), feet_y])
+
+
+func test_near_silhouette_plants_only_foliage() -> void:
+	var host := Node2D.new()
+	add_child(host)
+	var backdrop := ParallaxBackground.new()
+	backdrop.name = "ParallaxBackdrop"
+	host.add_child(backdrop)
+	var far := ParallaxLayer.new()
+	far.name = "Far"
+	backdrop.add_child(far)
+	var extras := Level01Parallax.new()
+	add_child(extras)
+	extras.build(host)
+	var sil := backdrop.get_node_or_null("NearSilhouette") as ParallaxLayer
+	if sil == null:
+		ok(true, "gothic assets missing — silhouette layer skipped")
+		return
+	var hard := 0
+	for child in sil.get_children():
+		var spr := child as Sprite2D
+		if spr == null and child.get_child_count() > 0:
+			spr = child.get_child(0) as Sprite2D
+		if spr == null or spr.texture == null:
+			continue
+		var path := String(spr.texture.resource_path)
+		if path != "" and not Level01Env.is_foliage(path):
+			hard += 1
+		ok(Level01Env.find_sway(child) == null or Level01Env.is_foliage(path),
+				"hard silhouette props do not sway")
+	eq(hard, 0, "NearSilhouette planted no stone/statue")
+
+
+func _on_standable_ground(feet: Vector2) -> bool:
+	# GroundLeft 0–400, GroundRight 512–1600, east floor 1600–2240. Pit 400–512 is void.
+	if not is_equal_approx(feet.y, Level01Static.GROUND_TOP):
+		return false
+	if feet.x >= 0.0 and feet.x <= 400.0:
+		return true
+	if feet.x >= 512.0 and feet.x <= 2240.0:
+		return true
+	return false
