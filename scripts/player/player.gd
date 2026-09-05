@@ -54,6 +54,8 @@ func _ready() -> void:
 	add_to_group("player")
 	collision_layer = 2
 	collision_mask = 1
+	# Default true freezes the body at wall-floor corners (sticky walls).
+	floor_block_on_wall = false
 	health.changed.connect(_on_health_changed)
 	health.died.connect(_on_died)
 	toxin.overflow_tick.connect(_on_toxin_overflow)
@@ -78,17 +80,23 @@ func _physics_process(delta: float) -> void:
 	health.invincible = controller.is_invincible()
 	var move_scale := 0.42 if melee.is_busy() else 1.0
 	controller.physics_tick(self, delta, move_scale)
+	if not is_on_floor() and melee.is_busy() and melee.phase_name() == "active" and velocity.y > 40.0:
+		velocity.y = move_toward(velocity.y, 40.0, 320.0 * delta)
 	if hookshot.is_active():
 		# 钩索接管速度（在 controller 之后、move_and_slide 之前）。
 		hookshot.apply_tether_velocity(self)
 	var fall_speed := velocity.y
 	move_and_slide()
+	controller.settle_after_slide(self)
 	var face := float(controller.facing)
 	visual.scale.x = face
 	melee.scale.x = face
 	# 落地扬尘：从明显下落转为触地时在脚边 puff 一团灰。
 	if is_on_floor() and not _was_on_floor and fall_speed > 60.0:
 		Fx.dust_puff(global_position + Vector2(0.0, -2.0))
+		Sfx.play(&"land", 0.06, -5.0)
+		if WorldClock.rain_opacity() >= 0.25:
+			Sfx.play(&"splash", 0.12, -12.0)
 	_was_on_floor = is_on_floor()
 	_update_visual(delta)
 	_poll_slash_arc(face)
@@ -172,10 +180,31 @@ func _setup_kenney_sprite() -> void:
 func _update_visual(delta: float) -> void:
 	if _hurt_timer > 0.0:
 		_hurt_timer = maxf(0.0, _hurt_timer - delta)
+	elif _sprite_root != null and (_hit_flash_tween == null or not _hit_flash_tween.is_valid()):
+		var pot := toxin.potency()
+		if pot >= 0.85:
+			_sprite_root.modulate = Color(1.28, 0.88, 0.62)
+			if randf() < 0.12:
+				Fx.dust_puff(global_position + Vector2(randf_range(-6.0, 6.0), -16.0))
+		elif pot >= 0.5:
+			_sprite_root.modulate = Color(1.12, 0.96, 0.85)
+		else:
+			_sprite_root.modulate = Color.WHITE
+	_poll_stride_audio(delta)
 	if _anim != null:
 		_update_knight_anim()
 		return
 	_update_kenney_sprite(delta)
+
+
+## Same ground-move threshold as the run/bob visuals. No physics writes.
+func _poll_stride_audio(delta: float) -> void:
+	var moving := is_on_floor() \
+		and not controller.is_dashing() \
+		and not melee.is_busy() \
+		and health.current > 0 \
+		and absf(velocity.x) > 12.0
+	Sfx.tick_stride(moving, WorldClock.rain_opacity() >= 0.35, delta)
 
 
 ## 状态优先级：死亡 > 挥砍 > dash > 受击帧 > 空中(升/降) > 跑动 > 待机。
@@ -287,6 +316,7 @@ func _tick_cutscene_idle(delta: float) -> void:
 		velocity.y += float(ProjectSettings.get_setting("physics/2d/default_gravity")) * delta
 	velocity.x = move_toward(velocity.x, 0.0, 420.0 * delta)
 	move_and_slide()
+	controller.settle_after_slide(self)
 	visual.scale.x = float(controller.facing)
 	_update_visual(delta)
 
@@ -316,7 +346,7 @@ func _spawn_fire_trail() -> void:
 	box_rect.size = Vector2(42, 10)
 	box_shape.shape = box_rect
 	box.add_child(box_shape)
-	var host: Node = get_tree().current_scene
+	var host: Node = GameContext.world_effects(self)
 	if host == null:
 		host = get_parent()
 	host.add_child(box)
@@ -345,7 +375,10 @@ func _spawn_blast() -> void:
 	box_rect.size = Vector2(48, 20)
 	box_shape.shape = box_rect
 	box.add_child(box_shape)
-	get_parent().add_child(box)
+	var host: Node = GameContext.world_effects(self)
+	if host == null:
+		host = get_parent()
+	host.add_child(box)
 	box.global_position = origin
 	box.monitoring = true
 	for node in get_tree().get_nodes_in_group("pressure_plate"):
@@ -427,7 +460,7 @@ func _on_died() -> void:
 		Director.fade_to(get_tree().current_scene.scene_file_path)
 
 
-## 存档里的巢路径是绝对 NodePath；换场景根名或测试宿主时可能对不上，再试叶子名。
+## 存档里的巢路径可能是场景相对路径或旧的绝对 NodePath。
 func _resolve_lit_nest() -> Node2D:
 	var nest_path := SaveData.last_lit_nest()
 	if nest_path == "" or get_tree() == null:
@@ -435,13 +468,7 @@ func _resolve_lit_nest() -> Node2D:
 	var scene := get_tree().current_scene
 	if scene == null:
 		return null
-	var nest := scene.get_node_or_null(nest_path)
-	if nest == null:
-		nest = get_tree().root.get_node_or_null(nest_path)
-	if nest == null:
-		var leaf := nest_path.get_file()
-		if leaf != "":
-			nest = scene.find_child(leaf, true, false)
+	var nest := SaveData.resolve_saved_node(scene, nest_path)
 	if nest is Node2D and is_instance_valid(nest):
 		return nest as Node2D
 	return null
