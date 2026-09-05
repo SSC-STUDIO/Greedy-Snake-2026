@@ -352,10 +352,7 @@ func _spawn_fire_trail() -> void:
 	host.add_child(box)
 	box.global_position = origin
 	box.monitoring = true
-	get_tree().create_timer(1.2).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	get_tree().create_timer(1.2).timeout.connect(box.queue_free)
 
 
 func _spawn_blast() -> void:
@@ -384,10 +381,7 @@ func _spawn_blast() -> void:
 	for node in get_tree().get_nodes_in_group("pressure_plate"):
 		if node is PressurePlate and (node as Node2D).global_position.distance_to(origin) < 56.0:
 			(node as PressurePlate).slam()
-	get_tree().create_timer(0.18).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	get_tree().create_timer(0.18).timeout.connect(box.queue_free)
 
 
 func _poll_interact() -> void:

@@ -30,6 +30,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	_build()
+	PresentationMetrics.bind_layer(self)
 
 
 func _build() -> void:
@@ -44,15 +45,20 @@ func _build() -> void:
 			close())
 	add_child(_root)
 
-	_root.add_child(UiKit.scrim(0.80, 0.80, 0.80))
+	_root.add_child(UiKit.scrim(0.86, 0.86, 0.86))
 
 	var frame := UiKit.panel(&"OrnatePanel")
-	frame.set_anchors_preset(Control.PRESET_CENTER)
-	frame.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	frame.grow_vertical = Control.GROW_DIRECTION_BOTH
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	frame.offset_left = 140.0
+	frame.offset_right = -140.0
+	frame.offset_top = 40.0
+	frame.offset_bottom = -40.0
 	_root.add_child(frame)
 
 	var column := VBoxContainer.new()
+	column.alignment = BoxContainer.ALIGNMENT_CENTER
+	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	frame.add_child(column)
 
 	column.add_child(UiKit.label("操 作 说 明", &"HeadLabel", HORIZONTAL_ALIGNMENT_CENTER))
@@ -60,6 +66,7 @@ func _build() -> void:
 
 	var grid := GridContainer.new()
 	grid.columns = 2
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	column.add_child(grid)
 	for row in ROWS:
 		var key := UiKit.label(String(row[0]), &"KeyCapLabel", HORIZONTAL_ALIGNMENT_RIGHT)
@@ -75,6 +82,7 @@ func _build() -> void:
 
 func open() -> void:
 	visible = true
+	GameContext.suppress_gameplay_input()
 	Sfx.play(&"ui_select")
 
 
@@ -82,6 +90,7 @@ func close() -> void:
 	if not visible:
 		return
 	visible = false
+	GameContext.suppress_gameplay_input()
 	Sfx.play(&"ui_back")
 	closed.emit()
 

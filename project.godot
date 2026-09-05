@@ -42,8 +42,7 @@ window/size/viewport_height=720
 window/size/mode=2
 window/stretch/mode="viewport"
 window/stretch/aspect="keep"
-window/stretch/scale_mode="integer"
-window/dpi/allow_hidpi=true
+window/stretch/scale_mode="fractional"
 
 [gui]
 

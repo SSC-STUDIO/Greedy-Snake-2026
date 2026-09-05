@@ -167,6 +167,9 @@ func _on_chosen(id: StringName) -> void:
 func _start(continue_game: bool) -> void:
 	_started = true
 	_menu.active = false
+	# 标题进关不沿用上一局死亡排队：继续走存档坐标，新开清档。
+	SaveData.pending_spawn = Vector2.INF
+	SaveData.entering_from_checkpoint = false
 	if continue_game:
 		SaveData.load_game()
 	else:

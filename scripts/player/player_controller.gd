@@ -8,9 +8,9 @@ signal jumped(is_extra: bool)
 
 @export_group("Move")
 @export var max_speed: float = 108.0
-@export var acceleration: float = 360.0
+@export var acceleration: float = 400.0
 @export var deceleration: float = 420.0
-@export var air_acceleration: float = 220.0
+@export var air_acceleration: float = 270.0
 @export var air_deceleration: float = 130.0
 
 @export_group("Jump")
@@ -20,8 +20,14 @@ signal jumped(is_extra: bool)
 @export var extra_jump_scale: float = 0.92
 @export var fall_gravity_scale: float = 1.85
 @export var jump_cut_gravity_scale: float = 2.15
-@export var coyote_time: float = 0.08
-@export var jump_buffer_time: float = 0.12
+@export var jump_cut_delay: float = 0.07
+@export var apex_window: float = 16.0
+@export var apex_gravity_scale: float = 0.62
+@export var max_fall_speed: float = 420.0
+@export var coyote_time: float = 0.12
+@export var jump_buffer_time: float = 0.14
+@export var land_probe: float = 12.0
+@export var land_grip_time: float = 0.08
 
 @export_group("Dash")
 @export var dash_speed: float = 236.0
@@ -40,6 +46,11 @@ var _iframe: float = 0.0
 var _air_dashes_left: int = 0
 var _dash_dir: float = 1.0
 var _commit_lock: bool = false
+var _cut_lock: float = 0.0
+var _cut_armed: bool = false
+var _land_grip: float = 0.0
+var _was_floor: bool = false
+var _floor_snap: float = 4.0
 
 
 func is_dashing() -> bool:
@@ -66,15 +77,23 @@ func physics_tick(body: CharacterBody2D, delta: float, move_scale: float) -> voi
 
 	var on_floor := body.is_on_floor()
 	if on_floor:
+		if not _was_floor:
+			_land_grip = land_grip_time
 		_coyote = coyote_time
 		_jumps_left = extra_jumps if extra_jumps_unlocked else 0
 		_air_dashes_left = air_dashes
+		_cut_armed = false
+		if body.floor_snap_length <= 0.0:
+			body.floor_snap_length = _floor_snap
 	else:
 		_coyote = maxf(0.0, _coyote - delta)
+	_was_floor = on_floor
 
 	if Input.is_action_just_pressed("jump"):
 		_buffer = jump_buffer_time
-	else:
+	elif not is_dashing():
+		# Dash lasts longer than a tap-buffer; freeze the window so a jump
+		# pressed mid-dash still fires on the first grounded/airborne tick after.
 		_buffer = maxf(0.0, _buffer - delta)
 
 	if is_dashing():
@@ -95,20 +114,56 @@ func physics_tick(body: CharacterBody2D, delta: float, move_scale: float) -> voi
 		_try_jump(body)
 
 	var axis := Input.get_axis("move_left", "move_right")
+	axis = _axis_away_from_wall(body, axis)
 	_apply_move(body, axis, delta, move_scale)
 
 	if absf(axis) > 0.2:
 		facing = 1 if axis > 0.0 else -1
 
 
+## Zero residual into-wall speed after move_and_slide. Box colliders otherwise
+## keep a sliver of vx and "glue" to walls at ZOOM=2. Rising along a lip is
+## how you climb a pit bank — keep the approach so a 32px hop can land.
+func settle_after_slide(body: CharacterBody2D) -> void:
+	if body.is_on_floor() or not body.is_on_wall():
+		return
+	if body.velocity.y < 0.0:
+		return
+	var n := body.get_wall_normal()
+	if absf(n.x) < 0.45:
+		return
+	if body.velocity.x * n.x < 0.0:
+		body.velocity.x = 0.0
+
+
+func _axis_away_from_wall(body: CharacterBody2D, axis: float) -> float:
+	if body.is_on_floor() or not body.is_on_wall() or absf(axis) <= 0.05:
+		return axis
+	if body.velocity.y < 0.0:
+		return axis
+	var n := body.get_wall_normal()
+	if absf(n.x) < 0.45:
+		return axis
+	if signf(axis) == -signf(n.x):
+		return 0.0
+	return axis
+
+
 func _apply_gravity(body: CharacterBody2D, delta: float) -> void:
+	if _cut_lock > 0.0:
+		_cut_lock = maxf(0.0, _cut_lock - delta)
 	var gravity: float = float(ProjectSettings.get_setting("physics/2d/default_gravity"))
 	var scale := 1.0
-	if body.velocity.y > 0.0:
+	if absf(body.velocity.y) < apex_window:
+		scale = apex_gravity_scale
+	elif body.velocity.y > 0.0:
 		scale = fall_gravity_scale
-	elif not Input.is_action_pressed("jump") and body.velocity.y < 0.0:
+	elif _cut_armed and _cut_lock <= 0.0 and not Input.is_action_pressed("jump") \
+			and body.velocity.y < 0.0:
 		scale = jump_cut_gravity_scale
 	body.velocity.y += gravity * scale * delta
+	if body.velocity.y > max_fall_speed:
+		body.velocity.y = max_fall_speed
 
 
 func _apply_move(body: CharacterBody2D, axis: float, delta: float, move_scale: float) -> void:
@@ -116,6 +171,9 @@ func _apply_move(body: CharacterBody2D, axis: float, delta: float, move_scale: f
 	var target := axis * max_speed * move_scale
 	var accel := acceleration if on_floor else air_acceleration
 	var decel := deceleration if on_floor else air_deceleration
+	if _land_grip > 0.0:
+		decel *= 1.85
+		_land_grip = maxf(0.0, _land_grip - delta)
 	if _commit_lock:
 		accel *= 0.35
 		decel *= 0.8
@@ -135,13 +193,26 @@ func _try_jump(body: CharacterBody2D) -> void:
 		return
 	# extra_jumps_unlocked 填地上刷新的次数；grant_air_jump() 可在空中临时加一条。
 	if _jumps_left > 0 and not body.is_on_floor():
+		# Falling onto a floor within land_probe: keep the buffer for the
+		# landing jump instead of burning the extra charge 1–2 frames early.
+		if body.velocity.y > 0.0 and _near_floor(body):
+			return
 		_jumps_left -= 1
 		_do_jump(body, true)
+
+
+func _near_floor(body: CharacterBody2D) -> bool:
+	return body.test_move(body.global_transform, Vector2(0.0, land_probe))
 
 
 func _do_jump(body: CharacterBody2D, is_extra: bool) -> void:
 	_buffer = 0.0
 	_coyote = 0.0
+	_cut_armed = true
+	_cut_lock = jump_cut_delay
+	if body.floor_snap_length > 0.0:
+		_floor_snap = body.floor_snap_length
+	body.floor_snap_length = 0.0
 	var power := jump_velocity
 	if is_extra:
 		power *= extra_jump_scale

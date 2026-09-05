@@ -96,7 +96,8 @@ func test_collision_unchanged_by_flame() -> void:
 	var shape := col.shape as RectangleShape2D
 	ok(shape != null)
 	if shape != null:
-		eq(shape.size, Vector2(18, 22))
+		# 18×22 石碑 + 默认 reach_pad (10, 8)
+		eq(shape.size, Vector2(38, 38))
 	eq(nest.collision_layer, 64)
 	eq(nest.collision_mask, 2)
 	ok(nest.get_node_or_null("Fill") != null, "tombstone sprite still named Fill")
@@ -198,3 +199,38 @@ func test_unlit_has_no_warm_shaft() -> void:
 		ok(absf(flame.rotation) > 0.0001, "lit flame leans with the wind")
 	if beam != null:
 		ok(beam.visible, "lit nest shows a warm shaft")
+
+
+func test_rain_soaks_outdoor_nest() -> void:
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_time(0.80)
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	var clear_e := WorldClock.nest_light_energy()
+	var clear_r := WorldClock.nest_light_radius()
+	ok(clear_e >= 2.0, "clear night nest is the bright setting")
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	var rain_e := WorldClock.nest_light_energy()
+	var rain_r := WorldClock.nest_light_radius()
+	ok(rain_e < clear_e * 0.40, "rain cuts outdoor nest energy by more than half")
+	ok(rain_e > 0.15, "rain leaves a dying glow, not a blackout")
+	ok(rain_r < clear_r * 0.55, "rain shrinks the warm pool")
+	var nest := EmberNest.new()
+	add_child(nest)
+	await flush(1)
+	nest.apply_persistent_state({"lit": true})
+	var flame := nest.get_node_or_null("Flame") as Sprite2D
+	var light := nest.get_node_or_null("NestLight") as PointLight2D
+	ok(flame != null and flame.visible, "rain does not extinguish a lit nest")
+	if flame != null:
+		ok(flame.scale.x <= 0.55, "rain flame shrinks instead of staying full")
+		ok(flame.modulate.r < 0.90, "rain flame cools toward steam")
+	if light != null:
+		ok(light.enabled, "rain nest stays lit for the checkpoint")
+		ok(light.energy < clear_e * 0.45, "NestLight energy follows the soak")
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	if flame != null:
+		almost(flame.scale.x, 1.0, 0.05, "clear weather restores flame size")
+		eq(flame.modulate, Color(1.0, 0.92, 0.62, 1.0), "clear weather restores warm fire")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	ok(WorldClock.nest_light_energy() >= clear_e - 0.01, "indoor rain does not soak the nest formula")

@@ -39,6 +39,8 @@ func _ready() -> void:
 	_apply_flame_state()
 	if not WorldClock.phase_changed.is_connected(_on_atmosphere):
 		WorldClock.phase_changed.connect(_on_atmosphere)
+	if not WorldClock.weather_changed.is_connected(_on_weather):
+		WorldClock.weather_changed.connect(_on_weather)
 
 
 func _ensure_flame() -> void:
@@ -70,16 +72,26 @@ func _ensure_flame() -> void:
 func _exit_tree() -> void:
 	if WorldClock.phase_changed.is_connected(_on_atmosphere):
 		WorldClock.phase_changed.disconnect(_on_atmosphere)
+	if WorldClock.weather_changed.is_connected(_on_weather):
+		WorldClock.weather_changed.disconnect(_on_weather)
+	Sfx.set_nest_steam(get_instance_id(), 0.0)
 
 
 func _on_atmosphere(_phase: int) -> void:
 	_sync_light(999.0)
+	_apply_rain_look()
+
+
+func _on_weather(_weather: int) -> void:
+	_sync_light(999.0)
+	_apply_rain_look()
 
 
 func _process(delta: float) -> void:
 	if _lit:
 		_sync_light(delta)
 		_lean_flame()
+		_apply_rain_look()
 	if _flame == null or not _lit:
 		return
 	_frame_t += delta
@@ -103,7 +115,7 @@ func _spawn_spark() -> void:
 	var sheet := load(SPARK_PATH) as Texture2D
 	if sheet == null:
 		return
-	_sparks.add_child(NestSpark.new(sheet))
+	_sparks.add_child(NestSpark.new(sheet, WorldClock.rain_opacity() >= 0.35))
 
 
 func _ensure_light() -> void:
@@ -145,9 +157,10 @@ func _sync_halo() -> void:
 	if not _lit:
 		_halo.modulate.a = 0.0
 		return
-	var k := clampf(WorldClock.nest_light_energy() / 2.60, 0.45, 1.0)
-	_halo.scale = Vector2(1.85, 1.65) * (0.85 + 0.25 * k)
-	_halo.modulate = Color(1.0, 0.62, 0.28, 0.38 + 0.28 * k)
+	var k := clampf(WorldClock.nest_light_energy() / 2.60, 0.12, 1.0)
+	var soak := WorldClock.rain_opacity()
+	_halo.scale = Vector2(1.85, 1.65) * (0.85 + 0.25 * k) * lerpf(1.0, 0.55, soak)
+	_halo.modulate = Color(1.0, 0.62, 0.28, (0.38 + 0.28 * k) * lerpf(1.0, 0.35, soak))
 
 
 func _sync_light(delta: float) -> void:
@@ -196,9 +209,29 @@ func _lean_flame() -> void:
 		_beam.visible = _lit
 		if _lit:
 			var e := WorldClock.nest_light_energy()
-			_beam.modulate.a = 0.16 + 0.28 * clampf(e / 2.60, 0.0, 1.0)
+			var soak := WorldClock.rain_opacity()
+			_beam.modulate.a = (0.16 + 0.28 * clampf(e / 2.60, 0.0, 1.0)) * lerpf(1.0, 0.22, soak)
 		else:
 			_beam.modulate.a = 0.0
+
+
+func _apply_rain_look() -> void:
+	_sync_steam_audio()
+	if _flame == null:
+		return
+	var soak := WorldClock.rain_opacity() if _lit else 0.0
+	_flame.scale = Vector2.ONE * lerpf(1.0, 0.40, soak)
+	if _lit:
+		_flame.modulate = LIT_MOD.lerp(Color(0.58, 0.64, 0.76, 0.78), soak)
+	else:
+		_flame.modulate = LIT_MOD
+
+
+func _sync_steam_audio() -> void:
+	var steam := 0.0
+	if _lit:
+		steam = maxf(WorldClock.rain_audio_gain(), WorldClock.rust_rain_audio_gain())
+	Sfx.set_nest_steam(get_instance_id(), steam)
 
 
 func _apply_flame_state() -> void:
@@ -215,6 +248,7 @@ func _apply_flame_state() -> void:
 	_sync_light(999.0)
 	_sync_halo()
 	_lean_flame()
+	_apply_rain_look()
 
 
 func can_interact(_actor: Node) -> bool:
@@ -233,9 +267,16 @@ func interact(actor: Node) -> void:
 		GameEvents.player_health_changed.emit(p.health.current, p.health.max_hp)
 		_lit = true
 		_apply_flame_state()
-		SaveData.register_lit_nest(String(get_path()))
-		GameEvents.announcement.emit("余烬重新点燃 —— 进度已刻入铁锈")
-		SaveData.save_game(SCENE_PATH, p)
+		SaveData.register_lit_nest(SaveData.persist_path(self))
+		var scene_path := SCENE_PATH
+		if get_tree() != null and get_tree().current_scene != null:
+			var live := get_tree().current_scene.scene_file_path
+			if live != "":
+				scene_path = live
+		if SaveData.save_game(scene_path, p):
+			GameEvents.announcement.emit("余烬重新点燃 —— 进度已刻入铁锈")
+		else:
+			GameEvents.announcement.emit("余烬亮了，但铁锈没刻住")
 		Sfx.play(&"insert")
 
 
@@ -256,20 +297,20 @@ class NestSpark extends Sprite2D:
 	var _phase := 0.0
 	var _x0 := 0.0
 
-	func _init(sheet: Texture2D) -> void:
+	func _init(sheet: Texture2D, steam: bool = false) -> void:
 		texture = sheet
 		hframes = EmberNest.SPARK_FRAMES
 		vframes = 1
 		centered = true
 		texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		scale = Vector2.ONE
+		scale = Vector2(1.2, 0.7) if steam else Vector2.ONE
 		frame = randi_range(0, EmberNest.SPARK_FRAMES - 1)
 		_x0 = float(randi_range(-2, 2))
 		position = Vector2(_x0, float(randi_range(-8, -4)))
-		_rise = randf_range(11.0, 18.0)
+		_rise = randf_range(6.0, 11.0) if steam else randf_range(11.0, 18.0)
 		_life = randf_range(0.40, 0.80)
 		_phase = randf() * TAU
-		modulate = Color(1.0, 0.78, 0.42, 0.80)
+		modulate = Color(0.80, 0.86, 0.92, 0.55) if steam else Color(1.0, 0.78, 0.42, 0.80)
 
 	func _process(delta: float) -> void:
 		_age += delta

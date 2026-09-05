@@ -56,8 +56,10 @@ func _ensure_light() -> void:
 	var light := WorldLight.new()
 	light.name = "HeartLight"
 	light.follow = &"heart"
-	light.color = Color(1.0, 0.55, 0.32)
+	light.color = Color(1.0, 0.48, 0.26)
 	light.position = Vector2(8, -10)
+	# Clock radius is 80; keep a coal so WarmPool + heart do not ADD-clip the remnant.
+	light.radius_cap = 44.0
 	add_child(light)
 	_glow = light
 

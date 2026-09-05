@@ -15,7 +15,6 @@ var _shaft: Sprite2D
 var _mote_tex: Texture2D
 var _headless := false
 var _mid_suppressed := false
-var _view_half := Vector2(320.0, 180.0)
 
 
 func _ready() -> void:
@@ -73,8 +72,7 @@ func _process(delta: float) -> void:
 	if _headless:
 		return
 	var cam := get_viewport().get_camera_2d()
-	var origin := cam.get_screen_center_position() if cam != null else global_position
-	_view_half = get_viewport().get_visible_rect().size * 0.5 / (cam.zoom if cam != null else Vector2.ONE)
+	var origin := cam.global_position if cam != null else global_position
 	var rain_cut := 1.0 - WorldClock.rain_opacity() * 0.65
 	var wind_vis := clampf(WorldClock.wind_speed * 2.4, 0.2, 1.0)
 	_drift(_far, delta, wind, 18.0, origin, 0.22 * rain_cut * wind_vis, -120.0, 80.0)
@@ -100,34 +98,28 @@ func _spawn_layer(bucket: Array[Sprite2D], count: int, scale: float, col: Color,
 			spr.frame = randi() % 8
 		spr.centered = true
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		spr.scale = Vector2.ONE
-		spr.set_meta("depth", scale)
+		spr.scale = Vector2(scale, scale)
 		spr.modulate = col
-		var cam := get_viewport().get_camera_2d()
-		var center := cam.get_screen_center_position() if cam != null else Vector2(320, 180)
-		var half := get_viewport().get_visible_rect().size * 0.5 / (cam.zoom if cam != null else Vector2.ONE)
-		spr.position = Vector2(randf_range(center.x - half.x, center.x + half.x), randf_range(y_min, y_max))
-		spr.set_meta("drift_position", spr.position)
+		spr.position = Vector2(randf() * 1280.0, randf_range(y_min, y_max))
 		add_child(spr)
 		bucket.append(spr)
 
 
 func _drift(bucket: Array[Sprite2D], delta: float, wind: Vector2, speed: float, origin: Vector2, fade: float, y_lo: float, y_hi: float) -> void:
 	for spr in bucket:
-		var p: Vector2 = spr.get_meta("drift_position", spr.position)
+		var p := spr.position
 		p.x += wind.x * speed * delta
 		p.y += sin(p.x * 0.03 + p.y * 0.02) * 6.0 * delta
-		if p.x < origin.x - _view_half.x - 24.0:
-			p.x = origin.x + _view_half.x + 24.0
+		if p.x < origin.x - 420.0:
+			p.x = origin.x + 420.0
 			p.y = origin.y + randf_range(y_lo, y_hi)
-		elif p.x > origin.x + _view_half.x + 24.0:
-			p.x = origin.x - _view_half.x - 24.0
+		elif p.x > origin.x + 420.0:
+			p.x = origin.x - 420.0
 			p.y = origin.y + randf_range(y_lo, y_hi)
 		if p.y < origin.y + y_lo:
 			p.y = origin.y + y_hi
 		elif p.y > origin.y + y_hi:
 			p.y = origin.y + y_lo
-		spr.set_meta("drift_position", p)
 		spr.position.x = roundf(p.x)
 		spr.position.y = roundf(p.y)
 		spr.modulate.a = fade

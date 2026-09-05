@@ -21,3 +21,6 @@ signal dash_performed
 signal jumped(is_extra: bool)
 signal resonance_changed(active: bool)
 signal ending_chosen(kind: StringName)
+signal boss_appeared(boss_name: String, current_hp: int, max_hp: int)
+signal boss_hp_changed(current_hp: int, max_hp: int)
+signal boss_defeated

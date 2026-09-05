@@ -96,6 +96,8 @@ func _update_anim() -> void:
 
 
 func _tick_state(delta: float) -> void:
+	if _dead:
+		return
 	match _state:
 		State.PATROL:
 			_tick_patrol(delta)
@@ -209,11 +211,7 @@ func _set_blocking(b: bool) -> void:
 	if _blocking == b:
 		return
 	_blocking = b
-	if _indicator == shield:
-		shield.modulate.a = 1.0 if b else 0.35
-	else:
-		# 贴图机体：格挡时压向冷钢色，收盾恢复原色。
-		_indicator.modulate = Color(0.82, 0.95, 1.08) if b else Color.WHITE
+	_refresh_indicator()
 
 
 func _update_visual() -> void:
@@ -225,7 +223,7 @@ func _flash_shield() -> void:
 	_kill_flicker()
 	_flicker_tween = create_tween()
 	_flicker_tween.tween_property(_indicator, "modulate", Color(0.9, 0.6, 0.3, 1.0), 0.04)
-	_flicker_tween.tween_property(_indicator, "modulate", Color.WHITE, 0.1)
+	_flicker_tween.tween_callback(_refresh_indicator)
 
 
 func _flicker_charge() -> void:
@@ -241,9 +239,24 @@ func _kill_flicker() -> void:
 
 
 ## 受击白闪走基类；先掐掉格挡/蓄力指示的染色 tween，避免两股 tween 抢色。
+## 闪完落回当前姿态色，避免蓄力/举盾被洗成死白。
 func _flash_white() -> void:
 	_kill_flicker()
 	super()
+	_refresh_indicator()
+
+
+## 格挡冷钢 / 蓄力余烬 / 收盾原色。白闪作用在 Visual 父节点，这里只钉指示器，避免叠乘。
+func _refresh_indicator() -> void:
+	if _indicator == null:
+		return
+	if _state == State.CHARGE:
+		_indicator.modulate = Palette.EMBER
+		return
+	if _indicator == shield:
+		_indicator.modulate = Color(1, 1, 1, 1.0 if _blocking else 0.35)
+		return
+	_indicator.modulate = Color(0.82, 0.95, 1.08) if _blocking else Color.WHITE
 
 
 func _on_died() -> void:

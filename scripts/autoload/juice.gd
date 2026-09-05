@@ -147,11 +147,17 @@ func _on_hit(attacker: Node, target: Node, amount: int) -> void:
 		shake(4.0, 160)
 	else:
 		Sfx.play(&"hit_flesh")
-		# Landing a blow still deserves a beat — shorter and punchier.
-		hit_stop(40, 0.12)
-		shake(2.0, 90)
-		if target is Node2D:
-			Fx.hit_sparks((target as Node2D).global_position)
+		if amount >= 2:
+			hit_stop(70, 0.06)
+			shake(4.5, 140)
+			if target is Node2D:
+				Fx.hit_sparks((target as Node2D).global_position)
+				Fx.rust_debris((target as Node2D).global_position)
+		else:
+			hit_stop(40, 0.12)
+			shake(2.0, 90)
+			if target is Node2D:
+				Fx.hit_sparks((target as Node2D).global_position)
 
 
 func _on_parried(projectile: Node, _by_actor: Node) -> void:

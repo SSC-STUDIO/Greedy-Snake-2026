@@ -25,7 +25,18 @@ func _ready() -> void:
 
 
 func can_interact(_actor: Node) -> bool:
-	return false
+	# 关着时始终可聚焦，否则走到铁闸前没有任何「去踩踏板」的提示。
+	return not is_open
+
+
+func get_prompt(_actor: Node) -> String:
+	return "闸门锁死 — 需要压下踏板"
+
+
+func interact(_actor: Node) -> void:
+	if is_open:
+		return
+	GameEvents.announcement.emit("闸门还咬着。去踩那块石板。")
 
 
 func open_door() -> void:

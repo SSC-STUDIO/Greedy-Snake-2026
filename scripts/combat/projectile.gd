@@ -72,10 +72,11 @@ func deflect(_by: Node2D) -> void:
 		return
 	deflected = true
 	team = &"player"
+	damage = 2
 	var aim := -velocity.normalized()
 	if source != null and is_instance_valid(source):
 		aim = (source.global_position - global_position).normalized()
-	velocity = aim * maxf(velocity.length() * 1.45, 180.0)
+	velocity = aim * maxf(velocity.length() * 1.55, 210.0)
 	_update_visual()
 
 
@@ -83,6 +84,8 @@ func _physics_process(delta: float) -> void:
 	global_position += velocity * delta
 	if velocity.length_squared() > 4.0:
 		rotation = velocity.angle()
+	if deflected and randf() < 0.28:
+		Fx.dust_puff(global_position, rotation + PI)
 	lifetime -= delta
 	if lifetime <= 0.0:
 		queue_free()

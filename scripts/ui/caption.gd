@@ -22,16 +22,19 @@ var _panel: PanelContainer
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sync_viewport_size()
+	get_viewport().size_changed.connect(_sync_viewport_size)
+
 	_panel = UiKit.panel(&"HudPanel")
 	_panel.name = "CaptionPanel"
 	_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_panel.offset_left = -320.0
-	_panel.offset_right = 320.0
-	# Sit on the Director letterbox (32px), not in the playfield.
-	_panel.offset_top = -52.0
-	_panel.offset_bottom = -6.0
+	_panel.offset_left = -280.0
+	_panel.offset_right = 280.0
+	# Hug the 32px letterbox / screen foot so the strip does not cover the player.
+	_panel.offset_top = -48.0
+	_panel.offset_bottom = -4.0
 	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_panel.visible = false
 	add_child(_panel)
@@ -39,6 +42,12 @@ func _ready() -> void:
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_panel.add_child(_label)
+
+
+func _sync_viewport_size() -> void:
+	var vp := get_viewport()
+	if vp != null:
+		set_deferred("size", vp.get_visible_rect().size)
 
 
 func is_busy() -> bool:

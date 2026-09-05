@@ -81,6 +81,17 @@ func test_deflected_bolt_staggers_shield_open() -> void:
 	ok(not g._blocking, "no longer blocking during stagger")
 
 
+func test_hit_flash_keeps_block_tint() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var g := await _spawn(arena, 320.0)
+	_enter_guard(g, 1)
+	g._flash_white()
+	ok(g._indicator.modulate != Color.WHITE, "block telegraph survives the hit flash")
+	eq(g._flash_restore_color(), Color.WHITE, "parent Visual flash still restores to white")
+
+
 func test_stagger_recovers_to_guarding() -> void:
 	var arena := Node2D.new()
 	add_child(arena)

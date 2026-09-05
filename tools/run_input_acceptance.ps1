@@ -1,0 +1,44 @@
+param(
+    [ValidateSet('rekindle', 'snuff', 'both')][string]$Ending = 'both',
+    [switch]$Rendered,
+    [string]$GodotExe = 'C:\Program Files\Godot\Godot_v4.7.1-stable_win64_console.exe'
+)
+$ErrorActionPreference = 'Stop'
+$workspace = Split-Path -Parent $PSScriptRoot
+$runDir = Join-Path $workspace ('screenshots\acceptance\input-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+$endings = if ($Ending -eq 'both') { @('rekindle', 'snuff') } else { @($Ending) }
+foreach ($kind in $endings) {
+    $stdoutPath = Join-Path $runDir ($kind + '-stdout.log')
+    $stderrPath = Join-Path $runDir ($kind + '-stderr.log')
+    $userdata = Join-Path $runDir ($kind + '-userdata')
+    $arguments = @('--path', ('"' + $workspace + '"'))
+    if (-not $Rendered) { $arguments += '--headless' }
+    else { $arguments += @('--windowed', '--position', '-12000,-12000', '--resolution', '1920x1080') }
+    $arguments += @('res://scenes/tools/InputWalkthrough.tscn', '--', ('--ending=' + $kind))
+    $previousAppData = $env:APPDATA
+    try {
+        $env:APPDATA = $userdata
+        $process = Start-Process -FilePath $GodotExe -ArgumentList $arguments -WindowStyle Hidden -WorkingDirectory $workspace -PassThru -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath
+    } finally { $env:APPDATA = $previousAppData }
+    $started = [DateTime]::UtcNow
+    while (-not $process.WaitForExit(250)) {
+        $errorText = Get-Content -LiteralPath $stderrPath -Raw
+        if ($errorText -match '(?m)^(SCRIPT ERROR:|ERROR:)' -or ([DateTime]::UtcNow - $started).TotalSeconds -gt 270) {
+            Get-CimInstance Win32_Process -Filter ('ParentProcessId=' + $process.Id) | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
+            if (-not $process.HasExited) { $process.Kill() }
+            throw ('Input acceptance failed or timed out. See ' + $runDir)
+        }
+    }
+    $process.Refresh()
+    $gameData = Join-Path $userdata 'Godot\app_userdata\Rustgrave'
+    $resultPath = Join-Path $gameData ('walkthrough_' + $kind + '.json')
+    Get-Content -LiteralPath $stdoutPath | Select-Object -Last 8
+    if (-not (Test-Path -LiteralPath $resultPath)) { throw ('No completion report: ' + $runDir) }
+    $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+    $stderr = Get-Content -LiteralPath $stderrPath -Raw
+    if ($process.ExitCode -ne 0 -or -not $result.passed -or $result.engine_errors.Count -gt 0 -or $stderr -match '(?m)^(SCRIPT ERROR:|ERROR:)') { throw ('Acceptance failed: ' + $runDir) }
+    Copy-Item -LiteralPath $resultPath -Destination (Join-Path $runDir ($kind + '.json'))
+    Get-ChildItem -LiteralPath $gameData -Filter '*.png' | Copy-Item -Destination $runDir
+}
+Write-Output ('Input acceptance passed. Evidence: ' + $runDir)

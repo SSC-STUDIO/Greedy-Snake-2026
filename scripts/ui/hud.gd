@@ -4,7 +4,7 @@ extends CanvasLayer
 ##
 ## 所有外观取自项目默认主题 assets/ui/theme_rust.tres 的变体，面板一律是
 ## 9-slice 贴图；这里只负责布局、数值与动效。华丽但克制：状态板收在左上角
-## 一小块，播报和提示都是横向窄条，不切进玩家的视野中央。
+## 一小块，播报在顶、交互提示贴底边，不切进玩家的视野中央。
 
 const PAUSE_MENU := preload("res://scenes/ui/PauseMenu.tscn")
 
@@ -15,9 +15,11 @@ const HEART_SIZE := Vector2(22, 18)
 const HEART_SLOT_SIZE := Vector2(26, 22)
 const HEART_FLASH := 0.22
 
-const TOXIN_BAR_SIZE := Vector2(168, 16)
+const TOXIN_BAR_SIZE := Vector2(176, 24)
 ## 与 assets/ui/banner.png 的高度一致（21 设计像素 * 2）。
 const BANNER_HEIGHT := 42.0
+## 交互提示贴在视口底边，避开玩家所在的中下视野；字幕占用底边时整条让路。
+const PROMPT_BOTTOM := 10.0
 
 # 危险反馈：毒素报警脉动 + 低血量血雾呼吸。
 const TOXIN_ALARM_RATIO := 0.8
@@ -62,6 +64,12 @@ var _breath_time := 0.0
 var _announce_queue: Array[String] = []
 var _resonating := false
 var _atmos_hint: Label
+var _prompt_text := ""
+
+var _boss_bar_panel: PanelContainer
+var _boss_title_label: Label
+var _boss_hp_bar: ProgressBar
+var _boss_max_hp: int = 1
 
 
 func _ready() -> void:
@@ -80,6 +88,9 @@ func _ready() -> void:
 	GameEvents.core_acquired.connect(func(_c): _refresh_cores())
 	GameEvents.sockets_changed.connect(_refresh_cores)
 	GameEvents.resonance_changed.connect(_on_resonance)
+	GameEvents.boss_appeared.connect(_on_boss_appeared)
+	GameEvents.boss_hp_changed.connect(_on_boss_hp_changed)
+	GameEvents.boss_defeated.connect(_on_boss_defeated)
 	WorldClock.phase_changed.connect(_on_atmosphere)
 	WorldClock.weather_changed.connect(_on_atmosphere)
 	_refresh_atmosphere()
@@ -99,6 +110,7 @@ func _build() -> void:
 
 	_build_stat_panel(root)
 	_build_banner(root)
+	_build_boss_bar(root)
 	_build_prompt(root)
 	_build_hint(root)
 	_build_vignette(root)
@@ -144,7 +156,7 @@ func _build_stat_panel(root: Control) -> void:
 	column.add_child(_socket_label)
 	_pouch_label = UiKit.label("袋中 0", &"HudLabel")
 	column.add_child(_pouch_label)
-	_atmos_hint = UiKit.label("", &"FootnoteLabel")
+	_atmos_hint = UiKit.label("", &"HudLabel")
 	_atmos_hint.name = "AtmosphereHint"
 	column.add_child(_atmos_hint)
 
@@ -165,18 +177,52 @@ func _build_banner(root: Control) -> void:
 	_banner.add_child(_announce_label)
 
 
+func _build_boss_bar(root: Control) -> void:
+	_boss_bar_panel = UiKit.panel(&"HudPanel")
+	_boss_bar_panel.name = "BossBar"
+	_boss_bar_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_boss_bar_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_boss_bar_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_boss_bar_panel.offset_top = -68.0
+	_boss_bar_panel.offset_bottom = -22.0
+	_boss_bar_panel.custom_minimum_size = Vector2(460.0, 40.0)
+	_boss_bar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_bar_panel.visible = false
+	root.add_child(_boss_bar_panel)
+
+	var col := VBoxContainer.new()
+	col.alignment = BoxContainer.ALIGNMENT_CENTER
+	col.add_theme_constant_override("separation", 2)
+	_boss_bar_panel.add_child(col)
+
+	_boss_title_label = UiKit.label("炉 约 刽 子 手 · 铸 渣 残 躯", &"HudStrongLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_boss_title_label.name = "BossTitle"
+	_boss_title_label.add_theme_color_override("font_color", Palette.EMBER)
+	col.add_child(_boss_title_label)
+
+	_boss_hp_bar = ProgressBar.new()
+	_boss_hp_bar.name = "BossHpBar"
+	_boss_hp_bar.custom_minimum_size = Vector2(420.0, 10.0)
+	_boss_hp_bar.show_percentage = false
+	_boss_hp_bar.min_value = 0.0
+	_boss_hp_bar.max_value = 13.0
+	_boss_hp_bar.value = 13.0
+	col.add_child(_boss_hp_bar)
+
+
 func _build_prompt(root: Control) -> void:
 	_prompt_panel = UiKit.panel(&"HudPanel")
 	_prompt_panel.name = "Prompt"
 	_prompt_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_prompt_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_prompt_panel.offset_top = -74.0
-	_prompt_panel.offset_bottom = -74.0
+	_prompt_panel.offset_top = -PROMPT_BOTTOM
+	_prompt_panel.offset_bottom = -PROMPT_BOTTOM
 	_prompt_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompt_panel.visible = false
 	root.add_child(_prompt_panel)
 	_prompt_label = UiKit.label("", &"PromptLabel", HORIZONTAL_ALIGNMENT_CENTER)
+	_prompt_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_prompt_panel.add_child(_prompt_label)
 
 
@@ -236,9 +282,12 @@ func _process(delta: float) -> void:
 				_hide_banner()
 	if _hint_time > 0.0:
 		_hint_time -= delta
+		var banner_up := _banner != null and _banner.modulate.a > 0.2
+		_hint.visible = not banner_up
 		_hint.modulate.a = clampf(_hint_time / 1.6, 0.0, 0.7)
 		if _hint_time <= 0.0:
 			_hint.visible = false
+	_sync_prompt()
 	if _resonating:
 		var glow := 0.55 + 0.45 * sin(TAU * _time / 0.35)
 		_toxin_bar.modulate = Color(1.35, 0.82 + glow * 0.15, 0.38)
@@ -333,14 +382,61 @@ func _on_toxin(current: float, maximum: float) -> void:
 	_toxin_bar.value = t * 100.0
 	var band := ToxinMeter.band_for(current, maximum)
 	_toxin_label.text = "毒素 %s %d%%" % [ToxinMeter.band_label_for(band), int(t * 100.0)]
-	if t < TOXIN_ALARM_RATIO:
+	if band == &"hot":
+		_toxin_label.modulate = Color(1.35, 0.75, 0.35)
+	elif band == &"warm":
+		_toxin_label.modulate = Color(1.15, 0.95, 0.65)
+	elif t < TOXIN_ALARM_RATIO:
 		_toxin_bar.modulate = Color.WHITE
 		_toxin_label.modulate = Color.WHITE
 
 
+func _on_boss_appeared(boss_name: String, current_hp: int, max_hp: int) -> void:
+	if _boss_bar_panel == null:
+		return
+	_boss_max_hp = maxi(1, max_hp)
+	_boss_title_label.text = boss_name
+	_boss_hp_bar.max_value = float(_boss_max_hp)
+	_boss_hp_bar.value = float(current_hp)
+	_boss_bar_panel.modulate.a = 0.0
+	_boss_bar_panel.visible = true
+	var tw := create_tween()
+	tw.tween_property(_boss_bar_panel, "modulate:a", 1.0, 0.6)
+
+
+func _on_boss_hp_changed(current_hp: int, max_hp: int) -> void:
+	if _boss_hp_bar == null:
+		return
+	if max_hp > 0:
+		_boss_max_hp = max_hp
+		_boss_hp_bar.max_value = float(max_hp)
+	var tw := create_tween()
+	tw.tween_property(_boss_hp_bar, "value", float(current_hp), 0.15)
+
+
+func _on_boss_defeated() -> void:
+	if _boss_bar_panel == null or not _boss_bar_panel.visible:
+		return
+	var tw := create_tween()
+	tw.tween_property(_boss_bar_panel, "modulate:a", 0.0, 0.8)
+	tw.tween_callback(func() -> void: _boss_bar_panel.visible = false)
+
+
+
 func _on_prompt(text: String) -> void:
-	_prompt_label.text = text
-	_prompt_panel.visible = text != ""
+	_prompt_text = text
+	if _prompt_label != null:
+		_prompt_label.text = text
+	_sync_prompt()
+
+
+func _sync_prompt() -> void:
+	if _prompt_panel == null:
+		return
+	var cap := Director.caption()
+	var cap_busy := cap != null and cap.is_busy()
+	var dead := _death_overlay != null and _death_overlay.visible
+	_prompt_panel.visible = _prompt_text != "" and not cap_busy and not dead
 
 
 func _on_announce(text: String) -> void:
@@ -377,6 +473,7 @@ func _on_player_died() -> void:
 	if _pause != null and _pause.is_open():
 		_pause.close()
 	_death_overlay.visible = true
+	_sync_prompt()
 	var tween := create_tween()
 	tween.tween_property(_death_overlay, "modulate:a", 1.0, 0.45)
 

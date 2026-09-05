@@ -102,7 +102,7 @@ func _add_nozzle() -> void:
 
 
 func _on_shoot_tick() -> void:
-	if Director.is_input_locked():
+	if Director.is_input_locked() or is_hurt_locked():
 		return
 	if health.current <= 0 or _charging:
 		return
@@ -140,7 +140,7 @@ func _on_charged() -> void:
 	_visual_tween.parallel().tween_property(
 		_body, "scale", Vector2(signf(_body.scale.x), 1.0), 0.08
 	)
-	if health.current <= 0:
+	if health.current <= 0 or _dead:
 		return
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player == null:
@@ -156,7 +156,10 @@ func _on_anim_finished(anim: StringName) -> void:
 
 func _fire(player: Player) -> void:
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	get_tree().current_scene.add_child(proj)
+	var effects := GameContext.world_effects(self)
+	if effects == null:
+		effects = get_parent()
+	effects.add_child(proj)
 	# 喷口跟随身体朝向镜像（原图面朝左，scale.x=-1 时面朝右）。
 	var mpos := muzzle.position
 	if _body != null and _body.scale.x < 0.0:
@@ -198,9 +201,15 @@ func _kill_visual_tween() -> void:
 
 func _on_died() -> void:
 	var pickup := PICKUP_SCENE.instantiate() as CorePickup
+	pickup.name = "TetherDrop_%s" % name
 	pickup.core = AbilityCatalog.tether_core()
-	get_parent().add_child(pickup)
-	pickup.global_position = global_position + Vector2(0, -8)
+	# Set the position before _ready captures the bobbing baseline.
+	pickup.position = position + Vector2(0, -8)
+	var saved_path := SaveData.persist_path(self).get_base_dir() + "/" + String(pickup.name)
+	if SaveData.is_consumed(saved_path):
+		pickup.free()
+	else:
+		get_parent().add_child(pickup)
 	# 尸体演出：烈焰焚毁 6 帧（火柱画布 160 高，脚底对齐原地），随朝向镜像。
 	var facing_right: bool = _body != null and _body.scale.x < 0.0
 	_death_burst(CharFrames.anim(BEAST_CHAR, "death"), 12.0,

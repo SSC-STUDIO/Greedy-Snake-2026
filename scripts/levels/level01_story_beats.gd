@@ -41,7 +41,7 @@ func _exit_tree() -> void:
 
 
 func try_wake() -> void:
-	if SaveData.has_pending_spawn() or SaveData.has_flag("wake"):
+	if SaveData.entering_from_checkpoint or SaveData.has_pending_spawn() or SaveData.has_flag("wake"):
 		if not Director.playing:
 			GameEvents.announcement.emit("锈墓・壹 — 腐液回廊")
 		return

@@ -21,6 +21,34 @@ func test_starts_with_boss_hp_and_not_enraged() -> void:
 	ok(not b.is_enraged())
 
 
+func test_slash_windup_pulses_ember() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var b := await _spawn(arena)
+	b._begin_slash()
+	ok(b._slash_next)
+	eq(b._state, b.State.CHARGE)
+	ok(b._flicker_tween != null and b._flicker_tween.is_valid(), "axe windup has a readable ember pulse")
+
+
+func test_death_cancels_pending_slash() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var b := await _spawn(arena)
+	b._set_blocking(false)
+	b._begin_slash()
+	b.health.take_damage(99, b)
+	ok(b._dead)
+	b._tick_charge(1.0)
+	var extra := 0
+	for child in arena.get_children():
+		if child is Hitbox:
+			extra += 1
+	eq(extra, 0, "dead executioner does not finish the axe")
+
+
 func test_enrages_at_half_hp() -> void:
 	var arena := Node2D.new()
 	add_child(arena)

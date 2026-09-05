@@ -119,7 +119,6 @@ func test_toxin_pool_hints_on_repeat_dip() -> void:
 	build_floor(arena)
 	var player := await spawn_player(arena)
 	var pool := ToxinPool.new()
-	pool.position = player.global_position + Vector2(-56, -8)
 	arena.add_child(pool)
 	pool._bodies.append(player)
 	var heard := [""]
@@ -138,26 +137,6 @@ func test_toxin_pool_hints_on_repeat_dip() -> void:
 	eq(heard[0], "腐液咬着靴底", "leaving and dipping again re-hints")
 	GameEvents.announcement.disconnect(on_ann)
 	Director.abort()
-
-
-func test_toxin_requires_boots_below_visible_surface() -> void:
-	Director.abort()
-	var arena := Node2D.new()
-	add_child(arena)
-	build_floor(arena)
-	var player := await spawn_player(arena)
-	var pool := ToxinPool.new()
-	pool.position = player.position + Vector2(-56, 0)
-	arena.add_child(pool)
-	pool._bodies.append(player)
-	var before := player.toxin.toxin
-	pool._physics_process(0.5)
-	almost(player.toxin.toxin, before, 0.001, "boots resting at the water lip are dry")
-	pool.position.y -= 8.0
-	pool._physics_process(0.5)
-	ok(player.toxin.toxin > before, "only submerged boots receive exposure")
-	var veil := pool.get_node("ImmersionVeil") as Polygon2D
-	ok(veil.z_index > player.z_index, "liquid covers the submerged silhouette")
 
 
 func test_toxin_pool_does_not_zero_velocity_or_cap_the_pit() -> void:

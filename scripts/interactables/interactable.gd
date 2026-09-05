@@ -3,6 +3,9 @@ extends Area2D
 ## Base for E-key objects. Pressure plates may extend this but return false from can_interact.
 
 @export var prompt: String = "E 交互"
+## Extra Area2D reach beyond the visual. The knight's sensor is only 32×32;
+## 12–18px props otherwise demand pixel-perfect overlap.
+@export var reach_pad: Vector2 = Vector2(10, 8)
 
 
 func _ready() -> void:
@@ -65,9 +68,12 @@ func ensure_sprite(path: String, size: Vector2, offset: Vector2 = Vector2.ZERO, 
 
 func _ensure_collision(size: Vector2, offset: Vector2) -> void:
 	if get_node_or_null("CollisionShape2D") == null:
+		var pad := reach_pad
+		var reach := size + pad * 2.0
+		var reach_off := offset - pad
 		var col := CollisionShape2D.new()
 		var shape := RectangleShape2D.new()
-		shape.size = size
+		shape.size = reach
 		col.shape = shape
-		col.position = offset + size * 0.5
+		col.position = reach_off + reach * 0.5
 		add_child(col)

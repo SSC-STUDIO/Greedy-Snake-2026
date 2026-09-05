@@ -51,7 +51,9 @@ func _build_backdrop() -> void:
 
 func _build_collision() -> void:
 	_plat(Vector2(0, 320), Vector2(400, 80), Palette.RUST_DARK)
-	_plat(Vector2(400, 368), Vector2(112, 32), Palette.RUST_SHADOW)
+	_plat(Vector2(Level01EastWing.PIT_X0, Level01EastWing.PIT_FLOOR_Y), Level01EastWing.PIT_FLOOR_SIZE, Palette.RUST_SHADOW)
+	_plat(Level01EastWing.PIT_CLIMB_LEFT_POS, Level01EastWing.PIT_CLIMB_LEFT_SIZE, Palette.RUST_MID)
+	_plat(Level01EastWing.PIT_CLIMB_RIGHT_POS, Level01EastWing.PIT_CLIMB_RIGHT_SIZE, Palette.RUST_MID)
 	_plat(Vector2(512, 320), Vector2(1088, 80), Palette.RUST_DARK)
 	_plat(Vector2(-16, 0), Vector2(16, 400), Palette.SHADOW)
 	_plat(Vector2(1600, 0), Vector2(16, 400), Palette.SHADOW)

@@ -1,18 +1,18 @@
-[gd_resource type="Theme" format=3]
+[gd_resource type="Theme" format=3 uid="uid://cdynlwbujaduc"]
 
-[ext_resource type="Texture2D" path="res://assets/ui/banner.png" id="1_fxawi"]
-[ext_resource type="Texture2D" path="res://assets/ui/band_edge.png" id="1_jh1ye"]
-[ext_resource type="Texture2D" path="res://assets/ui/btn_disabled.png" id="2_jh1ye"]
-[ext_resource type="Texture2D" path="res://assets/ui/btn_hover.png" id="3_51j20"]
-[ext_resource type="Texture2D" path="res://assets/ui/btn_normal.png" id="4_xgwhs"]
-[ext_resource type="Texture2D" path="res://assets/ui/btn_pressed.png" id="5_ojcqm"]
-[ext_resource type="Texture2D" path="res://assets/ui/bar_fill_ember.png" id="6_lheu4"]
-[ext_resource type="Texture2D" path="res://assets/ui/panel_hud.png" id="7_k8rnt"]
-[ext_resource type="Texture2D" path="res://assets/ui/panel_ornate.png" id="8_lhe8w"]
-[ext_resource type="Texture2D" path="res://assets/ui/panel_stone.png" id="9_d3vf0"]
-[ext_resource type="Texture2D" path="res://assets/ui/bar_track.png" id="10_jlemo"]
-[ext_resource type="Texture2D" path="res://assets/ui/bar_fill_toxin.png" id="11_1gp4e"]
-[ext_resource type="FontFile" path="res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf" id="12_35dpl"]
+[ext_resource type="Texture2D" uid="uid://bt6ftx7nhi376" path="res://assets/ui/banner.png" id="1_fxawi"]
+[ext_resource type="Texture2D" uid="uid://btpe8eepofffv" path="res://assets/ui/band_edge.png" id="1_jh1ye"]
+[ext_resource type="Texture2D" uid="uid://b148p4k88xlx" path="res://assets/ui/btn_disabled.png" id="2_jh1ye"]
+[ext_resource type="Texture2D" uid="uid://jlqltves34n3" path="res://assets/ui/btn_hover.png" id="3_51j20"]
+[ext_resource type="Texture2D" uid="uid://cbnxpuwdsrgjy" path="res://assets/ui/btn_normal.png" id="4_xgwhs"]
+[ext_resource type="Texture2D" uid="uid://m2ht2v2brgeh" path="res://assets/ui/btn_pressed.png" id="5_ojcqm"]
+[ext_resource type="Texture2D" uid="uid://bf4umccm6xkbi" path="res://assets/ui/bar_fill_ember.png" id="6_lheu4"]
+[ext_resource type="Texture2D" uid="uid://dy5p2ivfoikof" path="res://assets/ui/panel_hud.png" id="7_k8rnt"]
+[ext_resource type="Texture2D" uid="uid://wijck6s50sx1" path="res://assets/ui/panel_ornate.png" id="8_lhe8w"]
+[ext_resource type="Texture2D" uid="uid://dlhq6v8afm0hg" path="res://assets/ui/panel_stone.png" id="9_d3vf0"]
+[ext_resource type="Texture2D" uid="uid://dr81jhfgxodqp" path="res://assets/ui/bar_track.png" id="10_jlemo"]
+[ext_resource type="Texture2D" uid="uid://c7if62dd5ctfa" path="res://assets/ui/bar_fill_toxin.png" id="11_1gp4e"]
+[ext_resource type="FontFile" uid="uid://duluynxkdt1cg" path="res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf" id="12_35dpl"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_jh1ye"]
 content_margin_left = 24.0
@@ -166,6 +166,8 @@ default_font = ExtResource("12_35dpl")
 default_font_size = 24
 AnnounceLabel/base_type = &"Label"
 AnnounceLabel/colors/font_color = Color(0.9098039, 0.6901961, 0.5647059, 1)
+AnnounceLabel/colors/font_outline_color = Color(0.04, 0.03, 0.06, 0.92)
+AnnounceLabel/constants/outline_size = 2
 AnnounceLabel/font_sizes/font_size = 24
 BandPanel/base_type = &"PanelContainer"
 BandPanel/styles/panel = SubResource("StyleBoxTexture_jh1ye")
@@ -204,15 +206,21 @@ HeadLabel/colors/font_color = Color(1, 0.75686276, 0.2901961, 1)
 HeadLabel/font_sizes/font_size = 36
 HudLabel/base_type = &"Label"
 HudLabel/colors/font_color = Color(0.6392157, 0.6039216, 0.5568628, 1)
-HudLabel/font_sizes/font_size = 12
+HudLabel/colors/font_outline_color = Color(0.04, 0.03, 0.06, 0.92)
+HudLabel/constants/outline_size = 2
+HudLabel/font_sizes/font_size = 24
 HudPanel/base_type = &"PanelContainer"
 HudPanel/styles/panel = SubResource("StyleBoxTexture_jlemo")
 HudStrongLabel/base_type = &"Label"
 HudStrongLabel/colors/font_color = Color(0.9098039, 0.6901961, 0.5647059, 1)
-HudStrongLabel/font_sizes/font_size = 12
+HudStrongLabel/colors/font_outline_color = Color(0.04, 0.03, 0.06, 0.92)
+HudStrongLabel/constants/outline_size = 2
+HudStrongLabel/font_sizes/font_size = 24
 HudToxinLabel/base_type = &"Label"
 HudToxinLabel/colors/font_color = Color(0.61960787, 0.8156863, 0.57254905, 1)
-HudToxinLabel/font_sizes/font_size = 12
+HudToxinLabel/colors/font_outline_color = Color(0.04, 0.03, 0.06, 0.92)
+HudToxinLabel/constants/outline_size = 2
+HudToxinLabel/font_sizes/font_size = 24
 KeyCapLabel/base_type = &"Label"
 KeyCapLabel/colors/font_color = Color(1, 0.75686276, 0.2901961, 1)
 KeyCapLabel/constants/shadow_offset_x = 0
@@ -251,6 +259,8 @@ ProgressBar/styles/background = SubResource("StyleBoxTexture_3hpk4")
 ProgressBar/styles/fill = SubResource("StyleBoxTexture_u2bjs")
 PromptLabel/base_type = &"Label"
 PromptLabel/colors/font_color = Color(1, 0.75686276, 0.2901961, 1)
+PromptLabel/colors/font_outline_color = Color(0.04, 0.03, 0.06, 0.92)
+PromptLabel/constants/outline_size = 2
 PromptLabel/font_sizes/font_size = 24
 SubHeadLabel/base_type = &"Label"
 SubHeadLabel/colors/font_color = Color(0.9098039, 0.6901961, 0.5647059, 1)

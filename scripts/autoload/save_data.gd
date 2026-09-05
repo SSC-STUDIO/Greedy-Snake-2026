@@ -55,54 +55,9 @@ func save_game(scene_path: String, player: Node) -> bool:
 	var inv_state := _collect_inventory(player)
 	player_state["pouch"] = inv_state["pouch"]
 	player_state["sockets"] = inv_state["sockets"]
-	return _write_snapshot(scene_path, player_state, _collect_world(player))
-
-
-## Persist progression while keeping the last Ember Nest checkpoint intact.
-## Current inventory/world/consumed/story state is written atomically, but the
-## saved player position, hp and toxin remain the prior checkpoint values.
-## This prevents a Boss kill or gate interaction from moving the death reload
-## point into the middle of the encounter.
-func persist_progress(scene_path: String, player: Node) -> bool:
-	var current := _collect_player(player)
-	var inv_state := _collect_inventory(player)
-	current["pouch"] = inv_state["pouch"]
-	current["sockets"] = inv_state["sockets"]
-	var checkpoint := _checkpoint_player()
-	for key in ["pos", "hp", "max_hp", "toxin", "max_toxin", "facing"]:
-		if checkpoint.has(key):
-			current[key] = checkpoint[key]
-	return _write_snapshot(scene_path, current, _collect_world(player))
-
-
-func persist_progress_for_player(player: Node) -> bool:
-	var scene_path := GameContext.world_scene_path(player)
-	if scene_path == "":
-		scene_path = "res://scenes/levels/Level01_Static.tscn"
-	return persist_progress(scene_path, player)
-
-
-func _checkpoint_player() -> Dictionary:
-	if data.has("player") and data["player"] is Dictionary:
-		return (data["player"] as Dictionary).duplicate(true)
-	var cfg := _load_cfg()
-	if cfg != null and cfg.has_section("player"):
-		return {
-			"hp": cfg.get_value("player", "hp", 5),
-			"max_hp": cfg.get_value("player", "max_hp", 5),
-			"toxin": cfg.get_value("player", "toxin", 0.0),
-			"max_toxin": cfg.get_value("player", "max_toxin", 100.0),
-			"pos": Vector2(cfg.get_value("player", "pos_x", 96.0), cfg.get_value("player", "pos_y", 290.0)),
-			"facing": cfg.get_value("player", "facing", 1),
-		}
-	# A first progress write before any nest is lit gets a safe start checkpoint.
-	return {"hp": 5, "max_hp": 5, "toxin": 0.0, "max_toxin": 100.0,
-			"pos": Vector2(96, 290), "facing": 1}
-
-
-func _write_snapshot(scene_path: String, player_state: Dictionary, world: Dictionary) -> bool:
+	var world := _collect_world()
 	var cfg := ConfigFile.new()
-	var snapshot := {
+	data = {
 		"meta": {
 			"version": SAVE_VERSION,
 			"scene": scene_path,
@@ -110,15 +65,10 @@ func _write_snapshot(scene_path: String, player_state: Dictionary, world: Dictio
 		},
 		"player": player_state,
 		"world": world,
-		"consumed": Array(consumed),
-		"lit_nests": Array(lit_nests),
-		"flags": Array(flags),
-		"ending": ending,
 	}
 	cfg.set_value("meta", "version", SAVE_VERSION)
-	cfg.set_value("meta", "progress_revision", 1)
 	cfg.set_value("meta", "scene", scene_path)
-	cfg.set_value("meta", "saved_at", snapshot["meta"]["saved_at"])
+	cfg.set_value("meta", "saved_at", data["meta"]["saved_at"])
 	var ps: Dictionary = player_state
 	cfg.set_value("player", "hp", ps.get("hp", 0))
 	cfg.set_value("player", "max_hp", ps.get("max_hp", 1))
@@ -142,7 +92,7 @@ func _write_snapshot(scene_path: String, player_state: Dictionary, world: Dictio
 	cfg.set_value("story", "flags", Array(flags))
 	cfg.set_value("meta", "ending", ending)
 	var atmosphere := WorldClock.snapshot()
-	snapshot["atmosphere"] = atmosphere
+	data["atmosphere"] = atmosphere
 	cfg.set_value("atmosphere", "time_of_day", float(atmosphere.get("time_of_day", WorldClock.DEFAULT_TIME)))
 	cfg.set_value("atmosphere", "weather", String(atmosphere.get("weather", "haze")))
 	cfg.set_value("atmosphere", "zone", String(atmosphere.get("zone", "outdoors")))
@@ -150,7 +100,6 @@ func _write_snapshot(scene_path: String, player_state: Dictionary, world: Dictio
 	if not _write_cfg(cfg):
 		push_warning("SaveData: failed to save to %s" % save_path)
 		return false
-	data = snapshot
 	GameEvents.game_saved.emit()
 	return true
 
@@ -159,7 +108,6 @@ func load_game() -> bool:
 	if cfg == null:
 		data = {}
 		return false
-	_repair_legacy_progress(cfg)
 	data = {}
 	data["meta"] = {
 		"version": cfg.get_value("meta", "version", 1),
@@ -190,10 +138,6 @@ func load_game() -> bool:
 	for f in cfg.get_value("story", "flags", []):
 		flags.append(String(f))
 	ending = String(cfg.get_value("meta", "ending", ""))
-	data["consumed"] = Array(consumed)
-	data["lit_nests"] = Array(lit_nests)
-	data["flags"] = Array(flags)
-	data["ending"] = ending
 	var atmosphere := {
 		"time_of_day": float(cfg.get_value("atmosphere", "time_of_day", WorldClock.DEFAULT_TIME)),
 		"weather": String(cfg.get_value("atmosphere", "weather", "haze")),
@@ -287,12 +231,7 @@ func persist_story() -> void:
 	cfg.set_value("meta", "ending", ending)
 	cfg.set_value("consumed", "paths", Array(consumed))
 	cfg.set_value("lit_nests", "paths", Array(lit_nests))
-	if not _write_cfg(cfg):
-		return
-	data["consumed"] = Array(consumed)
-	data["lit_nests"] = Array(lit_nests)
-	data["flags"] = Array(flags)
-	data["ending"] = ending
+	_write_cfg(cfg)
 
 
 func peek_ending() -> String:
@@ -335,12 +274,9 @@ func _collect_inventory(player: Node) -> Dictionary:
 	return {"pouch": [], "sockets": []}
 
 
-func _collect_world(player: Node = null) -> Dictionary:
+func _collect_world() -> Dictionary:
 	var world: Dictionary = {}
-	var root := GameContext.world_root(player)
 	for node in get_tree().get_nodes_in_group("persistent"):
-		if root != null and node != root and not root.is_ancestor_of(node):
-			continue
 		if not node.has_method("get_persistent_state"):
 			continue
 		var state: Dictionary = node.get_persistent_state()
@@ -418,7 +354,7 @@ func apply_player(player: Node) -> void:
 func respawn(scene_path: String, spawn: Vector2) -> void:
 	pending_spawn = spawn
 	entering_from_checkpoint = true
-	Director.fade_to(GameContext.route_scene(scene_path))
+	Director.fade_to(scene_path)
 
 
 func consume_pending_spawn() -> Vector2:
@@ -509,7 +445,7 @@ func _normalize_saved_path(path: String) -> String:
 		return path
 	if not is_inside_tree():
 		return path
-	var scene := GameContext.world_root()
+	var scene := get_tree().current_scene
 	if scene == null or not scene.is_inside_tree():
 		return path
 	var root := String(scene.get_path())
@@ -529,45 +465,6 @@ func _collect_named(node: Node, leaf: String, hits: Array[Node]) -> void:
 
 func _backup_path() -> String:
 	return save_path + ".bak"
-
-
-## Old story-only writes could consume a unique core without saving the pouch.
-## Repair only identities established by authored pickups/door state. Unknown
-## runtime drop names are unconsumed so their respawning enemy can drop again.
-func _repair_legacy_progress(cfg: ConfigFile) -> void:
-	if int(cfg.get_value("meta", "progress_revision", 0)) >= 1:
-		return
-	var pouch: Array = Array(cfg.get_value("player", "pouch", []))
-	var equipped: Array = Array(cfg.get_value("player", "sockets", []))
-	var taken: Array = Array(cfg.get_value("consumed", "paths", []))
-	var retained: Array = []
-	var earned: Array[String] = []
-	for raw in taken:
-		var leaf := String(raw).get_file()
-		if leaf == "EmberCore":
-			earned.append("ember_core")
-		elif leaf.begins_with("Kiln_") or leaf == "RustyGate":
-			earned.append("kiln_core")
-		elif leaf == "CorePickup" or leaf.begins_with("@Area2D@"):
-			continue
-		retained.append(raw)
-	if cfg.has_section("world"):
-		for path in cfg.get_section_keys("world"):
-			var state = cfg.get_value("world", path)
-			if String(path).get_file() == "ScrapPile" and state is Dictionary and state.get("looted", false):
-				earned.append("kiln_core")
-	for id in earned:
-		if not pouch.has(id) and not equipped.has(id):
-			pouch.append(id)
-	var before := save_path + ".before_progress_repair.bak"
-	if FileAccess.file_exists(save_path) and not FileAccess.file_exists(before):
-		if DirAccess.copy_absolute(save_path, before) != OK:
-			push_warning("SaveData: could not back up legacy progress; repair will retry next load")
-			return
-	cfg.set_value("player", "pouch", pouch)
-	cfg.set_value("consumed", "paths", retained)
-	cfg.set_value("meta", "progress_revision", 1)
-	_write_cfg(cfg)
 
 
 func _tmp_path() -> String:

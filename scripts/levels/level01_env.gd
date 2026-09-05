@@ -92,10 +92,6 @@ static func find_sway(host: Node) -> WindSway:
 
 
 static func plant(parent: Node2D, path: String, feet: Vector2, scale: float, tint: Color = Color.WHITE) -> Sprite2D:
-	var derivative := "res://assets/env/normalized/props/%s_%d.png" % [path.get_file().get_basename(), roundi(scale * 100.0)]
-	if not is_equal_approx(scale, roundf(scale)) and ResourceLoader.exists(derivative):
-		var sized := load(derivative) as Texture2D
-		return plant_texture(parent, sized, path, feet, 1.0, tint)
 	if not ResourceLoader.exists(path):
 		return null
 	var tex := load(path) as Texture2D

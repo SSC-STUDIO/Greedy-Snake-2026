@@ -7,6 +7,7 @@ signal slain
 var _enraged := false
 var _slash_next := false
 var _slash_cd := 0.0
+var _intro_announced := false
 
 
 func is_enraged() -> bool:
@@ -28,15 +29,22 @@ func _enemy_ready() -> void:
 
 
 func _on_hp_changed(current: int, maximum: int) -> void:
+	GameEvents.boss_hp_changed.emit(current, maximum)
 	if _enraged or maximum <= 0:
 		return
 	if current <= maximum / 2:
 		_enraged = true
 		shoot_interval = 1.15
+		Juice.shake(4.0, 300)
+		Juice.slow_mo(200, 0.2)
+		Fx.hit_sparks(global_position)
 		GameEvents.announcement.emit("炉渣在他的斧上重新沸腾")
 
 
 func _tick_block(delta: float) -> void:
+	if not _intro_announced:
+		_intro_announced = true
+		GameEvents.boss_appeared.emit("炉 约 刽 子 手 · 铸 渣 残 躯", health.current, health.max_hp)
 	_slash_cd = maxf(0.0, _slash_cd - delta)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player != null and _slash_cd <= 0.0 \
@@ -51,6 +59,7 @@ func _begin_slash() -> void:
 	_state = State.CHARGE
 	_timer = 0.52
 	_set_blocking(true)
+	_flicker_slash()
 	if _anim != null and _anim.has_anim("slash"):
 		_anim.play("slash", true)
 
@@ -63,6 +72,8 @@ func _update_anim() -> void:
 
 
 func _tick_charge(delta: float) -> void:
+	if _dead:
+		return
 	if not _slash_next:
 		super._tick_charge(delta)
 		return
@@ -74,9 +85,22 @@ func _tick_charge(delta: float) -> void:
 		_slash_cd = 1.6 if _enraged else 2.1
 		_state = State.BLOCK
 		_shoot_timer = shoot_interval
+		_refresh_indicator()
+
+
+## 挥斧前摇：余烬脉冲，和射弹蓄力的毒橙闪区分开，0.52s 窗更可读。
+func _flicker_slash() -> void:
+	if _indicator == null:
+		return
+	_kill_flicker()
+	_flicker_tween = create_tween()
+	_flicker_tween.tween_property(_indicator, "modulate", Palette.EMBER, 0.16)
+	_flicker_tween.tween_property(_indicator, "modulate", Color(1.45, 0.72, 0.38), 0.36)
 
 
 func _do_slash() -> void:
+	if _dead:
+		return
 	var box := Hitbox.new()
 	box.damage = 2
 	box.team = &"enemy"
@@ -91,7 +115,7 @@ func _do_slash() -> void:
 	box.add_child(shape)
 	get_parent().add_child(box)
 	box.global_position = global_position + Vector2(float(_shield_facing) * 22.0, -18.0)
-	box.monitoring = true
+	box.arm(Vector2(float(_shield_facing) * 110.0, -28.0))
 	Sfx.play(&"swing")
 	get_tree().create_timer(0.16).timeout.connect(func() -> void:
 		if is_instance_valid(box):

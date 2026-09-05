@@ -18,3 +18,22 @@ func test_slam_opens_persistent_door() -> void:
 	await flush(1)
 	other.apply_persistent_state(state)
 	ok(other.is_open, "door remembers the latch")
+
+
+func test_plate_trigger_is_taller_than_the_stone() -> void:
+	var plate := PressurePlate.new()
+	add_child(plate)
+	await flush(1)
+	var col: CollisionShape2D = null
+	for child in plate.get_children():
+		if child is CollisionShape2D:
+			col = child
+			break
+	ok(col != null, "plate still has a trigger box")
+	if col == null:
+		return
+	var shape := col.shape as RectangleShape2D
+	ok(shape != null)
+	if shape != null:
+		eq(shape.size, Vector2(40, 26), "32×10 stone + reach_pad (4, 8)")
+		ok(shape.size.y > 10.0, "trigger is taller than the lip")

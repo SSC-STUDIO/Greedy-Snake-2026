@@ -9,6 +9,8 @@ var _count: int = 0
 
 
 func _ready() -> void:
+	# 视觉仍是 32×10 石唇；判定加高，落地瞬间脚还在空中也能压上。
+	reach_pad = Vector2(4, 8)
 	super._ready()
 	add_to_group("pressure_plate")
 	prompt = ""
@@ -52,5 +54,7 @@ func _on_body_exited(body: Node2D) -> void:
 func _set_pressed(down: bool) -> void:
 	var fill := get_node_or_null("Fill") as Node2D
 	if fill:
-		fill.position.y = 3.0 if down else -2.0
+		fill.position.y = 4.0 if down else -2.0
 		fill.modulate = Color(1.25, 0.95, 0.7) if down else Color.WHITE
+	if down:
+		Sfx.play(&"insert")

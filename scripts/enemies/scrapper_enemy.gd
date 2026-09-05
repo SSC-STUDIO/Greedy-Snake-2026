@@ -20,6 +20,11 @@ const CHARGE_PROBE_TOP := 16.0
 const CHARGE_PROBE_BOTTOM := 10.0
 ## 危害区（毒池 ToxinPool）所在的物理层。
 const HAZARD_LAYER := 128
+## 像素前摇：贴图路径会藏掉 Eye 色块，改用整体染色 + 微蹲表达蓄势。
+const WINDUP_TINT := Color(1.35, 0.85, 0.45)
+const WINDUP_BODY_SCALE := Vector2(1.08, 0.92)
+const CHARGE_KNOCKBACK_X := 120.0
+const CHARGE_KNOCKBACK_Y := -32.0
 
 ## Hell Hound 像素帧动画（ansimuz，原图面朝左）：idle 6 / walk 12 / run 5 / jump 5。
 ## 画布 64x32（run 67x32、jump 78x48），脚底均贴画布底边。
@@ -100,47 +105,40 @@ func _after_move() -> void:
 
 
 func _tick_patrol(_delta: float) -> void:
-	charge_box.monitoring = false
+	charge_box.disarm()
 	_patrol_step()
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if _cooldown <= 0.0 and player != null:
 		var to_player := player.global_position - global_position
 		if absf(to_player.x) < aggro_range and absf(to_player.y) < 70.0:
 			_dir = signf(to_player.x) if absf(to_player.x) > 4.0 else _dir
-			_state = State.WINDUP
-			_timer = windup_time
-			eye.color = Palette.EMBER
+			_enter_windup()
 
 
 func _tick_windup(delta: float) -> void:
 	velocity.x = move_toward(velocity.x, 0.0, 600.0 * delta)
 	_timer -= delta
 	if _timer <= 0.0:
-		_state = State.CHARGE
-		_timer = charge_max_time
-		charge_box.monitoring = true
+		_arm_charge()
 
 
 func _tick_charge(delta: float) -> void:
 	velocity.x = _dir * charge_speed
 	_timer -= delta
 	if is_on_wall():
-		_state = State.STUN
-		_timer = stun_time
-		charge_box.monitoring = false
+		_enter_stun()
 		GameEvents.hit.emit(self, self, 0)  # Camera/hear feedback via bus.
 	elif _charge_hazard_ahead():
 		# （bug fix）冲锋不再扎进毒坑/冲出平台：前下方探不到地面或探到
 		# 危害区就地刹车、回头，进入与撞墙同长的眩晕惩罚窗。
 		velocity.x = 0.0
 		_dir = -_dir
-		_state = State.STUN
-		_timer = stun_time
-		charge_box.monitoring = false
+		_enter_stun()
 	elif _timer <= 0.0:
 		_cooldown = re_aggro_cooldown
 		_state = State.PATROL
-		charge_box.monitoring = false
+		charge_box.disarm()
+		_clear_windup_look()
 		eye.color = Palette.TOXIC
 
 
@@ -165,7 +163,49 @@ func _tick_stun(delta: float) -> void:
 	if _timer <= 0.0:
 		_cooldown = re_aggro_cooldown
 		_state = State.PATROL
+		_clear_windup_look()
 		eye.color = Palette.TOXIC
+
+
+func _enter_windup() -> void:
+	_state = State.WINDUP
+	_timer = windup_time
+	_apply_windup_look()
+
+
+func _arm_charge() -> void:
+	_state = State.CHARGE
+	_timer = charge_max_time
+	_clear_windup_look()
+	charge_box.arm(Vector2(_dir * CHARGE_KNOCKBACK_X, CHARGE_KNOCKBACK_Y))
+
+
+func _enter_stun() -> void:
+	_state = State.STUN
+	_timer = stun_time
+	charge_box.disarm()
+	_clear_windup_look()
+
+
+## Eye 色块在帧动画路径会被藏掉；用机体染色 + 微蹲让冲锋前摇可读。
+func _apply_windup_look() -> void:
+	eye.color = Palette.EMBER
+	visual.modulate = WINDUP_TINT
+	if _anim != null:
+		_anim.scale = WINDUP_BODY_SCALE
+
+
+func _clear_windup_look() -> void:
+	if _anim != null:
+		_anim.scale = Vector2.ONE
+	eye.color = Palette.TOXIC
+	# 受击白闪若还在播，交给 flash tween 落回；否则收掉蓄势染色。
+	if _flash_tween == null or not _flash_tween.is_valid():
+		visual.modulate = Color.WHITE
+
+
+func _flash_restore_color() -> Color:
+	return WINDUP_TINT if _state == State.WINDUP else Color.WHITE
 
 
 func _update_facing() -> void:

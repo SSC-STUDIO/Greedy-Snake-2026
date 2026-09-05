@@ -24,7 +24,6 @@ var _scum_sprites: Array[Sprite2D] = []
 var _scum_frames: Array[Texture2D] = []
 var _scum_time := 0.0
 var _hinted := false
-var _immersed: Dictionary = {}
 
 
 func _ready() -> void:
@@ -53,11 +52,12 @@ func surface_rect() -> Rect2:
 func _on_body_entered(body: Node2D) -> void:
 	if not _bodies.has(body):
 		_bodies.append(body)
+	if body is Player:
+		Sfx.play(&"splash", 0.08, -8.0)
 
 
 func _on_body_exited(body: Node2D) -> void:
 	_bodies.erase(body)
-	_immersed.erase(body.get_instance_id())
 	if body is Player:
 		_hinted = false
 
@@ -131,15 +131,6 @@ func _rebuild_visual() -> void:
 		add_child(col)
 	(col.shape as RectangleShape2D).size = _pool_size
 	col.position = _pool_size * 0.5
-	# Render water in front of the submerged boots, instead of drawing the
-	# entire knight above an opaque background that looks like solid ground.
-	var veil := Polygon2D.new()
-	veil.name = "ImmersionVeil"
-	veil.z_index = 2
-	veil.color = Color(0.07, 0.23, 0.19, 0.52)
-	veil.polygon = PackedVector2Array([Vector2.ZERO, Vector2(_pool_size.x, 0),
-		_pool_size, Vector2(0, _pool_size.y)])
-	add_child(veil)
 
 
 func _load_tex(path: String) -> Texture2D:
@@ -171,26 +162,13 @@ func _physics_process(delta: float) -> void:
 		return
 	_prune_bodies()
 	for body in _bodies:
-		if body is Player and is_submerged(body):
-			if not _immersed.has(body.get_instance_id()):
-				_immersed[body.get_instance_id()] = true
-				Sfx.play(&"splash", 0.08, -8.0)
+		if body is Player:
 			(body as Player).toxin.expose(toxin_per_second * delta)
 			_maybe_hint()
-		elif is_instance_valid(body):
-			_immersed.erase(body.get_instance_id())
 	_bubble_accum += delta
 	if _bubble_accum >= BUBBLE_INTERVAL:
 		_bubble_accum -= BUBBLE_INTERVAL
 		Fx.toxin_bubbles(self, _bubble_rect())
-
-
-func is_submerged(body: Node2D) -> bool:
-	var foot := to_local(body.global_position)
-	# Character origins are their boot soles. Contact at the bank/water lip
-	# must not count as immersion; the visible film stays at local y=0.
-	return foot.y > 0.75 and foot.y < _pool_size.y + 26.0 \
-		and foot.x > 0.0 and foot.x < _pool_size.x
 
 
 func _prune_bodies() -> void:
