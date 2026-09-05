@@ -2,6 +2,8 @@
 
 Target: **Godot 4.7** · GDScript only · zero external deps.
 
+显示边界：世界始终在 **640×360 SubViewport** 中以原生像素渲染，`GameCamera.zoom=1`；`GamePresentation` 将世界图像和 1280×720 设计单位的 UI 一起放入最大整数倍率内容矩形。`PresentationMetrics` 是内容矩形、倍率和坐标转换的唯一来源，非 16:9 窗口只增加黑边。
+
 ## Autoloads
 
 Do not give autoload scripts a `class_name` — the autoload name is the API.
@@ -14,7 +16,7 @@ Do not give autoload scripts a `class_name` — the autoload name is the API.
 | `Fx` | `scripts/autoload/fx.gd` | Particles, ember attach, death puffs. |
 | `SaveData` | `scripts/autoload/save_data.gd` | `user://` save: player, inventory, persistent world, consumed paths, story `flags`, ending. |
 | `Director` | `scripts/autoload/director.gd` | Fade, sequenced cutscenes, cinematic letterbox. Never touches `Engine.time_scale`. |
-| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `nest_light_*()` `moon_fill_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
+| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `outdoor_tint()` `indoor_tint()` `nest_light_*()` `outdoor_moon_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WorldAtmosphere` / `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
 
 ## Level01 (`scenes/levels/Level01_Static.tscn`)
 
@@ -37,12 +39,14 @@ Night is a cold corridor (`mood_tint` ≈ 30–40% luminance). Lights carve warm
 |---|---|---|
 | `WorldLight` | `scripts/world/world_light.gd` | Additive PointLight2D. `follow` is `nest` / `indoor` / `heart`. Shadows on. |
 | `EmberNest/NestLight` + `Halo` | planted by the nest | Lit fire only: warm pool + additive glow sprite. Unlit = energy 0. |
-| `DisplayFit` | `scripts/ui/display_fit.gd` | Integer-scale 1280×720 onto 1440p (2×) and 4K (3×). Not an Autoload. |
+| `DisplayFit` | `scripts/ui/display_fit.gd` | Keeps the pixel-safe integer presentation and saved window dimensions. Not an Autoload. |
 | `MoonFill` | `Level01Parallax` | Weak cool `DirectionalLight2D`. Off indoors and on the title. |
 | `ForgeShelter/WarmPool` | `Level01EastWing.place_forge_shelter` | Large dim indoor fill. |
 | `ForgeHeart/HeartLight` | `forge_heart.gd` | Residual heat after `unlock()`. |
 
 `SolidPlatform` / `GearPlatform` already carry `LightOccluder2D`. Purification shrine does not emit. No eighth Autoload.
+
+`WorldAtmosphere` owns smooth outdoor/indoor tint and background hierarchy. `WorldLight` changes energy/radius during a doorway transition while keeping one blend mode, so lighting never pops between additive and mixed compositing. `WeatherFx` caches ground and water spans and maps hits through the world viewport transform.
 
 ## Player (`scenes/player/Player.tscn`)
 
@@ -66,6 +70,8 @@ Night is a cold corridor (`mood_tint` ≈ 30–40% luminance). Lights carve warm
 
 - `data/ability_ids.gd`, `data/ability_catalog.gd`, `data/rust_core.gd` — immutable core definitions (kiln ⇒ Heat Forge, tether ⇒ Hookshot Tether, ember ⇒ Ember Step).
 
-## Testing
+## Progress snapshots and testing
+
+`SaveData.persist_progress()` writes player state, pouch/sockets, consumed paths, switches, Boss flags, checkpoints, weather and ending state as one atomic snapshot. The saved identifier remains `scenes/levels/Level01_Static.tscn` even though the presentation wrapper owns display. Legacy absolute node paths are resolved, and uncertain old pickup records are made obtainable again after a `.before_progress_repair.bak` backup.
 
 Zero-dependency harness under `tests/`. See the Testing section in `README.md`.

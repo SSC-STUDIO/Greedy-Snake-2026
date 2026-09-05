@@ -49,10 +49,10 @@ godot --path "C:\Users\Administrator\OneDrive\Documents\My-Program\Rustgrave"
 - 判定帧弹反投射物（判定统一在 `MeleeCombat`）；弹反减毒并点燃 2 秒共鸣
 - 毒素即燃料：档位越高越锋利，满溢掉血；净化是卸武装
 - 锈核共鸣：窑+系绳=熔钩，窑+余烬=爆燃斩，系绳+余烬=摆荡步
-- 三种敌人 + 东端刽子手 Boss（半血二阶段）与复燃/熄灭双结局
+- 飞怪、喷吐者、碎甲者、齿轮盾卫 + 东端刽子手 Boss（半血二阶段）与复燃/熄灭双结局
 - 过场：Director 淡变/字幕/镜头托管（苏醒、初毒、初核、初弹反、Boss、结局）
 - 像素帧动画角色：玩家 Fantasy Knight，敌人 Hell Beast / Hell Hound / Undead Executioner（`CharFrames` + `FrameAnimSprite` 逐帧驱动）
-- Gothicvania 环境：无缝视差背景、双皮肤平台、腐液毒池、剪影层与漂雾
+- Gothicvania 环境：无缝视差背景、远山/近山/前景分层、双皮肤平台、腐液毒池、剪影层与漂雾
 - 墓园昼夜（约 20 分钟一轮）与薄雾 / 雨 / 锈雨 / 浓雾 / 余烬风；室内锁暖光；夜里点燃的余烬巢有被平台挡住的暖光
 - 压力板、门、废料堆、滤芯、净化祠、锈门
 - 毒素槽：满了掉血，同时驱动能力档位；滤芯/祠减毒
@@ -124,7 +124,7 @@ Rustgrave/
 - `#FF8C00` Toxic Glow  
 - `#4A6B6B` Teal/Water  
 
-窗口 1280×720，viewport 拉伸，全局纹理过滤 Nearest（像素锐利）。
+世界固定在 640×360 SubViewport，窗口界面使用 1280×720 设计单位；最终按窗口可容纳的最大整数倍率居中显示，非 16:9 保留黑边。世界与 UI 均使用 Nearest，字体保留自动 oversampling。
 
 ## Testing
 
@@ -142,3 +142,11 @@ Zero-dependency unit/integration suite lives in `tests/`. No GUT/plugin install 
 - Assertions: `ok(cond)`, `eq(got, expected)`, `almost(f)`. Counters inside signal lambdas must be captured as arrays (`var n := [0]`) because lambdas capture ints by value.
 - Fixture helpers live on `TestCase`: `build_floor()`, `spawn_player()`, `flush(frames)`, `wait_until(pred)`.
 - Heads-up: drive physics manually through public seams (`PlayerController.physics_tick`, `MeleeCombat.start_swing/tick`) instead of simulating Input; and never mix hand-fed `_process` calls with tree-resident nodes — engine idle frames interleave unpredictably in headless runs.
+
+真实流程验收：
+
+```powershell
+& ./tools/run_input_acceptance.ps1 -Rendered
+```
+
+该脚本只使用正常移动、跳跃、攻击、交互和菜单输入，覆盖能力获取、Boss、死亡后余烬巢复活、退出继续及复燃/熄灭两种结局。视觉矩阵使用 `run_render_acceptance.ps1`，属于离屏/窗口渲染检查，不替代真实通关证据。
