@@ -86,9 +86,11 @@ func _physics_process(delta: float) -> void:
 	var face := float(controller.facing)
 	visual.scale.x = face
 	melee.scale.x = face
-	# 落地扬尘：从明显下落转为触地时在脚边 puff 一团灰。
-	if is_on_floor() and not _was_on_floor and fall_speed > 60.0:
+	# 落地扬尘：从明显下落转为触地时在脚边 puff；重落再给镜头一下。
+	if is_on_floor() and not _was_on_floor and fall_speed > 48.0:
 		Fx.dust_puff(global_position + Vector2(0.0, -2.0))
+		if fall_speed > 130.0:
+			Juice.shake(2.2, 90)
 	_was_on_floor = is_on_floor()
 	_update_visual(delta)
 	_poll_slash_arc(face)

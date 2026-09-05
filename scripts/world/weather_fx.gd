@@ -13,8 +13,8 @@ const EMBER_PATH := "res://assets/ui/ember_motes.png"
 const EMBER_FRAMES := 8
 const EMBER_DRIFT := 78.0
 const GROUND_MASK := 1
-const SPLASH_RATE := 40.0
-const SPLASH_BURST := 14.0
+const SPLASH_RATE := 56.0
+const SPLASH_BURST := 18.0
 
 var _drops: Array[Sprite2D] = []
 var _world: Array[Vector2] = []
@@ -30,16 +30,20 @@ var _warm := 0.12
 func _ready() -> void:
 	layer = 4
 	follow_viewport_enabled = false
+	add_to_group("weather_fx")
 	if DisplayServer.get_name() == "headless":
 		set_process(false)
 		return
 	var bounds := _bounds()
 	_tex = _make_drop_tex()
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	for i in DROP_COUNT:
 		var spr := Sprite2D.new()
 		spr.texture = _tex
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		spr.centered = false
+		spr.material = add
 		spr.position = Vector2(randf() * bounds.x, randf() * bounds.y)
 		spr.modulate = Color(0.86, 0.90, 0.96, 0.0)
 		add_child(spr)
@@ -66,15 +70,17 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var target := WorldClock.rain_opacity()
 	_alpha = move_toward(_alpha, target, delta / 2.2)
-	var rust := WorldClock.rust_rain_mix() if WorldClock.weather_fx_allowed() else 0.0
-	var rain_col := Color(0.86, 0.90, 0.96).lerp(Color(0.86, 0.52, 0.36), clampf(rust, 0.0, 1.0))
+	# 锈色只跟锈雨天气走。夜晚普通雨的 soak 仍由 rust_rain_mix 处理，
+	# 但银白雨丝被lerp成锈橙后再叠 MoodTint 会发脏、盖住骑士。
+	var rust := WorldClock.weather_weight(WorldClock.Weather.RUST_RAIN) if WorldClock.weather_fx_allowed() else 0.0
+	var rain_col := Color(0.90, 0.94, 1.0).lerp(Color(0.86, 0.52, 0.36), clampf(rust, 0.0, 1.0))
 	if _alpha <= 0.001 and target <= 0.0:
 		for spr in _drops:
 			if spr.modulate.a > 0.0:
 				spr.modulate.a = 0.0
 	else:
 		_ensure_world_positions()
-		var vis := _alpha * 0.88
+		var vis := _alpha * 0.95
 		var view := _camera_world_rect()
 		_splash_budget = minf(_splash_budget + SPLASH_RATE * delta, SPLASH_BURST)
 		_warm = maxf(0.0, _warm - delta)
@@ -275,9 +281,17 @@ func probe_segment(from_world: Vector2, to_world: Vector2) -> Dictionary:
 	if nest_hit["kind"] != &"":
 		return nest_hit
 	var pool_hit := _probe_pools(from_world, to_world)
+	var ground_hit := _probe_ground(from_world, to_world, empty)
+	if pool_hit["kind"] != &"" and ground_hit["kind"] != &"":
+		var pool_y := (pool_hit["point"] as Vector2).y
+		var ground_y := (ground_hit["point"] as Vector2).y
+		# 坑唇草皮比水膜高：溅在石头上，不要绿水吻盖过踏步。
+		if ground_y <= pool_y + 1.5:
+			return ground_hit
+		return pool_hit
 	if pool_hit["kind"] != &"":
 		return pool_hit
-	return _probe_ground(from_world, to_world, empty)
+	return ground_hit
 
 
 func _probe_nests(from_world: Vector2, to_world: Vector2) -> Dictionary:
@@ -391,10 +405,10 @@ func _make_ember_tex() -> Texture2D:
 func _make_drop_tex() -> Texture2D:
 	var img := Image.create(2, int(DROP_H), false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
-	img.set_pixel(0, 0, Color(0.78, 0.84, 0.92, 0.20))
-	img.set_pixel(1, 1, Color(0.88, 0.92, 0.98, 0.70))
-	img.set_pixel(0, 2, Color(0.94, 0.96, 1.00, 0.95))
-	img.set_pixel(1, 3, Color(0.90, 0.94, 0.98, 0.75))
-	img.set_pixel(0, 4, Color(0.84, 0.90, 0.96, 0.45))
-	img.set_pixel(1, 5, Color(0.80, 0.86, 0.94, 0.22))
+	img.set_pixel(0, 0, Color(0.84, 0.90, 1.00, 0.28))
+	img.set_pixel(1, 1, Color(0.92, 0.96, 1.00, 0.82))
+	img.set_pixel(0, 2, Color(0.98, 1.00, 1.00, 1.00))
+	img.set_pixel(1, 3, Color(0.94, 0.97, 1.00, 0.88))
+	img.set_pixel(0, 4, Color(0.88, 0.93, 1.00, 0.55))
+	img.set_pixel(1, 5, Color(0.82, 0.88, 0.98, 0.28))
 	return ImageTexture.create_from_image(img)

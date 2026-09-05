@@ -1,6 +1,7 @@
 class_name CineFx
 extends Node2D
 ## World-space depth dust / scrap plus a faint moon shaft.
+## Sits behind the knight (z=-1) so near motes never grey the silhouette.
 ## Presentation only — wind and zone come from WorldClock.
 
 const FAR_COUNT := 22
@@ -17,7 +18,7 @@ var _headless := false
 
 
 func _ready() -> void:
-	z_index = 3
+	z_index = -1
 	_headless = DisplayServer.get_name() == "headless"
 	_mote_tex = _load_motes()
 	_shaft = Sprite2D.new()

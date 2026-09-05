@@ -23,6 +23,7 @@ var _headless := false
 var _weaponhit_sheet: Texture2D = null
 var _bubbles_sheet: Texture2D = null
 var _brightfire_sheet: Texture2D = null
+var _add_mat: CanvasItemMaterial = null
 
 
 func _ready() -> void:
@@ -118,7 +119,7 @@ func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
 		return
 	var bubble := ToxinBubble.new(_bubbles_sheet)
 	bubble.position = rect.position + Vector2(randf() * rect.size.x, randf() * rect.size.y)
-	bubble.modulate = Color(0.45, 0.78, 0.55, 0.75)
+	bubble.modulate = Color(0.62, 1.05, 0.78, 0.95)
 	parent.add_child(bubble)
 
 
@@ -126,16 +127,18 @@ func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
 func rain_splash(pos: Vector2, kind: StringName = &"ground") -> void:
 	if _headless:
 		return
-	var host := _world_host()
+	var placed: Dictionary = _splash_host(pos)
+	var host: Node = placed["host"]
+	var at: Vector2 = placed["pos"]
 	if kind == &"toxin":
 		var kiss := WaterKiss.new()
-		kiss.launch(pos)
+		kiss.launch(at)
 		kiss.z_index = FX_Z
 		host.add_child(kiss)
 	var count := 5 if kind == &"toxin" else 4
 	for i in count:
 		var mote := RainSplash.new()
-		mote.launch(pos, kind)
+		mote.launch(at, kind)
 		mote.z_index = FX_Z
 		host.add_child(mote)
 
@@ -144,14 +147,16 @@ func rain_splash(pos: Vector2, kind: StringName = &"ground") -> void:
 func pool_splash(pos: Vector2) -> void:
 	if _headless:
 		return
-	var host := _world_host()
+	var placed: Dictionary = _splash_host(pos)
+	var host: Node = placed["host"]
+	var at: Vector2 = placed["pos"]
 	var kiss := WaterKiss.new()
-	kiss.launch(pos)
+	kiss.launch(at)
 	kiss.z_index = FX_Z
 	host.add_child(kiss)
 	for i in 7:
 		var mote := RainSplash.new()
-		mote.launch(pos + Vector2(randf_range(-5.0, 5.0), 0.0), &"toxin")
+		mote.launch(at + Vector2(randf_range(-5.0, 5.0), 0.0), &"toxin")
 		mote.z_index = FX_Z
 		host.add_child(mote)
 
@@ -159,6 +164,24 @@ func pool_splash(pos: Vector2) -> void:
 func _world_host() -> Node:
 	var host := GameContext.world_effects()
 	return host if host != null else self
+
+
+## Shared ADD material. MoodTint multiplies first; additive still reads as a kiss.
+func _additive_mat() -> CanvasItemMaterial:
+	if _add_mat == null:
+		_add_mat = CanvasItemMaterial.new()
+		_add_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _add_mat
+
+
+## Splashes live on WeatherFx's canvas so night CanvasModulate cannot crush them.
+func _splash_host(world_pos: Vector2) -> Dictionary:
+	var tree := get_tree()
+	if tree != null:
+		var wx := tree.get_first_node_in_group("weather_fx") as WeatherFx
+		if wx != null:
+			return {"host": wx, "pos": wx.world_to_canvas(world_pos)}
+	return {"host": _world_host(), "pos": world_pos}
 
 
 ## 一次性帧序列播放器：固定 fps 播完即自由。像素素材 NEAREST。
@@ -294,13 +317,14 @@ class DustMote extends Node2D:
 
 
 	func _ready() -> void:
-		var half := randf_range(1.0, 1.5)
+		var half := randf_range(1.2, 1.8)
 		var poly := Polygon2D.new()
 		poly.polygon = PackedVector2Array([
 			Vector2(-half, -half), Vector2(half, -half),
 			Vector2(half, half), Vector2(-half, half),
 		])
-		poly.color = Palette.IRON.lerp(Palette.CONCRETE, randf())
+		poly.color = Palette.IRON.lerp(Palette.CONCRETE, randf()) * 1.35
+		poly.material = Fx._additive_mat()
 		add_child(poly)
 
 
@@ -312,28 +336,29 @@ class DustMote extends Node2D:
 		_velocity.x *= maxf(0.0, 1.0 - 3.2 * delta)
 		_velocity.y += 90.0 * delta
 		position += _velocity * delta
+		position = Vector2(roundf(position.x), roundf(position.y))
 		var k := _age / _lifetime
 		modulate.a = minf(k * 10.0, 1.0) * (1.0 - k)
 
 
-## 2 px rain kiss on ground / water / iron. Bright enough to survive MoodTint.
+## 2 px rain kiss on ground / water / iron. Additive so MoodTint cannot crush it.
 class RainSplash extends Node2D:
 	var _velocity := Vector2.ZERO
 	var _age := 0.0
-	var _lifetime := 0.28
+	var _lifetime := 0.32
 
 
 	func launch(pos: Vector2, kind: StringName) -> void:
 		position = Vector2(roundf(pos.x + randf_range(-2.0, 2.0)), roundf(pos.y))
-		_lifetime = randf_range(0.20, 0.34)
+		_lifetime = randf_range(0.24, 0.40)
 		match kind:
 			&"toxin":
-				_velocity = Vector2(randf_range(-22.0, 22.0), randf_range(-48.0, -18.0))
+				_velocity = Vector2(randf_range(-24.0, 24.0), randf_range(-54.0, -20.0))
 			&"nest_lit":
 				_velocity = Vector2(randf_range(-12.0, 12.0), randf_range(-56.0, -28.0))
 			_:
-				_velocity = Vector2(randf_range(-26.0, 26.0), randf_range(-36.0, -12.0))
-		var half := 1.6 if kind == &"toxin" else 1.4
+				_velocity = Vector2(randf_range(-28.0, 28.0), randf_range(-40.0, -14.0))
+		var half := 1.8 if kind == &"toxin" else 1.6
 		var poly := Polygon2D.new()
 		poly.polygon = PackedVector2Array([
 			Vector2(-half, -half), Vector2(half, -half),
@@ -341,15 +366,16 @@ class RainSplash extends Node2D:
 		])
 		match kind:
 			&"toxin":
-				poly.color = Color(0.62, 0.95, 0.78).lerp(Palette.FOG, randf() * 0.25)
+				poly.color = Color(0.78, 1.15, 0.92)
 			&"nest":
 				poly.color = Palette.IRON.lerp(Palette.RUST_LIGHT, randf())
 			&"nest_lit":
-				poly.color = Color(1.0, 0.86, 0.62).lerp(Palette.PALE, randf() * 0.35)
+				poly.color = Color(1.15, 0.95, 0.62)
 			&"rust":
 				poly.color = Palette.RUST_LIGHT.lerp(Palette.EMBER_ASH, randf() * 0.45)
 			_:
-				poly.color = Color(0.92, 0.94, 0.98).lerp(Palette.PALE, randf() * 0.35)
+				poly.color = Color(1.05, 1.08, 1.15)
+		poly.material = Fx._additive_mat()
 		add_child(poly)
 
 
@@ -368,17 +394,18 @@ class RainSplash extends Node2D:
 ## Horizontal scum flash on the toxin film — reads as a water kiss, not dust.
 class WaterKiss extends Node2D:
 	var _age := 0.0
-	var _lifetime := 0.28
-	var _half := 4.0
+	var _lifetime := 0.30
+	var _half := 5.0
 	var _poly: Polygon2D
 
 
 	func launch(pos: Vector2) -> void:
 		position = Vector2(roundf(pos.x), roundf(pos.y))
-		_half = randf_range(4.0, 7.0)
-		_lifetime = randf_range(0.22, 0.34)
+		_half = randf_range(5.0, 9.0)
+		_lifetime = randf_range(0.24, 0.36)
 		_poly = Polygon2D.new()
-		_poly.color = Color(0.70, 0.98, 0.82, 0.95)
+		_poly.color = Color(0.82, 1.18, 0.95, 1.0)
+		_poly.material = Fx._additive_mat()
 		_set_span(_half)
 		add_child(_poly)
 
@@ -489,7 +516,7 @@ class ToxinBubble extends Sprite2D:
 		_lifetime = randf_range(0.9, 1.6)
 		_rise = randf_range(7.0, 14.0)
 		_phase = randf() * TAU
-		var s := randf_range(0.06, 0.1)
+		var s := randf_range(0.08, 0.13)
 		scale = Vector2(s, s)
 
 

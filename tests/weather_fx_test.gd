@@ -63,6 +63,48 @@ func test_drop_hits_pool_water_before_pit_floor() -> void:
 	eq(submerged["kind"], &"toxin", "a drop already in the volume still counts as water")
 
 
+func test_drop_hits_pit_lip_as_ground() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	var lip := SolidPlatform.new()
+	lip.size = Vector2(32, 16)
+	lip.position = Vector2(400, 336)
+	arena.add_child(lip)
+	var floor := SolidPlatform.new()
+	floor.size = Vector2(112, 48)
+	floor.position = Vector2(400, 352)
+	arena.add_child(floor)
+	var pool := ToxinPool.new()
+	pool.position = Vector2(400, 336)
+	arena.add_child(pool)
+	pool.configure(Vector2(112, 32))
+	var fx := WeatherFx.new()
+	arena.add_child(fx)
+	await flush(2)
+	var lip_hit: Dictionary = fx.probe_segment(Vector2(416, 328), Vector2(416, 342))
+	eq(lip_hit["kind"], &"ground", "rain on the pit step is turf, not a green kiss")
+	var water: Dictionary = fx.probe_segment(Vector2(456, 328), Vector2(456, 342))
+	eq(water["kind"], &"toxin", "open water between the lips still kisses")
+
+
+func test_pool_volume_reads_and_scum_snaps() -> void:
+	var pool := ToxinPool.new()
+	add_child(pool)
+	pool.configure(Vector2(112, 32))
+	await flush(1)
+	eq(pool.z_index, -1, "water sits under pit lips")
+	var volume := pool.get_node_or_null("Volume") as ColorRect
+	ok(volume != null, "pool has a liquid body, not only a 5px film")
+	if volume != null:
+		eq(volume.size, Vector2(112, 32))
+		ok(volume.color.g > volume.color.r, "volume stays teal")
+	ok(not pool._scum_sprites.is_empty(), "scum film still tiles the surface")
+	pool._process(0.35)
+	for spr in pool._scum_sprites:
+		eq(spr.position.y, roundf(spr.position.y), "scum stays on the pixel grid")
+		ok(spr.modulate.g > 1.0, "scum is pre-boosted against MoodTint")
+
+
 func test_drop_hits_ember_nest_bowl() -> void:
 	var arena := Node2D.new()
 	add_child(arena)
