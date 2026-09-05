@@ -111,6 +111,10 @@ func _on_shoot_tick() -> void:
 		return
 	if global_position.distance_to(player.global_position) > aggro_range:
 		return
+	# Do not fire through a full platform-height gap. The player must first
+	# reach the ledge so the telegraph is readable and the fight is answerable.
+	if absf(global_position.y - player.global_position.y) > 96.0:
+		return
 	_begin_charge()
 
 
