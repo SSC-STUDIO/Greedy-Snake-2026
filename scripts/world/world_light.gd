@@ -79,6 +79,9 @@ func _target_energy() -> float:
 		&"nest":
 			return WorldClock.nest_light_energy()
 		&"indoor":
+			var shelter := get_parent()
+			if shelter != null and String(shelter.name) == "ForgeShelter":
+				return WorldClock.indoor_fill_energy()
 			return 0.85 if WorldClock.zone == WorldClock.Zone.INDOORS else 0.30
 		&"heart":
 			return WorldClock.heart_light_energy()

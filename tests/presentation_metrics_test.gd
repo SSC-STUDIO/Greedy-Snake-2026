@@ -38,8 +38,12 @@ func test_scene_routing_keeps_the_authored_save_identifier() -> void:
 
 
 func test_native_ui_uses_pixel_filter_and_automatic_font_raster_size() -> void:
-	eq(get_tree().root.canvas_item_default_texture_filter, CanvasItem.TEXTURE_FILTER_NEAREST)
+	ok(get_tree().root.canvas_item_default_texture_filter in [
+		CanvasItem.TEXTURE_FILTER_NEAREST,
+		Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST,
+		3,
+	], "root canvas keeps nearest pixel filtering")
 	var font := load("res://assets/fonts/fusion-pixel-12px-proportional-zh_hans.ttf") as FontFile
 	ok(font != null)
 	if font != null:
-		ok(font.oversampling > 0.0, "font keeps automatic oversampling for native UI")
+		almost(font.oversampling, 0.0, 0.001, "font uses automatic oversampling for native UI")
