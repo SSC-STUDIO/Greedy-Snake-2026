@@ -1,0 +1,3076 @@
+{
+	"capture_type": "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
+	"captured_at_utc": "2026-09-05T05:57:10",
+	"completed": true,
+	"display_server": "Windows",
+	"driver": "opengl3",
+	"errors": [],
+	"expected_capture_count": 24,
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"gpu_vendor": "NVIDIA",
+	"passed": true,
+	"purpose": "VISUAL FIXTURES: actor placement and clock/weather overrides; NOT a playthrough or completion proof",
+	"renderer": "gl_compatibility",
+	"resolutions": [
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"actual_world_image_rect": [
+				14.5005149841309,
+				115.492958068848,
+				2530.9990234375,
+				1369.01416015625
+			],
+			"clock_time": 0.35,
+			"fixture": "start_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"physics_body_count": 69,
+			"png": "start_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				2560.0,
+				1600.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						583.0,
+						108.0,
+						114.0,
+						84.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						180.0,
+						664.0,
+						920.0,
+						92.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						612.0,
+						740.0,
+						56.0,
+						40.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						32.0,
+						104.0,
+						672.0,
+						388.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				2560.0,
+				1600.0
+			],
+			"world_scale": 4,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"actual_world_image_rect": [
+				14.5005149841309,
+				115.492958068848,
+				2530.9990234375,
+				1369.01416015625
+			],
+			"clock_time": 0.85,
+			"fixture": "start_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"physics_body_count": 69,
+			"png": "start_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				2560.0,
+				1600.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						583.0,
+						108.0,
+						114.0,
+						84.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						180.0,
+						664.0,
+						920.0,
+						92.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						612.0,
+						740.0,
+						56.0,
+						40.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						32.0,
+						104.0,
+						672.0,
+						388.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				2560.0,
+				1600.0
+			],
+			"world_scale": 4,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"actual_world_image_rect": [
+				14.5005149841309,
+				115.492958068848,
+				2530.9990234375,
+				1369.01416015625
+			],
+			"clock_time": 0.85,
+			"fixture": "boss_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"physics_body_count": 69,
+			"png": "boss_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				2560.0,
+				1600.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						583.0,
+						108.0,
+						114.0,
+						84.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						180.0,
+						628.0,
+						920.0,
+						128.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						612.0,
+						740.0,
+						56.0,
+						40.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						32.0,
+						104.0,
+						672.0,
+						388.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				2560.0,
+				1600.0
+			],
+			"world_scale": 4,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"actual_world_image_rect": [
+				14.5005149841309,
+				115.492958068848,
+				2530.9990234375,
+				1369.01416015625
+			],
+			"clock_time": 0.35,
+			"fixture": "boss_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"physics_body_count": 69,
+			"png": "boss_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				2560.0,
+				1600.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						583.0,
+						108.0,
+						114.0,
+						84.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						180.0,
+						628.0,
+						920.0,
+						128.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						612.0,
+						740.0,
+						56.0,
+						40.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						32.0,
+						104.0,
+						672.0,
+						388.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				2560.0,
+				1600.0
+			],
+			"world_scale": 4,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "start_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "start_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "start_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "start_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "start_fog",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "start_fog_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 2,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "pit_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "pit_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "pit_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "pit_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "pit_fog",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "pit_fog_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 2,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "east_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "east_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "east_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "east_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "east_fog",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "east_fog_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 2,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "boss_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "boss_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "boss_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "boss_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "boss_fog",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "boss_fog_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 2,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "forge_day",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "forge_day_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": true
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "forge_night_rain",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "forge_night_rain_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "forge_fog",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "forge_fog_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 2,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.35,
+			"fixture": "pit_submerged",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "pit_submerged_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 0,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 0
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "pause_menu",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081",
+					"rect": [
+						320.0,
+						180.0,
+						640.0,
+						360.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/Veil",
+					"rect": [
+						320.0,
+						180.0,
+						640.0,
+						360.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/@TextureRect@1082",
+					"rect": [
+						320.0,
+						180.0,
+						640.0,
+						360.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame",
+					"rect": [
+						440.0,
+						216.0,
+						488.0,
+						578.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083",
+					"rect": [
+						474.0,
+						246.0,
+						420.0,
+						518.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@Label@1084",
+					"rect": [
+						474.0,
+						246.0,
+						420.0,
+						48.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@TextureRect@1085",
+					"rect": [
+						474.0,
+						304.0,
+						420.0,
+						14.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086",
+					"rect": [
+						474.0,
+						328.0,
+						420.0,
+						300.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1087",
+					"rect": [
+						474.0,
+						328.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1087/@Panel@1088",
+					"rect": [
+						474.0,
+						328.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1087/@Label@1089",
+					"rect": [
+						474.0,
+						328.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1087/@TextureRect@1094",
+					"rect": [
+						512.0,
+						340.0,
+						18.0,
+						28.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1095",
+					"rect": [
+						474.0,
+						390.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1095/@Panel@1096",
+					"rect": [
+						474.0,
+						390.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1095/@Label@1097",
+					"rect": [
+						474.0,
+						390.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1103",
+					"rect": [
+						474.0,
+						452.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1103/@Panel@1104",
+					"rect": [
+						474.0,
+						452.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1103/@Label@1105",
+					"rect": [
+						474.0,
+						452.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1111",
+					"rect": [
+						474.0,
+						514.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1111/@Panel@1112",
+					"rect": [
+						474.0,
+						514.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1111/@Label@1113",
+					"rect": [
+						474.0,
+						514.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1119",
+					"rect": [
+						474.0,
+						576.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1119/@Panel@1120",
+					"rect": [
+						474.0,
+						576.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@VBoxContainer@1086/@Control@1119/@Label@1121",
+					"rect": [
+						474.0,
+						576.0,
+						420.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1129",
+					"rect": [
+						515.0,
+						638.0,
+						338.0,
+						32.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1129/@Label@1127",
+					"rect": [
+						515.0,
+						638.0,
+						88.0,
+						32.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1129/@HSlider@1128",
+					"rect": [
+						613.0,
+						638.0,
+						240.0,
+						22.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1132",
+					"rect": [
+						515.0,
+						680.0,
+						338.0,
+						32.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1132/@Label@1130",
+					"rect": [
+						515.0,
+						680.0,
+						88.0,
+						32.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@HBoxContainer@1132/@HSlider@1131",
+					"rect": [
+						613.0,
+						680.0,
+						240.0,
+						22.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@Label@1133",
+					"rect": [
+						474.0,
+						722.0,
+						420.0,
+						16.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@Control@1081/PauseFrame/@VBoxContainer@1083/@Label@1134",
+					"rect": [
+						474.0,
+						748.0,
+						420.0,
+						16.0
+					]
+				}
+			],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "pause_menu_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": false
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": false
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "controls_menu",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root",
+					"rect": [
+						327.250244140625,
+						197.746475219727,
+						632.749755859375,
+						342.253540039063
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@TextureRect@1136",
+					"rect": [
+						327.250244140625,
+						197.746475219727,
+						632.749755859375,
+						342.253540039063
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137",
+					"rect": [
+						465.664245605469,
+						235.774642944336,
+						658.455139160156,
+						557.112670898438
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138",
+					"rect": [
+						499.279113769531,
+						264.295776367188,
+						591.225524902344,
+						500.070434570313
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@Label@1139",
+					"rect": [
+						499.279113769531,
+						264.295776367188,
+						591.225524902344,
+						45.6337890625
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@TextureRect@1140",
+					"rect": [
+						499.279113769531,
+						319.436614990234,
+						591.225524902344,
+						13.3098449707031
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141",
+					"rect": [
+						499.279113769531,
+						342.253509521484,
+						591.225524902344,
+						334.647857666016
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1142",
+					"rect": [
+						499.279113769531,
+						342.253509521484,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1143",
+					"rect": [
+						710.854736328125,
+						342.253509521484,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1144",
+					"rect": [
+						499.279113769531,
+						380.281677246094,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1145",
+					"rect": [
+						710.854736328125,
+						380.281677246094,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1146",
+					"rect": [
+						499.279113769531,
+						418.309875488281,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1147",
+					"rect": [
+						710.854736328125,
+						418.309875488281,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1148",
+					"rect": [
+						499.279113769531,
+						456.338043212891,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1149",
+					"rect": [
+						710.854736328125,
+						456.338043212891,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1150",
+					"rect": [
+						499.279113769531,
+						494.3662109375,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1151",
+					"rect": [
+						710.854736328125,
+						494.3662109375,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1152",
+					"rect": [
+						499.279113769531,
+						532.394409179688,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1153",
+					"rect": [
+						710.854736328125,
+						532.394409179688,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1154",
+					"rect": [
+						499.279113769531,
+						570.422546386719,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1155",
+					"rect": [
+						710.854736328125,
+						570.422546386719,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1156",
+					"rect": [
+						499.279113769531,
+						608.45068359375,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1157",
+					"rect": [
+						710.854736328125,
+						608.45068359375,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1158",
+					"rect": [
+						499.279113769531,
+						646.478881835938,
+						187.847595214844,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@GridContainer@1141/@Label@1159",
+					"rect": [
+						710.854736328125,
+						646.478881835938,
+						379.64990234375,
+						30.4225463867188
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@TextureRect@1160",
+					"rect": [
+						499.279113769531,
+						686.408447265625,
+						591.225524902344,
+						13.3098754882813
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@Label@1161",
+					"rect": [
+						499.279113769531,
+						709.225341796875,
+						591.225524902344,
+						15.2112426757813
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/HUD/PauseMenu/@CanvasLayer@1135/Root/@PanelContainer@1137/@VBoxContainer@1138/@Label@1162",
+					"rect": [
+						499.279113769531,
+						733.943664550781,
+						591.225524902344,
+						30.4225463867188
+					]
+				}
+			],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "controls_menu_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": false
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": false
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "ending_caption",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [
+				{
+					"inside_content": true,
+					"node": "/root/Director/DirectorCaption/Caption/CaptionPanel",
+					"rect": [
+						680.0,
+						844.0,
+						560.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/Director/DirectorCaption/Caption/CaptionPanel/@Label@17",
+					"rect": [
+						694.0,
+						854.0,
+						532.0,
+						32.0
+					]
+				}
+			],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "ending_caption_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		},
+		{
+			"actual_hud_root_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"actual_world_image_rect": [
+				327.250244140625,
+				197.746475219727,
+				1265.49951171875,
+				684.507080078125
+			],
+			"clock_time": 0.85,
+			"fixture": "ending_choice",
+			"hud_design_size": [
+				640.0,
+				360.0
+			],
+			"offscreen_positioned": true,
+			"overlay_controls": [
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot",
+					"rect": [
+						320.0,
+						180.0,
+						640.0,
+						360.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@TextureRect@1308",
+					"rect": [
+						320.0,
+						180.0,
+						640.0,
+						360.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309",
+					"rect": [
+						366.0,
+						211.0,
+						548.0,
+						298.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310",
+					"rect": [
+						400.0,
+						241.0,
+						480.0,
+						238.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@Label@1311",
+					"rect": [
+						400.0,
+						241.0,
+						480.0,
+						48.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@TextureRect@1312",
+					"rect": [
+						400.0,
+						299.0,
+						480.0,
+						14.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@Label@1313",
+					"rect": [
+						400.0,
+						323.0,
+						480.0,
+						32.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314",
+					"rect": [
+						400.0,
+						365.0,
+						480.0,
+						114.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1315",
+					"rect": [
+						400.0,
+						365.0,
+						480.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1315/@Panel@1316",
+					"rect": [
+						400.0,
+						365.0,
+						480.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1315/@Label@1317",
+					"rect": [
+						400.0,
+						365.0,
+						480.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1315/@TextureRect@1322",
+					"rect": [
+						438.0,
+						377.0,
+						18.0,
+						28.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1323",
+					"rect": [
+						400.0,
+						427.0,
+						480.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1323/@Panel@1324",
+					"rect": [
+						400.0,
+						427.0,
+						480.0,
+						52.0
+					]
+				},
+				{
+					"inside_content": true,
+					"node": "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1307/ChoiceRoot/@PanelContainer@1309/@VBoxContainer@1310/@VBoxContainer@1314/@Control@1323/@Label@1325",
+					"rect": [
+						400.0,
+						427.0,
+						480.0,
+						52.0
+					]
+				}
+			],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				0.0,
+				1920.0,
+				1080.0
+			],
+			"physics_body_count": 69,
+			"png": "ending_choice_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				1920.0,
+				1080.0
+			],
+			"weather": 1,
+			"widgets": {
+				"Banner": {
+					"rect": [
+						611.5,
+						194.0,
+						57.0,
+						42.0
+					],
+					"visible": true
+				},
+				"BossBar": {
+					"rect": [
+						410.0,
+						454.0,
+						460.0,
+						64.0
+					],
+					"visible": false
+				},
+				"Prompt": {
+					"rect": [
+						626.0,
+						510.0,
+						28.0,
+						20.0
+					],
+					"visible": false
+				},
+				"StatPanel": {
+					"rect": [
+						336.0,
+						192.0,
+						336.0,
+						194.0
+					],
+					"visible": true
+				}
+			},
+			"window_position": [
+				-12000.0,
+				-12000.0
+			],
+			"window_size": [
+				1920.0,
+				1080.0
+			],
+			"world_scale": 3,
+			"world_viewport": [
+				640.0,
+				360.0
+			],
+			"wrong_world_nodes": [],
+			"zone": 1
+		}
+	],
+	"screen_size": [
+		2560.0,
+		1600.0
+	],
+	"supplement": true,
+	"timings": [],
+	"title_screens": [
+		{
+			"actual_title_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"passed": true,
+			"physical_content_rect": [
+				0.0,
+				80.0,
+				2560.0,
+				1440.0
+			],
+			"png": "title_1280x720.png",
+			"rendered_image_size": [
+				1280.0,
+				720.0
+			],
+			"requested": [
+				2560.0,
+				1600.0
+			]
+		}
+	],
+	"vsync": "disabled; wall frame timing includes driver/compositor/CPU scheduling",
+	"wing_animation": {
+		"frames": [
+			{
+				"animation": "idle",
+				"png": "wing_a_1920x1080.png",
+				"saved": true,
+				"texture": "res://assets/characters/flying_demon_px/idle/idle_2.png",
+				"wall_ms": 9157
+			},
+			{
+				"animation": "idle",
+				"png": "wing_b_1920x1080.png",
+				"saved": true,
+				"texture": "res://assets/characters/flying_demon_px/idle/idle_4.png",
+				"wall_ms": 9296
+			}
+		],
+		"note": "unmodified animation process at one frozen actor position; not combat acceptance",
+		"passed": true
+	},
+	"engine_exit_errors": []
+}
