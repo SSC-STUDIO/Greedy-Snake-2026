@@ -37,10 +37,11 @@ func _setup_light() -> void:
 	_light.follow = &"torch"
 	_light.lit = true
 	_light.flicker = true
-	_light.casts_shadow = false
+	# WorldLight controls shadowing through its presentation defaults; Godot 4's
+	# PointLight2D has no casts_shadow property.
 	_light.color = light_color
-	_light.base_energy = base_energy
-	_light.base_radius = light_radius
+	_light.energy = base_energy
+	_light.texture_scale = light_radius / 32.0
 	_light.position = Vector2(0.0, -8.0)
 	add_child(_light)
 
