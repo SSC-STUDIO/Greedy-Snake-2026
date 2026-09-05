@@ -32,6 +32,8 @@ const BEAST_CHAR := "spitter_hell_beast"
 const BEAST_IDLE_POS := Vector2(-4.0, -33.0)   # 身体中心在画布 x≈37 → 补偿 -4
 const BEAST_ATTACK_POS := Vector2(0.0, -32.0)
 const BEAST_DEATH_BASELINE := -80.0            # 死亡帧画布 160 高（火柱向上）
+## Keep the original spitter read at the native 640x360 world scale.
+const BEAST_VISUAL_SCALE := Vector2(1.15, 1.15)
 
 
 func _enemy_ready() -> void:
@@ -63,6 +65,7 @@ func _build_visual() -> void:
 		["attack", "", 10.0, false, BEAST_ATTACK_POS],
 	])
 	if _anim != null:
+		_anim.scale = BEAST_VISUAL_SCALE
 		_anim.play("idle")
 		_anim.finished.connect(_on_anim_finished)
 		add_child(_anim)
@@ -126,7 +129,8 @@ func _begin_charge() -> void:
 	_visual_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	_visual_tween.tween_property(_body, "modulate", _charge_modulate(), CHARGE_TIME)
 	_visual_tween.parallel().tween_property(
-		_body, "scale", Vector2(signf(_body.scale.x) * CHARGE_SCALE.x, CHARGE_SCALE.y), CHARGE_TIME
+		_body, "scale", Vector2(signf(_body.scale.x) * BEAST_VISUAL_SCALE.x * CHARGE_SCALE.x,
+			BEAST_VISUAL_SCALE.y * CHARGE_SCALE.y), CHARGE_TIME
 	)
 	_charge_timer.start()
 
@@ -138,7 +142,8 @@ func _on_charged() -> void:
 	_visual_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_visual_tween.tween_property(_body, "modulate", _base_modulate, 0.08)
 	_visual_tween.parallel().tween_property(
-		_body, "scale", Vector2(signf(_body.scale.x), 1.0), 0.08
+		_body, "scale", Vector2(signf(_body.scale.x) * BEAST_VISUAL_SCALE.x,
+			BEAST_VISUAL_SCALE.y), 0.08
 	)
 	if health.current <= 0 or _dead:
 		return
@@ -191,7 +196,8 @@ func _face_player() -> void:
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player == null:
 		return
-	_body.scale.x = 1.0 if player.global_position.x < global_position.x else -1.0
+	_body.scale.x = BEAST_VISUAL_SCALE.x if player.global_position.x < global_position.x \
+		else -BEAST_VISUAL_SCALE.x
 
 
 func _kill_visual_tween() -> void:
