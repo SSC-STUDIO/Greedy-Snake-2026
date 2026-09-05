@@ -44,8 +44,6 @@ static func _get_root_window(win: Window = null) -> Window:
 static func apply(win: Window = null) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
-	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_WINDOWED:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 	apply_fit_mode(_current_fit_mode, win)
 
 

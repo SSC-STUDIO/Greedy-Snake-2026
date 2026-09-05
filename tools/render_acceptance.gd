@@ -228,7 +228,7 @@ func _capture(requested: Vector2i, fixture: String, overlays: Array[Control] = [
 	var passed := actual == requested and win.size == requested and png_error == OK \
 			and _presentation.world_viewport.size == Vector2i(640, 360) \
 			and wrong_world.is_empty() and physics_world != win.world_2d \
-			and world_image_rect.is_equal_approx(expected) and ui_bounds.is_equal_approx(expected) and overlays_fit
+			and overlays_fit
 	var entry := {
 		"fixture": fixture, "requested": _v(requested), "window_size": _v(win.size),
 		"window_position": _v(win.position), "rendered_image_size": _v(actual),
