@@ -7,10 +7,10 @@ extends Camera2D
 ## 视口已是 1280x720；zoom=2.0 让可视范围回到 640x360 世界单位，
 ## 因此速度/碰撞盒/关卡坐标无需改动，只是每个世界单位渲染成 2x2 像素。
 ## 改这个值等于改画面取景（WorldScale 不变，看得更多或更少）。
-const ZOOM := 2.0
+const ZOOM := 1.0
 ## 1280×720 在 2560×1440（2.5K）上是 2× 整数拉伸。zoom=2 时
 ## 1 世界单位 = 4 屏幕像素；对齐 0.25 世界单位 = 1 物理像素。
-const PIXEL_GRID := 1.0 / (ZOOM * 2.0)
+const PIXEL_GRID := 1.0
 ## 与 Director 宽银幕条同高（viewport 像素），只读、不改 Director。
 const LETTER_BAR_PX := 32.0
 const LAND_PUNCH_Y := 5.0
@@ -70,12 +70,9 @@ func _ready() -> void:
 	GameEvents.hit.connect(_on_hit)
 	GameEvents.parried.connect(_on_parried)
 	# The chain finisher is a big committed swing — sell it with a shake.
-	GameEvents.swing_started.connect(func(combo_index: int) -> void:
-		if combo_index >= 2:
-			add_trauma(0.30)
-	)
-	GameEvents.rusty_gate_melted.connect(func(): add_trauma(0.38))
-	GameEvents.player_died.connect(func(): add_trauma(0.55))
+	GameEvents.swing_started.connect(_on_swing_started)
+	GameEvents.rusty_gate_melted.connect(_on_gate_melted)
+	GameEvents.player_died.connect(_on_player_died)
 
 
 ## Public juice entry point. Strength is clamped to [0, 1].
@@ -241,11 +238,9 @@ func _letter_k() -> float:
 
 
 func _half_extents() -> Vector2:
-	var vp := Vector2(1280.0, 720.0)
-	if is_inside_tree() and get_viewport() != null:
-		var r := get_viewport().get_visible_rect().size
-		if r.x > 1.0 and r.y > 1.0:
-			vp = r
+	# The camera always frames the fixed 640x360 world viewport. The display
+	# wrapper enlarges that texture after world rendering.
+	var vp := Vector2(640.0, 360.0)
 	return vp / (2.0 * maxf(zoom.x, 0.001))
 
 
@@ -297,3 +292,16 @@ func _on_hit(attacker: Node, target: Node, _amount: int) -> void:
 
 func _on_parried(_projectile: Node, _by_actor: Node) -> void:
 	add_trauma(0.45)
+
+
+func _on_swing_started(combo_index: int) -> void:
+	if combo_index >= 2:
+		add_trauma(0.30)
+
+
+func _on_gate_melted() -> void:
+	add_trauma(0.38)
+
+
+func _on_player_died() -> void:
+	add_trauma(0.55)
