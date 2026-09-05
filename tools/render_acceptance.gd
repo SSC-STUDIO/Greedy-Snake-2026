@@ -287,7 +287,9 @@ func _supplement_captures() -> void:
 	await _capture(size, "ending_caption", [Director.caption()._panel])
 	Director.abort()
 	Director.set_letterbox(false, true)
-	var heart := _world.get_node("Props/ForgeHeart") as ForgeHeart
+	var heart := _world.find_child("ForgeHeart", true, false) as ForgeHeart
+	if heart == null:
+		heart = _presentation.find_child("ForgeHeart", true, false) as ForgeHeart
 	heart._open_choice()
 	await _frames(8)
 	await _capture(size, "ending_choice", [heart._layer.get_node("ChoiceRoot") as Control])
