@@ -5,8 +5,8 @@ extends Node
 ##
 ## World persistence: any node in the "persistent" group exports a snapshot via
 ## get_persistent_state() and restores it via apply_persistent_state(). The
-## save stores that data keyed by the node's absolute scene path, which is
-## stable because Level01 remains a single static scene.
+## save stores that data keyed by a scene-relative path (with a resolver for
+## older absolute `/root/...` keys) so a renamed root still remaps.
 
 const SAVE_VERSION := 1
 
@@ -17,13 +17,16 @@ var save_path := "user://rustgrave_save.cfg"
 ##   meta      = { version, scene, saved_at }
 ##   player    = { hp, max_hp, toxin, max_toxin, pos (Vector2), facing }
 ##   inventory = { pouch: [core ids], sockets: [core ids or ""] }
-##   world     = { "/root/Level01../Props/Door": {...}, ... }
+##   world     = { "Props/Door": {...}, ... }  # scene-relative; old /root keys still resolve
 ##   atmosphere = { time_of_day (0–1), weather }
 var data: Dictionary = {}
 
 ## One-shot spawn override consumed by a level right after it instantiates the
 ## player. Set by respawn flow so the player appears at the last Ember Nest.
 var pending_spawn: Vector2 = Vector2.INF
+## True from death→fade until the new level finishes try_wake. Survives
+## consume_pending_spawn(), unlike pending_spawn itself.
+var entering_from_checkpoint: bool = false
 
 ## Absolute node paths of one-shot interactables that died (picked up cores,
 ## used filter gears, melted gates). Persisted even though their nodes are
@@ -45,16 +48,61 @@ func _ready() -> void:
 
 
 func has_save() -> bool:
-	return FileAccess.file_exists(save_path)
+	return FileAccess.file_exists(save_path) or FileAccess.file_exists(_backup_path())
 
 func save_game(scene_path: String, player: Node) -> bool:
 	var player_state := _collect_player(player)
 	var inv_state := _collect_inventory(player)
 	player_state["pouch"] = inv_state["pouch"]
 	player_state["sockets"] = inv_state["sockets"]
-	var world := _collect_world()
+	return _write_snapshot(scene_path, player_state, _collect_world(player))
+
+
+## Persist progression while keeping the last Ember Nest checkpoint intact.
+## Current inventory/world/consumed/story state is written atomically, but the
+## saved player position, hp and toxin remain the prior checkpoint values.
+## This prevents a Boss kill or gate interaction from moving the death reload
+## point into the middle of the encounter.
+func persist_progress(scene_path: String, player: Node) -> bool:
+	var current := _collect_player(player)
+	var inv_state := _collect_inventory(player)
+	current["pouch"] = inv_state["pouch"]
+	current["sockets"] = inv_state["sockets"]
+	var checkpoint := _checkpoint_player()
+	for key in ["pos", "hp", "max_hp", "toxin", "max_toxin", "facing"]:
+		if checkpoint.has(key):
+			current[key] = checkpoint[key]
+	return _write_snapshot(scene_path, current, _collect_world(player))
+
+
+func persist_progress_for_player(player: Node) -> bool:
+	var scene_path := GameContext.world_scene_path(player)
+	if scene_path == "":
+		scene_path = "res://scenes/levels/Level01_Static.tscn"
+	return persist_progress(scene_path, player)
+
+
+func _checkpoint_player() -> Dictionary:
+	if data.has("player") and data["player"] is Dictionary:
+		return (data["player"] as Dictionary).duplicate(true)
+	var cfg := _load_cfg()
+	if cfg != null and cfg.has_section("player"):
+		return {
+			"hp": cfg.get_value("player", "hp", 5),
+			"max_hp": cfg.get_value("player", "max_hp", 5),
+			"toxin": cfg.get_value("player", "toxin", 0.0),
+			"max_toxin": cfg.get_value("player", "max_toxin", 100.0),
+			"pos": Vector2(cfg.get_value("player", "pos_x", 96.0), cfg.get_value("player", "pos_y", 290.0)),
+			"facing": cfg.get_value("player", "facing", 1),
+		}
+	# A first progress write before any nest is lit gets a safe start checkpoint.
+	return {"hp": 5, "max_hp": 5, "toxin": 0.0, "max_toxin": 100.0,
+			"pos": Vector2(96, 290), "facing": 1}
+
+
+func _write_snapshot(scene_path: String, player_state: Dictionary, world: Dictionary) -> bool:
 	var cfg := ConfigFile.new()
-	data = {
+	var snapshot := {
 		"meta": {
 			"version": SAVE_VERSION,
 			"scene": scene_path,
@@ -62,10 +110,15 @@ func save_game(scene_path: String, player: Node) -> bool:
 		},
 		"player": player_state,
 		"world": world,
+		"consumed": Array(consumed),
+		"lit_nests": Array(lit_nests),
+		"flags": Array(flags),
+		"ending": ending,
 	}
 	cfg.set_value("meta", "version", SAVE_VERSION)
+	cfg.set_value("meta", "progress_revision", 1)
 	cfg.set_value("meta", "scene", scene_path)
-	cfg.set_value("meta", "saved_at", data["meta"]["saved_at"])
+	cfg.set_value("meta", "saved_at", snapshot["meta"]["saved_at"])
 	var ps: Dictionary = player_state
 	cfg.set_value("player", "hp", ps.get("hp", 0))
 	cfg.set_value("player", "max_hp", ps.get("max_hp", 1))
@@ -89,26 +142,24 @@ func save_game(scene_path: String, player: Node) -> bool:
 	cfg.set_value("story", "flags", Array(flags))
 	cfg.set_value("meta", "ending", ending)
 	var atmosphere := WorldClock.snapshot()
-	data["atmosphere"] = atmosphere
+	snapshot["atmosphere"] = atmosphere
 	cfg.set_value("atmosphere", "time_of_day", float(atmosphere.get("time_of_day", WorldClock.DEFAULT_TIME)))
 	cfg.set_value("atmosphere", "weather", String(atmosphere.get("weather", "haze")))
 	cfg.set_value("atmosphere", "zone", String(atmosphere.get("zone", "outdoors")))
 	cfg.set_value("atmosphere", "wind_heading", float(atmosphere.get("wind_heading", -1.0)))
-	var err := cfg.save(save_path)
-	if err != OK:
-		push_warning("SaveData: failed to save to %s (err %d)" % [save_path, err])
+	if not _write_cfg(cfg):
+		push_warning("SaveData: failed to save to %s" % save_path)
 		return false
+	data = snapshot
 	GameEvents.game_saved.emit()
 	return true
 
 func load_game() -> bool:
-	if not has_save():
+	var cfg := _load_cfg()
+	if cfg == null:
 		data = {}
 		return false
-	var cfg := ConfigFile.new()
-	if cfg.load(save_path) != OK:
-		data = {}
-		return false
+	_repair_legacy_progress(cfg)
 	data = {}
 	data["meta"] = {
 		"version": cfg.get_value("meta", "version", 1),
@@ -139,6 +190,10 @@ func load_game() -> bool:
 	for f in cfg.get_value("story", "flags", []):
 		flags.append(String(f))
 	ending = String(cfg.get_value("meta", "ending", ""))
+	data["consumed"] = Array(consumed)
+	data["lit_nests"] = Array(lit_nests)
+	data["flags"] = Array(flags)
+	data["ending"] = ending
 	var atmosphere := {
 		"time_of_day": float(cfg.get_value("atmosphere", "time_of_day", WorldClock.DEFAULT_TIME)),
 		"weather": String(cfg.get_value("atmosphere", "weather", "haze")),
@@ -151,25 +206,37 @@ func load_game() -> bool:
 
 
 func delete_save() -> void:
-	if has_save():
-		DirAccess.remove_absolute(save_path)
+	_remove_if_exists(save_path)
+	_remove_if_exists(_backup_path())
+	_remove_if_exists(_tmp_path())
 	data = {}
 	consumed.clear()
 	lit_nests.clear()
 	flags.clear()
 	ending = ""
+	pending_spawn = Vector2.INF
+	entering_from_checkpoint = false
 	WorldClock.reset()
 
 
 ## Record that a one-shot interactable at `path` has been consumed (picked up,
 ## used, melted). Survives node free because it's a plain path list.
 func mark_consumed(path: String) -> void:
+	path = _normalize_saved_path(path)
+	if path == "":
+		return
 	if not consumed.has(path):
 		consumed.append(path)
 
 
 func is_consumed(path: String) -> bool:
-	return consumed.has(path)
+	path = _normalize_saved_path(path)
+	if consumed.has(path):
+		return true
+	for p in consumed:
+		if _normalize_saved_path(String(p)) == path:
+			return true
+	return false
 
 
 ## Remove from the freshly-built scene every one-shot node that was consumed.
@@ -177,14 +244,23 @@ func apply_consumed(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	for p in consumed:
-		var target := node.get_node_or_null(p)
+		var target := resolve_saved_node(node, String(p))
 		if target != null and is_instance_valid(target):
 			target.queue_free()
 
 
 func register_lit_nest(path: String) -> void:
-	if not lit_nests.has(path):
-		lit_nests.append(path)
+	path = _normalize_saved_path(path)
+	if path == "":
+		return
+	var leaf := path.get_file()
+	var i := lit_nests.size() - 1
+	while i >= 0:
+		var existing := String(lit_nests[i])
+		if existing == path or (leaf != "" and existing.get_file() == leaf):
+			lit_nests.remove_at(i)
+		i -= 1
+	lit_nests.append(path)
 
 
 func last_lit_nest() -> String:
@@ -202,24 +278,28 @@ func has_flag(id: String) -> bool:
 
 ## Write flags + ending onto an existing save without needing a live player.
 ## Used after Boss kill so a nest-respawn load_game() cannot revive the Executioner.
+## Also flushes consumed / lit_nests so a story write cannot drop later pickups.
 func persist_story() -> void:
-	if not has_save():
-		return
-	var cfg := ConfigFile.new()
-	if cfg.load(save_path) != OK:
+	var cfg := _load_cfg()
+	if cfg == null:
 		return
 	cfg.set_value("story", "flags", Array(flags))
 	cfg.set_value("meta", "ending", ending)
-	cfg.save(save_path)
+	cfg.set_value("consumed", "paths", Array(consumed))
+	cfg.set_value("lit_nests", "paths", Array(lit_nests))
+	if not _write_cfg(cfg):
+		return
+	data["consumed"] = Array(consumed)
+	data["lit_nests"] = Array(lit_nests)
+	data["flags"] = Array(flags)
+	data["ending"] = ending
 
 
 func peek_ending() -> String:
 	if ending != "":
 		return ending
-	if not has_save():
-		return ""
-	var cfg := ConfigFile.new()
-	if cfg.load(save_path) != OK:
+	var cfg := _load_cfg()
+	if cfg == null:
 		return ""
 	return String(cfg.get_value("meta", "ending", ""))
 
@@ -255,14 +335,18 @@ func _collect_inventory(player: Node) -> Dictionary:
 	return {"pouch": [], "sockets": []}
 
 
-func _collect_world() -> Dictionary:
+func _collect_world(player: Node = null) -> Dictionary:
 	var world: Dictionary = {}
+	var root := GameContext.world_root(player)
 	for node in get_tree().get_nodes_in_group("persistent"):
+		if root != null and node != root and not root.is_ancestor_of(node):
+			continue
 		if not node.has_method("get_persistent_state"):
 			continue
 		var state: Dictionary = node.get_persistent_state()
-		if not state.is_empty():
-			world[String(node.get_path())] = state
+		var key := persist_path(node)
+		if key != "" and not state.is_empty():
+			world[key] = state
 	return world
 
 
@@ -273,10 +357,20 @@ func apply_world(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	for key in data["world"]:
-		var target := node.get_node_or_null(String(key))
+		var target := resolve_saved_node(node, String(key))
 		if target == null or not target.has_method("apply_persistent_state"):
 			continue
 		target.apply_persistent_state(data["world"][key])
+
+
+## Relight every recorded Ember Nest even when the world snapshot key is stale.
+func apply_lit_nests(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	for p in lit_nests:
+		var nest := resolve_saved_node(node, String(p))
+		if nest != null and nest.has_method("apply_persistent_state"):
+			nest.apply_persistent_state({"lit": true})
 
 
 ## Populate a freshly-instantiated player from the stored save.
@@ -323,7 +417,8 @@ func apply_player(player: Node) -> void:
 ## Record the scene we should boot into and the spawn point, then reload there.
 func respawn(scene_path: String, spawn: Vector2) -> void:
 	pending_spawn = spawn
-	Director.fade_to(scene_path)
+	entering_from_checkpoint = true
+	Director.fade_to(GameContext.route_scene(scene_path))
 
 
 func consume_pending_spawn() -> Vector2:
@@ -334,3 +429,182 @@ func consume_pending_spawn() -> Vector2:
 
 func has_pending_spawn() -> bool:
 	return pending_spawn != Vector2.INF
+
+
+## Scene-relative path so a renamed root or test host still remaps on load.
+func persist_path(node: Node) -> String:
+	if node == null or not is_instance_valid(node) or not node.is_inside_tree():
+		return ""
+	return _normalize_saved_path(String(node.get_path()))
+
+
+func resolve_saved_node(root: Node, saved_path: String) -> Node:
+	if root == null or not is_instance_valid(root) or saved_path == "":
+		return null
+	saved_path = saved_path.strip_edges()
+	if saved_path == ".":
+		return root
+	# Walk by each `/` name. Do not feed the raw string to get_node — test
+	# hosts (and some Godot NodePaths) put `.` in a node name; the parser
+	# treats `.` as "current", so `/root/.../save_test.test_foo/...` misses.
+	var parts := _path_parts(saved_path)
+	var found := _walk_parts(root, parts)
+	if found != null:
+		return found
+	if root.is_inside_tree():
+		found = _walk_parts(root.get_tree().root, parts)
+		if found != null:
+			return found
+	for i in range(parts.size()):
+		found = _walk_parts(root, parts.slice(i, parts.size()))
+		if found != null:
+			return found
+	if parts.is_empty():
+		return null
+	var leaf := String(parts[parts.size() - 1])
+	var hits: Array[Node] = []
+	_collect_named(root, leaf, hits)
+	return hits[0] if hits.size() == 1 else null
+
+
+func _path_parts(path: String) -> PackedStringArray:
+	var parts: PackedStringArray = []
+	var skipped_viewport := false
+	for p in path.split("/"):
+		if p == "" or p == ".":
+			continue
+		if not skipped_viewport and p == "root":
+			skipped_viewport = true
+			continue
+		skipped_viewport = true
+		parts.append(p)
+	return parts
+
+
+func _walk_parts(from: Node, parts: PackedStringArray) -> Node:
+	if from == null or not is_instance_valid(from):
+		return null
+	var node := from
+	for part in parts:
+		if part == "..":
+			node = node.get_parent()
+			if node == null:
+				return null
+			continue
+		node = _child_named(node, String(part))
+		if node == null:
+			return null
+	return node
+
+
+func _child_named(parent: Node, child_name: String) -> Node:
+	for child in parent.get_children():
+		if String(child.name) == child_name:
+			return child
+	return null
+
+
+func _normalize_saved_path(path: String) -> String:
+	if path == "" or path == ".":
+		return path
+	if not is_inside_tree():
+		return path
+	var scene := GameContext.world_root()
+	if scene == null or not scene.is_inside_tree():
+		return path
+	var root := String(scene.get_path())
+	if path == root:
+		return "."
+	if path.begins_with(root + "/"):
+		return path.substr(root.length() + 1)
+	return path
+
+
+func _collect_named(node: Node, leaf: String, hits: Array[Node]) -> void:
+	if String(node.name) == leaf:
+		hits.append(node)
+	for child in node.get_children():
+		_collect_named(child, leaf, hits)
+
+
+func _backup_path() -> String:
+	return save_path + ".bak"
+
+
+## Old story-only writes could consume a unique core without saving the pouch.
+## Repair only identities established by authored pickups/door state. Unknown
+## runtime drop names are unconsumed so their respawning enemy can drop again.
+func _repair_legacy_progress(cfg: ConfigFile) -> void:
+	if int(cfg.get_value("meta", "progress_revision", 0)) >= 1:
+		return
+	var pouch: Array = Array(cfg.get_value("player", "pouch", []))
+	var equipped: Array = Array(cfg.get_value("player", "sockets", []))
+	var taken: Array = Array(cfg.get_value("consumed", "paths", []))
+	var retained: Array = []
+	var earned: Array[String] = []
+	for raw in taken:
+		var leaf := String(raw).get_file()
+		if leaf == "EmberCore":
+			earned.append("ember_core")
+		elif leaf.begins_with("Kiln_") or leaf == "RustyGate":
+			earned.append("kiln_core")
+		elif leaf == "CorePickup" or leaf.begins_with("@Area2D@"):
+			continue
+		retained.append(raw)
+	if cfg.has_section("world"):
+		for path in cfg.get_section_keys("world"):
+			var state = cfg.get_value("world", path)
+			if String(path).get_file() == "ScrapPile" and state is Dictionary and state.get("looted", false):
+				earned.append("kiln_core")
+	for id in earned:
+		if not pouch.has(id) and not equipped.has(id):
+			pouch.append(id)
+	var before := save_path + ".before_progress_repair.bak"
+	if FileAccess.file_exists(save_path) and not FileAccess.file_exists(before):
+		if DirAccess.copy_absolute(save_path, before) != OK:
+			push_warning("SaveData: could not back up legacy progress; repair will retry next load")
+			return
+	cfg.set_value("player", "pouch", pouch)
+	cfg.set_value("consumed", "paths", retained)
+	cfg.set_value("meta", "progress_revision", 1)
+	_write_cfg(cfg)
+
+
+func _tmp_path() -> String:
+	return save_path + ".tmp"
+
+
+func _remove_if_exists(path: String) -> void:
+	if FileAccess.file_exists(path):
+		DirAccess.remove_absolute(path)
+
+
+func _cfg_is_usable(cfg: ConfigFile) -> bool:
+	return cfg.has_section("player") or cfg.has_section("meta")
+
+
+func _load_cfg() -> ConfigFile:
+	var cfg := ConfigFile.new()
+	if FileAccess.file_exists(save_path) and cfg.load(save_path) == OK and _cfg_is_usable(cfg):
+		return cfg
+	var bak := _backup_path()
+	var bak_cfg := ConfigFile.new()
+	if FileAccess.file_exists(bak) and bak_cfg.load(bak) == OK and _cfg_is_usable(bak_cfg):
+		bak_cfg.save(save_path)
+		return bak_cfg
+	return null
+
+
+func _write_cfg(cfg: ConfigFile) -> bool:
+	var tmp := _tmp_path()
+	var err := cfg.save(tmp)
+	if err != OK:
+		return false
+	if FileAccess.file_exists(save_path):
+		DirAccess.copy_absolute(save_path, _backup_path())
+		DirAccess.remove_absolute(save_path)
+	err = DirAccess.rename_absolute(tmp, save_path)
+	if err != OK:
+		err = cfg.save(save_path)
+		_remove_if_exists(tmp)
+	return err == OK
