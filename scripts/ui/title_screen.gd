@@ -35,7 +35,7 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	DisplayServer.window_set_title("Rustgrave")
-	DisplayFit.apply()
+	DisplayFit.apply_menu()
 	WorldClock.hold_for_menu()
 	_build_backdrop()
 	_build_masthead()

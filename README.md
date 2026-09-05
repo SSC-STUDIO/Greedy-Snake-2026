@@ -124,7 +124,7 @@ Rustgrave/
 - `#FF8C00` Toxic Glow  
 - `#4A6B6B` Teal/Water  
 
-窗口 1280×720，viewport 拉伸，全局纹理过滤 Nearest（像素锐利）。
+窗口 1280×720 设计单位，世界在 640×360 SubViewport 里 NEAREST 光栅化后再整数倍放大。
 
 ## Testing
 

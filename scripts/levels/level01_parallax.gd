@@ -5,51 +5,54 @@ extends Node
 ## Mood / fog / sky follow WorldClock — existing plates stay, only their modulate moves.
 
 const FOG_PATH := "res://assets/env/fog_band.png"
-## 近景剪影带（motion 0.65）：一段 512px 宽的图样平铺，枯树/石碑压成暗紫剪影，
+## Godot 4.7 的 ParallaxLayer 走 canvas_set_item_mirroring，把 repeat_times 写死成 1。
+## 远山 192×1.7=326，引擎只再画一份 → 652px，刚好比 640 视口多一点。镜头前探/震屏
+## 把循环缝扫到左边，紫山就像被裁掉。Parallax2D 可以指定 repeat_times，循环单元
+## 仍是一张图的宽度，份数必须盖住视口再加一点余量。
+const COVER_PAD := 128.0
+const MIN_REPEAT_TIMES := 4
+## 近景剪影带（scroll 0.65）：一段 512px 宽的图样平铺，枯树/石碑压成暗紫剪影，
 ## 填在远景 Hills(0.48) 与游玩层(1.0) 之间，背景不再是三张图硬叠。
 const SIL_PATTERN := [
-	# [path, x, feet_y, scale]。树不要缩太狠：密集枝干缩到一半以下会糊成实心色板。
-	[Level01Env.DECOR_STONE_2, 14.0, 300.0, 1.0],
-	[Level01Env.DECOR_TREE_2, 46.0, 300.0, 0.72],
-	[Level01Env.DECOR_STONE_1, 224.0, 303.0, 1.0],
-	[Level01Env.DECOR_STATUE, 282.0, 300.0, 0.85],
-	[Level01Env.DECOR_TREE_1, 342.0, 302.0, 0.62],
-	[Level01Env.DECOR_STONE_3, 476.0, 300.0, 1.0],
+	[Level01Env.DECOR_TREE_2, 64.0, 320.0, 0.44],
+	[Level01Env.DECOR_BUSH_S, 150.0, 322.0, 0.70],
+	[Level01Env.DECOR_BUSH_L, 250.0, 322.0, 0.50],
+	[Level01Env.DECOR_TREE_3, 430.0, 320.0, 0.38],
+	[Level01Env.DECOR_BUSH_L, 360.0, 322.0, 0.42],
 ]
 const SIL_TINT := Color(0.17, 0.14, 0.24, 0.95)
 const SIL_SPAN := 512.0
 const TINT_FOLLOW := 2.8
 
-var _far_layer: ParallaxLayer
-var _fog_far: ParallaxLayer
-var _fog_near: ParallaxLayer
-var _fog_far_spr: Sprite2D
-var _fog_near_spr: Sprite2D
-var _sil_layer: ParallaxLayer
-var _far_sprite: Sprite2D
+var _far_layer: Parallax2D
+var _fog_far: Parallax2D
+var _fog_near: Parallax2D
+var _sil_layer: Parallax2D
 var _mood_tint: CanvasModulate
 var _moon_fill: DirectionalLight2D
 
 
 func build(host: Node2D) -> void:
-	var backdrop := host.get_node_or_null("ParallaxBackdrop") as ParallaxBackground
+	var backdrop := host.get_node_or_null("ParallaxBackdrop") as Node
 	if backdrop == null:
 		return
-	_far_layer = backdrop.get_node_or_null("Far") as ParallaxLayer
-	if _far_layer != null:
-		_far_sprite = _far_layer.get_node_or_null("Sprite") as Sprite2D
+	if backdrop is CanvasLayer:
+		(backdrop as CanvasLayer).follow_viewport_enabled = false
+	_far_layer = backdrop.get_node_or_null("Far") as Parallax2D
+	for child in backdrop.get_children():
+		if child is Parallax2D:
+			cover_layer(child as Parallax2D)
 	var fog_tex: Texture2D = null
 	if ResourceLoader.exists(FOG_PATH):
 		fog_tex = load(FOG_PATH) as Texture2D
 	if fog_tex != null:
 		_fog_far = _add_fog_layer(backdrop, "FogFar", Vector2(0.5, 0.1), 234.0, 0.13, fog_tex)
-		_fog_far_spr = _fog_far.get_child(0) as Sprite2D
 	_sil_layer = _add_silhouette_layer(backdrop)
 	if fog_tex != null:
 		_fog_near = _add_fog_layer(backdrop, "FogNear", Vector2(0.75, 0.14), 276.0, 0.2, fog_tex)
-		_fog_near_spr = _fog_near.get_child(0) as Sprite2D
 	# 全局微紫色调：把厚涂角色与紫色墓地轻轻拉到同一冷色轴上。
 	# CanvasModulate 与余烬巢 PointLight2D 叠在同一视口：夜里压暗，点光打出暖圈。
+	# 视差板在独立 CanvasLayer 上，不受 MoodTint 牵连，夜晚远山仍能看清剪影。
 	var tint := host.get_node_or_null("MoodTint") as CanvasModulate
 	if tint == null:
 		tint = CanvasModulate.new()
@@ -81,11 +84,11 @@ func build(host: Node2D) -> void:
 func _process(delta: float) -> void:
 	var drift := WorldClock.wind_vector().x
 	if _far_layer != null:
-		_far_layer.motion_offset.x += drift * 8.0 * delta
+		_far_layer.scroll_offset.x += drift * 8.0 * delta
 	if _fog_far != null:
-		_fog_far.motion_offset.x += drift * 18.0 * delta
+		_fog_far.scroll_offset.x += drift * 18.0 * delta
 	if _fog_near != null:
-		_fog_near.motion_offset.x += drift * 32.0 * delta
+		_fog_near.scroll_offset.x += drift * 32.0 * delta
 	_follow_atmosphere(delta)
 
 
@@ -97,43 +100,90 @@ func _follow_atmosphere(delta: float) -> void:
 	var k := 1.0 if delta > 10.0 else (1.0 - exp(-TINT_FOLLOW * delta))
 	if _mood_tint != null:
 		_mood_tint.color = _mood_tint.color.lerp(WorldClock.mood_tint(), k)
-	if _fog_far_spr != null:
+	if _fog_far != null:
 		var fa := WorldClock.fog_far_alpha()
-		_fog_far_spr.modulate = _fog_far_spr.modulate.lerp(Color(1, 1, 1, fa), k)
-	if _fog_near_spr != null:
+		_fog_far.modulate = _fog_far.modulate.lerp(Color(1, 1, 1, fa), k)
+	if _fog_near != null:
 		var na := WorldClock.fog_near_alpha()
-		_fog_near_spr.modulate = _fog_near_spr.modulate.lerp(Color(1, 1, 1, na), k)
+		_fog_near.modulate = _fog_near.modulate.lerp(Color(1, 1, 1, na), k)
 	if _sil_layer != null:
 		_sil_layer.modulate = _sil_layer.modulate.lerp(WorldClock.silhouette_modulate(), k)
-	if _far_sprite != null:
-		_far_sprite.modulate = _far_sprite.modulate.lerp(WorldClock.sky_modulate(), k)
+	if _far_layer != null:
+		_far_layer.modulate = _far_layer.modulate.lerp(WorldClock.sky_modulate(), k)
 	if _moon_fill != null:
 		var e := WorldClock.moon_fill_energy()
 		_moon_fill.energy = e
 		_moon_fill.enabled = e > 0.001
 
 
-func _add_fog_layer(backdrop: ParallaxBackground, layer_name: String, motion: Vector2, y: float, alpha: float, tex: Texture2D) -> ParallaxLayer:
-	var layer := ParallaxLayer.new()
+static func tile_width(sprite: Sprite2D) -> float:
+	if sprite == null or sprite.texture == null:
+		return 0.0
+	return float(sprite.texture.get_width()) * absf(sprite.scale.x)
+
+
+static func copies_for_view(tile: float, view_w: float = 0.0, pad: float = COVER_PAD) -> int:
+	if tile < 1.0:
+		return MIN_REPEAT_TIMES
+	var view := view_w if view_w > 0.0 else float(PresentationMetrics.WORLD_SIZE.x)
+	return maxi(MIN_REPEAT_TIMES, int(ceil((view + pad) / tile)))
+
+
+## 一层只留一张图，让 Parallax2D 按 repeat_size 重复。repeat_times 必须大于 1，
+## 否则又会回到「引擎只再画一份、640 视口露缝」的老问题。
+static func cover_layer(layer: Parallax2D, view_w: float = 0.0) -> void:
+	if layer == null:
+		return
+	layer.follow_viewport = false
+	var sprites: Array[Sprite2D] = []
+	for child in layer.get_children():
+		if child is Sprite2D:
+			sprites.append(child as Sprite2D)
+	if sprites.is_empty():
+		if layer.repeat_size.x >= 1.0:
+			layer.repeat_times = maxi(layer.repeat_times, MIN_REPEAT_TIMES)
+		return
+	var spr := sprites[0]
+	var tile := tile_width(spr)
+	if tile < 1.0:
+		return
+	for i in range(sprites.size() - 1, 0, -1):
+		var extra := sprites[i]
+		layer.remove_child(extra)
+		extra.free()
+	# 略小于实际宽度，像素吸附时副本重叠一丁点，避免 326.4 → 326 露出天空缝。
+	var step := floorf(tile)
+	if step < 1.0:
+		step = tile
+	layer.repeat_size = Vector2(step, 0.0)
+	layer.repeat_times = copies_for_view(step, view_w)
+
+
+func _add_fog_layer(backdrop: Node, layer_name: String, motion: Vector2, y: float, alpha: float, tex: Texture2D) -> Parallax2D:
+	var layer := Parallax2D.new()
 	layer.name = layer_name
-	layer.motion_scale = motion
-	layer.motion_mirroring = Vector2(SIL_SPAN, 0)
+	layer.scroll_scale = motion
+	layer.follow_viewport = false
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
 	spr.position = Vector2(0, y)
 	spr.scale = Vector2(SIL_SPAN / float(tex.get_width()), 1.0)
-	spr.modulate = Color(1, 1, 1, alpha)
+	spr.modulate = Color.WHITE
 	layer.add_child(spr)
+	cover_layer(layer)
+	layer.modulate = Color(1, 1, 1, alpha)
 	backdrop.add_child(layer)
 	return layer
 
 
-func _add_silhouette_layer(backdrop: ParallaxBackground) -> ParallaxLayer:
-	var layer := ParallaxLayer.new()
+func _add_silhouette_layer(backdrop: Node) -> Parallax2D:
+	var layer := Parallax2D.new()
 	layer.name = "NearSilhouette"
-	layer.motion_scale = Vector2(0.65, 0.12)
-	layer.motion_mirroring = Vector2(SIL_SPAN, 0)
+	layer.scroll_scale = Vector2(0.65, 0.12)
+	layer.follow_viewport = false
+	layer.repeat_size = Vector2(SIL_SPAN, 0)
+	layer.repeat_times = MIN_REPEAT_TIMES
 	var any := false
 	for item in SIL_PATTERN:
 		var path := item[0] as String

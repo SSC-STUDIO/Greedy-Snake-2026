@@ -19,10 +19,13 @@ const WORLD := 16.0
 ## Scum frame swap cadence and bob amplitude (px).
 const SCUM_FRAME_TIME := 0.45
 const SCUM_BOB := 1.0
+const WADE_SPLASH_GAP := 0.22
+const WADE_SPEED := 18.0
 
 var _scum_sprites: Array[Sprite2D] = []
 var _scum_frames: Array[Texture2D] = []
 var _scum_time := 0.0
+var _wade_cd := 0.0
 
 
 func _ready() -> void:
@@ -30,8 +33,9 @@ func _ready() -> void:
 	collision_mask = 2
 	monitoring = true
 	monitorable = true
-	body_entered.connect(func(b: Node2D) -> void: _bodies.append(b))
-	body_exited.connect(func(b: Node2D) -> void: _bodies.erase(b))
+	add_to_group("toxin_pools")
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 	_rebuild_visual()
 
 
@@ -137,13 +141,41 @@ func _physics_process(delta: float) -> void:
 	# 过场锁输入时人走不开，继续灌毒会在台词里把骑士灌满并触发满溢。
 	if Director.is_input_locked():
 		return
+	_wade_cd = maxf(0.0, _wade_cd - delta)
 	for body in _bodies:
 		if body is Player:
-			(body as Player).toxin.expose(toxin_per_second * delta)
+			var knight := body as Player
+			knight.toxin.expose(toxin_per_second * delta)
+			if _wade_cd <= 0.0 and knight.velocity.length() > WADE_SPEED:
+				_wade_cd = WADE_SPLASH_GAP
+				Fx.pool_splash(splash_point(knight.global_position.x))
 	_bubble_accum += delta
 	if _bubble_accum >= BUBBLE_INTERVAL:
 		_bubble_accum -= BUBBLE_INTERVAL
 		Fx.toxin_bubbles(self, _bubble_rect())
+
+
+func surface_rect() -> Rect2:
+	return Rect2(global_position, Vector2(_pool_size.x, 8.0))
+
+
+func volume_rect() -> Rect2:
+	return Rect2(global_position, _pool_size)
+
+
+func splash_point(x: float) -> Vector2:
+	var surface := surface_rect()
+	return Vector2(clampf(x, surface.position.x + 2.0, surface.end.x - 2.0), surface.position.y + 1.0)
+
+
+func _on_body_entered(body: Node2D) -> void:
+	_bodies.append(body)
+	if body is Player:
+		Fx.pool_splash(splash_point(body.global_position.x))
+
+
+func _on_body_exited(body: Node2D) -> void:
+	_bodies.erase(body)
 
 
 func _bubble_rect() -> Rect2:

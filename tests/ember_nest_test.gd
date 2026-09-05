@@ -52,6 +52,10 @@ func test_unlit_hides_flame() -> void:
 	if sparks != null:
 		ok(not sparks.visible, "unlit nest shows no sparks")
 		eq(sparks.get_child_count(), 0, "unlit nest has no spark children")
+	var coals := nest.get_node_or_null("Coals") as Sprite2D
+	ok(coals != null, "Coals overlay exists")
+	if coals != null:
+		ok(not coals.visible, "unlit nest shows no live coals")
 	var f0 := flame.frame
 	nest._process(1.0)
 	eq(flame.frame, f0, "unlit flame does not animate")
@@ -77,6 +81,8 @@ func test_lit_shows_warm_flame() -> void:
 	ok(sparks != null, "Sparks node exists")
 	if sparks != null:
 		ok(sparks.visible, "lit nest can emit sparks")
+	var coals := nest.get_node_or_null("Coals") as Sprite2D
+	ok(coals != null and coals.visible, "lit nest shows the coal bed")
 	nest.apply_persistent_state({"lit": false})
 	ok(not flame.visible, "relit-off hides the flame again")
 
@@ -96,10 +102,17 @@ func test_collision_unchanged_by_flame() -> void:
 	var shape := col.shape as RectangleShape2D
 	ok(shape != null)
 	if shape != null:
-		eq(shape.size, Vector2(18, 22))
+		eq(shape.size, Vector2(48, 36))
 	eq(nest.collision_layer, 64)
 	eq(nest.collision_mask, 2)
-	ok(nest.get_node_or_null("Fill") != null, "tombstone sprite still named Fill")
+	ok(nest.get_node_or_null("Fill") != null, "brazier sprite still named Fill")
+	var fill := nest.get_node_or_null("Fill") as Sprite2D
+	ok(fill != null and fill.texture != null)
+	if fill != null and fill.texture != null:
+		eq(String(fill.texture.resource_path), "res://assets/env/ember_nest.png")
+		ok(fill.texture.get_width() >= 44, "nest is a readable brazier, not 18px rubble")
+	eq(nest.rain_hit_rect().size, Vector2(48, 36), "rain uses the planted 48×36 iron, not the interact Area")
+	eq(nest.is_lit(), false)
 
 
 func test_unlit_has_no_nest_light() -> void:

@@ -86,7 +86,8 @@ func _spawn_layer(bucket: Array[Sprite2D], count: int, scale: float, col: Color)
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		spr.scale = Vector2(scale, scale)
 		spr.modulate = col
-		spr.position = Vector2(randf() * 1280.0, randf() * 360.0)
+		spr.position = Vector2(randf() * float(PresentationMetrics.WORLD_SIZE.x),
+				randf() * float(PresentationMetrics.WORLD_SIZE.y))
 		add_child(spr)
 		bucket.append(spr)
 

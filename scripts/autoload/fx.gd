@@ -4,17 +4,17 @@ extends Node2D
 ## never gameplay state. Headless runs and missing art degrade silently.
 ##
 ## Particles are lightweight self-managing Node2D/Polygon2D squares or
-## Sprite2D sheet cuts (no GPUParticles2D). One-shot effects parent here in
-## world space and free themselves; attach_ember parents to its target so
-## scene reloads clean it up automatically.
+## Sprite2D sheet cuts (no GPUParticles2D). One-shot effects parent into
+## GameContext.world_effects() so they share the world's World2D / camera;
+## attach_ember parents to its target so scene reloads clean it up.
 
 const WEAPONHIT_SHEET_PATH := "res://assets/kenney_clean/vfx/10_weaponhit_spritesheet.png"
 const BUBBLES_SHEET_PATH := "res://assets/kenney_clean/vfx/20_magicbubbles_spritesheet.png"
 const BRIGHTFIRE_SHEET_PATH := "res://assets/kenney_clean/vfx/9_brightfire_spritesheet.png"
 
-## One-shot particles live under this autoload, which sits early in the tree
-## (autoloads come before the current scene), so z_index must lift them above
-## scene content to stay visible.
+## One-shot particles parent into the authored world (SubViewport World2D).
+## Autoload canvas would draw them on the 1280×720 UI window instead of the
+## 640×360 world image.
 const FX_Z := 100
 
 const EMBER_FIELD_NAME := "FxEmberField"
@@ -57,11 +57,12 @@ func attach_ember(target: Node2D) -> void:
 func dust_puff(pos: Vector2, dir: float = 0.0) -> void:
 	if _headless:
 		return
+	var host := _world_host()
 	for i in randi_range(4, 6):
 		var mote := DustMote.new()
 		mote.launch(pos, dir)
 		mote.z_index = FX_Z
-		add_child(mote)
+		host.add_child(mote)
 
 
 ## Weapon-hit flash: first six frames of the CC0 Kenney/CodeManu sheet,
@@ -72,7 +73,7 @@ func hit_sparks(pos: Vector2) -> void:
 	var spark := HitSpark.new(_weaponhit_sheet)
 	spark.position = pos
 	spark.z_index = FX_Z
-	add_child(spark)
+	_world_host().add_child(spark)
 
 
 ## Rust debris bursting out of a destroyed enemy: gravity, a floor bounce,
@@ -80,11 +81,12 @@ func hit_sparks(pos: Vector2) -> void:
 func rust_debris(pos: Vector2) -> void:
 	if _headless:
 		return
+	var host := _world_host()
 	for i in randi_range(6, 8):
 		var bit := RustDebris.new()
 		bit.launch(pos)
 		bit.z_index = FX_Z
-		add_child(bit)
+		host.add_child(bit)
 
 
 ## 世界坐标一次性帧动画（敌人死亡尸体动画/烟雾等）。播完自毁；headless 或
@@ -99,7 +101,7 @@ func play_frames_once(frames: Array[Texture2D], pos: Vector2, fps: float,
 	player.position = pos + Vector2(0.0, baseline)
 	player.flip_h = flip
 	player.z_index = FX_Z
-	add_child(player)
+	_world_host().add_child(player)
 
 
 ## 通用敌人死亡烟雾（Gothicvania cemetery 5 帧，44x52，底部留白 2px）。
@@ -118,6 +120,45 @@ func toxin_bubbles(parent: Node2D, rect: Rect2) -> void:
 	bubble.position = rect.position + Vector2(randf() * rect.size.x, randf() * rect.size.y)
 	bubble.modulate = Color(0.45, 0.78, 0.55, 0.75)
 	parent.add_child(bubble)
+
+
+## Rain hitting a surface. `kind` is ground / toxin / nest / nest_lit / rust.
+func rain_splash(pos: Vector2, kind: StringName = &"ground") -> void:
+	if _headless:
+		return
+	var host := _world_host()
+	if kind == &"toxin":
+		var kiss := WaterKiss.new()
+		kiss.launch(pos)
+		kiss.z_index = FX_Z
+		host.add_child(kiss)
+	var count := 5 if kind == &"toxin" else 4
+	for i in count:
+		var mote := RainSplash.new()
+		mote.launch(pos, kind)
+		mote.z_index = FX_Z
+		host.add_child(mote)
+
+
+## Knight stepping into the sludge — a slightly bigger surface burst.
+func pool_splash(pos: Vector2) -> void:
+	if _headless:
+		return
+	var host := _world_host()
+	var kiss := WaterKiss.new()
+	kiss.launch(pos)
+	kiss.z_index = FX_Z
+	host.add_child(kiss)
+	for i in 7:
+		var mote := RainSplash.new()
+		mote.launch(pos + Vector2(randf_range(-5.0, 5.0), 0.0), &"toxin")
+		mote.z_index = FX_Z
+		host.add_child(mote)
+
+
+func _world_host() -> Node:
+	var host := GameContext.world_effects()
+	return host if host != null else self
 
 
 ## 一次性帧序列播放器：固定 fps 播完即自由。像素素材 NEAREST。
@@ -273,6 +314,90 @@ class DustMote extends Node2D:
 		position += _velocity * delta
 		var k := _age / _lifetime
 		modulate.a = minf(k * 10.0, 1.0) * (1.0 - k)
+
+
+## 2 px rain kiss on ground / water / iron. Bright enough to survive MoodTint.
+class RainSplash extends Node2D:
+	var _velocity := Vector2.ZERO
+	var _age := 0.0
+	var _lifetime := 0.28
+
+
+	func launch(pos: Vector2, kind: StringName) -> void:
+		position = Vector2(roundf(pos.x + randf_range(-2.0, 2.0)), roundf(pos.y))
+		_lifetime = randf_range(0.20, 0.34)
+		match kind:
+			&"toxin":
+				_velocity = Vector2(randf_range(-22.0, 22.0), randf_range(-48.0, -18.0))
+			&"nest_lit":
+				_velocity = Vector2(randf_range(-12.0, 12.0), randf_range(-56.0, -28.0))
+			_:
+				_velocity = Vector2(randf_range(-26.0, 26.0), randf_range(-36.0, -12.0))
+		var half := 1.6 if kind == &"toxin" else 1.4
+		var poly := Polygon2D.new()
+		poly.polygon = PackedVector2Array([
+			Vector2(-half, -half), Vector2(half, -half),
+			Vector2(half, half), Vector2(-half, half),
+		])
+		match kind:
+			&"toxin":
+				poly.color = Color(0.62, 0.95, 0.78).lerp(Palette.FOG, randf() * 0.25)
+			&"nest":
+				poly.color = Palette.IRON.lerp(Palette.RUST_LIGHT, randf())
+			&"nest_lit":
+				poly.color = Color(1.0, 0.86, 0.62).lerp(Palette.PALE, randf() * 0.35)
+			&"rust":
+				poly.color = Palette.RUST_LIGHT.lerp(Palette.EMBER_ASH, randf() * 0.45)
+			_:
+				poly.color = Color(0.92, 0.94, 0.98).lerp(Palette.PALE, randf() * 0.35)
+		add_child(poly)
+
+
+	func _process(delta: float) -> void:
+		_age += delta
+		if _age >= _lifetime:
+			queue_free()
+			return
+		_velocity.y += 120.0 * delta
+		position += _velocity * delta
+		position = Vector2(roundf(position.x), roundf(position.y))
+		var k := _age / _lifetime
+		modulate.a = minf(k * 10.0, 1.0) * (1.0 - k)
+
+
+## Horizontal scum flash on the toxin film — reads as a water kiss, not dust.
+class WaterKiss extends Node2D:
+	var _age := 0.0
+	var _lifetime := 0.28
+	var _half := 4.0
+	var _poly: Polygon2D
+
+
+	func launch(pos: Vector2) -> void:
+		position = Vector2(roundf(pos.x), roundf(pos.y))
+		_half = randf_range(4.0, 7.0)
+		_lifetime = randf_range(0.22, 0.34)
+		_poly = Polygon2D.new()
+		_poly.color = Color(0.70, 0.98, 0.82, 0.95)
+		_set_span(_half)
+		add_child(_poly)
+
+
+	func _set_span(half: float) -> void:
+		_poly.polygon = PackedVector2Array([
+			Vector2(-half, -1.0), Vector2(half, -1.0),
+			Vector2(half, 1.0), Vector2(-half, 1.0),
+		])
+
+
+	func _process(delta: float) -> void:
+		_age += delta
+		if _age >= _lifetime:
+			queue_free()
+			return
+		var k := _age / _lifetime
+		_set_span(_half + k * 5.0)
+		modulate.a = (1.0 - k) * 0.95
 
 
 ## Sprite-sheet hit flash: 6 frames across, ~0.25 s, scale ~0.5.

@@ -11,6 +11,8 @@ func _equip_pair(player: Player) -> void:
 
 func _count_hitboxes(host: Node) -> int:
 	var n := 0
+	if host == null:
+		return 0
 	for child in host.get_children():
 		if child is Hitbox:
 			n += 1
@@ -25,10 +27,11 @@ func test_blast_requires_resonance_window() -> void:
 	_equip_pair(player)
 	ok(player.inventory.has_pair(AbilityIds.HEAT_FORGE, AbilityIds.EMBER_STEP))
 	ok(not player.resonance.is_active())
-	var before := _count_hitboxes(arena)
+	var effects := GameContext.world_effects(player)
+	var before := _count_hitboxes(effects)
 	player.on_melee_active(2)
-	eq(_count_hitboxes(arena), before, "no blast without resonance")
+	eq(_count_hitboxes(effects), before, "no blast without resonance")
 	player.resonance.pulse()
 	ok(player.resonance.is_active())
 	player.on_melee_active(2)
-	ok(_count_hitboxes(arena) > before, "pair + resonance fires the blast")
+	ok(_count_hitboxes(effects) > before, "pair + resonance fires the blast")

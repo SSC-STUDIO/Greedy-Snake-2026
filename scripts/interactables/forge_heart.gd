@@ -31,8 +31,7 @@ func can_interact(_actor: Node) -> bool:
 func lock() -> void:
 	unlocked = false
 	visible = false
-	monitoring = false
-	monitorable = false
+	_apply_monitor(false)
 	_ensure_light()
 	if _glow != null:
 		_glow.lit = false
@@ -42,12 +41,18 @@ func lock() -> void:
 func unlock() -> void:
 	unlocked = true
 	visible = true
-	monitoring = true
-	monitorable = true
+	_apply_monitor(true)
 	_ensure_light()
 	if _glow != null:
 		_glow.lit = true
 		_glow.apply(true)
+
+
+func _apply_monitor(on: bool) -> void:
+	# Boss death unlocks from a hurtbox area_entered stack. Godot rejects
+	# monitorable writes there ("Function blocked during in/out signal").
+	set_deferred("monitoring", on)
+	set_deferred("monitorable", on)
 
 
 func _ensure_light() -> void:
@@ -75,7 +80,11 @@ func _open_choice() -> void:
 	_layer = CanvasLayer.new()
 	_layer.layer = 25
 	_layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_layer)
+	var host := GameContext.ui_host(self)
+	if host == null:
+		host = self
+	host.add_child(_layer)
+	PresentationMetrics.bind_layer(_layer)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -111,7 +120,7 @@ func _on_chosen(id: StringName) -> void:
 	GameEvents.ending_chosen.emit(id)
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
-		SaveData.save_game(get_tree().current_scene.scene_file_path, player)
+		SaveData.save_game(GameContext.world_scene_path(player), player)
 	var line := "陵墓在锈里睁开眼。" if kind == "rekindle" else "余烬落回炉灰。骑士也是。"
 	Director.play([
 		{"kind": "lock"},

@@ -156,7 +156,10 @@ func _on_anim_finished(anim: StringName) -> void:
 
 func _fire(player: Player) -> void:
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	get_tree().current_scene.add_child(proj)
+	var host := GameContext.world_effects(self)
+	if host == null:
+		host = get_tree().current_scene
+	host.add_child(proj)
 	# 喷口跟随身体朝向镜像（原图面朝左，scale.x=-1 时面朝右）。
 	var mpos := muzzle.position
 	if _body != null and _body.scale.x < 0.0:

@@ -93,10 +93,7 @@ func _do_slash() -> void:
 	box.global_position = global_position + Vector2(float(_shield_facing) * 22.0, -18.0)
 	box.monitoring = true
 	Sfx.play(&"swing")
-	get_tree().create_timer(0.16).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	GameContext.free_after(box, 0.16)
 
 
 func _fire() -> void:
@@ -107,7 +104,10 @@ func _fire() -> void:
 		_anim.play("skill", true)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	get_tree().current_scene.add_child(proj)
+	var host := GameContext.world_effects(self)
+	if host == null:
+		host = get_tree().current_scene
+	host.add_child(proj)
 	var origin := global_position + Vector2(_shield_facing * 16.0, -38.0)
 	var aim := Vector2(_shield_facing * 40.0, -18.0)
 	if player:

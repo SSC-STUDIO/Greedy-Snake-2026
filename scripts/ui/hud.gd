@@ -107,6 +107,7 @@ func _build() -> void:
 	_pause = PAUSE_MENU.instantiate()
 	add_child(_pause)
 	WorldClock.isolate_ui_layer(_pause)
+	PresentationMetrics.bind_descendants(self)
 
 
 func _build_stat_panel(root: Control) -> void:

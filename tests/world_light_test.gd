@@ -122,11 +122,12 @@ func test_parallax_plants_moon_fill() -> void:
 	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	backdrop.name = "ParallaxBackdrop"
 	host.add_child(backdrop)
-	var far := ParallaxLayer.new()
+	var far := Parallax2D.new()
 	far.name = "Far"
+	far.follow_viewport = false
 	backdrop.add_child(far)
 	var extras := Level01Parallax.new()
 	add_child(extras)
