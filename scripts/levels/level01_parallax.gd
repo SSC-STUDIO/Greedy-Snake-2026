@@ -28,6 +28,7 @@ const STAR_TICK := 1.0 / 12.0
 ## wash + 56px moon made the whole scene read flatter and smaller than the
 ## original presentation; weather/fog layers remain available on top.
 const USE_AUTHORED_SKY_PLATE := true
+const LEGACY_SKY_PATH := "res://assets/env/normalized/parallax_sky_legacy.png"
 
 var _far_layer: ParallaxLayer
 var _star_layer: ParallaxLayer
@@ -138,19 +139,24 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 		_far_sprite.set_meta("source_path", SkyPlate.SKY_SRC)
 		if _far_layer != null:
 			_far_layer.motion_mirroring = Vector2(float(SkyPlate.SKY_COVER_W), 0)
-		if USE_AUTHORED_SKY_PLATE:
-			var authored := Sprite2D.new()
-			authored.name = "AuthoredSkyPlate"
-			authored.texture = load(SkyPlate.SKY_SRC) as Texture2D
-			authored.centered = false
-			authored.position = _far_sprite.position
-			authored.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		# The authored plate is one composed 704px scene. Repeating it across
-		# the 1280px wash creates the two-moon artifact visible in the new build.
-		authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
-		authored.region_enabled = false
-			authored.set_meta("source_path", SkyPlate.SKY_SRC)
-			_far_layer.add_child(authored)
+			if USE_AUTHORED_SKY_PLATE:
+				var authored := Sprite2D.new()
+				authored.name = "AuthoredSkyPlate"
+				authored.texture = load(LEGACY_SKY_PATH) as Texture2D
+				authored.centered = false
+				# The authored plate is 1280px wide; offset it by half the
+				# 1920px capture viewport so its single moon stays centered.
+				authored.position = _far_sprite.position + Vector2(-640.0, 0.0)
+				authored.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+				authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
+				authored.region_enabled = false
+				authored.set_meta("source_path", LEGACY_SKY_PATH)
+				var authored_layer := ParallaxLayer.new()
+				authored_layer.name = "LegacySkyPlateLayer"
+				authored_layer.motion_scale = Vector2.ZERO
+				authored_layer.motion_mirroring = Vector2.ZERO
+				backdrop.add_child(authored_layer)
+				authored_layer.add_child(authored)
 	_add_moon(backdrop, _plan["moon"])
 	if USE_AUTHORED_SKY_PLATE:
 		# The authored plate already contains its large moon, clouds and stars.
