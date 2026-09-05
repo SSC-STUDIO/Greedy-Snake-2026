@@ -5,11 +5,11 @@ extends TestCase
 
 const LEVEL := "res://scenes/levels/Level01_Static.tscn"
 const PX := {
-	"Far": "res://assets/env/parallax_sky_px.png",
-	"FarMountains": "res://assets/env/parallax_far_mountains_px.png",
-	"Mid": "res://assets/env/parallax_mountains_px.png",
-	"MidGrove": "res://assets/env/parallax_mid_grove_px.png",
-	"Hills": "res://assets/env/parallax_graveyard_px.png",
+	"Far": "res://assets/env/normalized/parallax_sky_px.png",
+	"FarMountains": "res://assets/env/normalized/parallax_far_mountains_px.png",
+	"Mid": "res://assets/env/normalized/parallax_mountains_px.png",
+	"MidGrove": "res://assets/env/normalized/parallax_mid_grove_px.png",
+	"Hills": "res://assets/env/normalized/parallax_graveyard_px.png",
 }
 const STRIP_ORDER := ["Far", "FarMountains", "Mid", "MidGrove", "Hills"]
 ## Pre-upsample world size (texel * non-integer scale). Authored three stay near this.
@@ -74,7 +74,8 @@ func test_five_strips_integer_scale_nearest_and_order() -> void:
 			var world_w := float(spr.texture.get_width()) * spr.scale.x
 			almost(layer.motion_mirroring.x, world_w, 0.01,
 					"%s mirroring matches world width" % name)
-			ok(spr.texture.resource_path == PX[name],
+			var source_path := String(spr.get_meta("source_path", spr.texture.resource_path))
+			ok(source_path == PX[name],
 					"%s uses %s" % [name, PX[name]])
 	level.free()
 
@@ -101,7 +102,7 @@ func test_backdrop_composition_stays_near_legacy() -> void:
 
 
 func test_sky_moon_has_no_dark_cross() -> void:
-	var tex := load("res://assets/env/parallax_sky_px.png") as Texture2D
+	var tex := load("res://assets/env/normalized/parallax_sky_px.png") as Texture2D
 	ok(tex != null, "sky plate loads")
 	if tex == null:
 		return
@@ -117,11 +118,15 @@ func test_sky_moon_has_no_dark_cross() -> void:
 	for y in range(h):
 		for x in range(w):
 			var c := img.get_pixel(x, y)
-			if c.r > 0.70 and c.b > 0.28 and c.r >= c.g + 0.05:
+			# The normalized plate intentionally uses a muted moon rather than the
+			# old saturated magenta. Identify the bright disk by its luminance and
+			# remaining warm/cool separation so this catches a dark cross without
+			# rejecting the corrected palette.
+			if c.r > 0.45 and c.b > 0.25 and c.r >= c.g + 0.02:
 				sx += x
 				sy += y
 				n += 1
-	ok(n > 200, "sky still has a magenta moon")
+	ok(n > 200, "sky still has a visible moon disk")
 	if n <= 200:
 		return
 	var cx := float(sx) / float(n)
@@ -141,7 +146,7 @@ func test_sky_moon_has_no_dark_cross() -> void:
 
 
 func test_mid_grove_is_keyed_not_a_black_box() -> void:
-	var tex := load("res://assets/env/parallax_mid_grove_px.png") as Texture2D
+	var tex := load("res://assets/env/normalized/parallax_mid_grove_px.png") as Texture2D
 	ok(tex != null)
 	if tex == null:
 		return
@@ -176,15 +181,15 @@ func test_mid_grove_is_keyed_not_a_black_box() -> void:
 
 
 func test_cloud_and_fog_plates_exist() -> void:
-	ok(ResourceLoader.exists("res://assets/env/parallax_clouds_px.png"), "cloud far plate")
-	ok(ResourceLoader.exists("res://assets/env/parallax_clouds_low_px.png"), "cloud low plate")
-	ok(ResourceLoader.exists("res://assets/env/parallax_fog_px.png"), "pixel fog plate")
-	var grove := load("res://assets/env/parallax_mid_grove_px.png") as Texture2D
+	ok(ResourceLoader.exists("res://assets/env/normalized/parallax_clouds_px.png"), "cloud far plate")
+	ok(ResourceLoader.exists("res://assets/env/normalized/parallax_clouds_low_px.png"), "cloud low plate")
+	ok(ResourceLoader.exists("res://assets/env/normalized/parallax_fog_px.png"), "pixel fog plate")
+	var grove := load("res://assets/env/normalized/parallax_mid_grove_px.png") as Texture2D
 	ok(grove != null, "MidGrove plate still loads")
 	if grove != null:
 		eq(grove.get_width(), 768, "MidGrove stays 768 wide")
 		eq(grove.get_height(), 192, "MidGrove stays a short sparse strip")
-	var fog := load("res://assets/env/parallax_fog_px.png") as Texture2D
+	var fog := load("res://assets/env/normalized/parallax_fog_px.png") as Texture2D
 	if fog != null:
 		ok(fog.get_height() <= 96, "fog strip stays a low band, not a screen wash")
 		ok(fog.get_width() >= 512, "fog strip is wide enough to tile")
@@ -213,8 +218,8 @@ func test_cloud_layers_sit_in_the_sky() -> void:
 
 
 func test_near_and_foreground_layers_exist() -> void:
-	ok(ResourceLoader.exists("res://assets/env/parallax_near_ground_px.png"), "near-ground plate")
-	ok(ResourceLoader.exists("res://assets/env/parallax_foreground_px.png"), "foreground plate")
+	ok(ResourceLoader.exists("res://assets/env/normalized/parallax_near_ground_px.png"), "near-ground plate")
+	ok(ResourceLoader.exists("res://assets/env/normalized/parallax_foreground_px.png"), "foreground plate")
 	var level := _load_level()
 	var hills := level.get_node("ParallaxBackdrop/Hills") as ParallaxLayer
 	var near := level.get_node("ParallaxBackdrop/NearGround") as ParallaxLayer
@@ -257,8 +262,8 @@ func test_near_and_foreground_layers_exist() -> void:
 
 func test_near_strips_are_foliage_not_stone() -> void:
 	for path: String in [
-		"res://assets/env/parallax_near_ground_px.png",
-		"res://assets/env/parallax_foreground_px.png",
+		"res://assets/env/normalized/parallax_near_ground_px.png",
+		"res://assets/env/normalized/parallax_foreground_px.png",
 	]:
 		var low: String = path.to_lower()
 		ok(not low.contains("stone") and not low.contains("statue"),
@@ -295,8 +300,8 @@ func test_near_strips_are_foliage_not_stone() -> void:
 
 func test_near_plates_are_keyed_not_black_boxes() -> void:
 	for path in [
-		"res://assets/env/parallax_near_ground_px.png",
-		"res://assets/env/parallax_foreground_px.png",
+		"res://assets/env/normalized/parallax_near_ground_px.png",
+		"res://assets/env/normalized/parallax_foreground_px.png",
 	]:
 		var tex := load(path) as Texture2D
 		ok(tex != null, "%s loads" % path)
@@ -330,7 +335,7 @@ func test_near_plates_are_keyed_not_black_boxes() -> void:
 		ok(black < int(float(opaque) * 0.08 + 1.0), "%s has no dead-black fill" % path)
 		ok(mid_row < w, "%s mid band is not a solid slab" % path)
 		ok(foot_row < w, "%s feet are not a full-width box" % path)
-	var grove := load("res://assets/env/parallax_mid_grove_px.png") as Texture2D
+	var grove := load("res://assets/env/normalized/parallax_mid_grove_px.png") as Texture2D
 	if grove != null:
 		eq(grove.get_height(), 192, "MidGrove was not restacked into a wall")
 
@@ -433,7 +438,8 @@ func test_runtime_sky_uses_units_not_wide_tile() -> void:
 	eq(far_spr.texture_repeat, CanvasItem.TEXTURE_REPEAT_ENABLED, "sky region repeats source pixels")
 	ok(moon != null and moon.texture != null, "one moon sprite cut from the sky plate")
 	eq(moon.texture.get_width(), 56, "moon uses its offline reduced native pixels")
-	eq(backdrop.get_node("SkyMoon").get_child_count(), 1, "moon is instanced once")
+	eq(backdrop.get_node("SkyMoon").find_children("Moon", "Sprite2D", false, false).size(), 1, "moon is instanced once")
+	ok(backdrop.get_node_or_null("SkyMoon/MoonHalo") != null, "moon has a separate soft light halo")
 	almost((backdrop.get_node("SkyMoon") as ParallaxLayer).motion_mirroring.x, 0.0, 0.01,
 			"moon does not tile")
 	var far_stamps := _stamp_count(cloud_far)

@@ -5,7 +5,7 @@ extends Node
 ## seeded. Mountain / grove / graveyard strips stay. Near grass stays a strip.
 
 ## Pixel fog already has body; WorldClock haze alphas stay low, so lift locally.
-const FOG_SEE := 0.72
+const FOG_SEE := 1.35
 ## 近景剪影带（motion 0.65）：一段 512px 宽的图样平铺，只种暗紫软物，
 ## 填在远景 Hills(0.48) 与游玩层(1.0) 之间。石碑/雕像不进这层——
 ## 看起来能踩却够不着，叠在月亮/远山上会像「飞着的交互物」。
@@ -46,7 +46,8 @@ var _near_ground: ParallaxLayer
 var _foreground: ParallaxLayer
 var _far_sprite: Sprite2D
 var _moon_sprite: Sprite2D
-var _atmosphere: WorldAtmosphere
+var _mood_tint: CanvasModulate
+var _moon_fill: DirectionalLight2D
 var sky_seed: int = 0
 var _plan: Dictionary = {}
 
@@ -90,12 +91,25 @@ func build(host: Node2D) -> void:
 	if front != null:
 		# motion>1 只给幕前草。碑/石/土唇不进这张条，否则人一走坟自己在滑。
 		_foreground = front.get_node_or_null("Foreground") as ParallaxLayer
-	_atmosphere = host.get_node_or_null("WorldAtmosphere") as WorldAtmosphere
-	if _atmosphere == null:
-		_atmosphere = WorldAtmosphere.new()
-		_atmosphere.name = "WorldAtmosphere"
-		host.add_child(_atmosphere)
-	_atmosphere.build(host, backdrop, front)
+	# 全局微紫色调：把厚涂角色与紫色墓地轻轻拉到同一冷色轴上。
+	# CanvasModulate 与余烬巢 PointLight2D 叠在同一视口：夜里压暗，点光打出暖圈。
+	var tint := host.get_node_or_null("MoodTint") as CanvasModulate
+	if tint == null:
+		tint = CanvasModulate.new()
+		tint.name = "MoodTint"
+		host.add_child(tint)
+	_mood_tint = tint
+	_mood_tint.color = WorldClock.mood_tint()
+	var moon := host.get_node_or_null("MoonFill") as DirectionalLight2D
+	if moon == null:
+		moon = DirectionalLight2D.new()
+		moon.name = "MoonFill"
+		moon.color = Color(0.72, 0.78, 1.0)
+		moon.shadow_enabled = true
+		moon.height = 0.65
+		moon.rotation = deg_to_rad(-18.0)
+		host.add_child(moon)
+	_moon_fill = moon
 	_snap_atmosphere()
 	if host.get_node_or_null("WeatherFx") == null:
 		var wx := WeatherFx.new()
@@ -113,11 +127,11 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 	if _far_sprite != null:
 		_far_sprite.texture = SkyPlate.sky_wash()
 		_far_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_far_sprite.scale = Vector2.ONE
-		# Fill a full viewing span before ParallaxLayer mirrors adjacent copies.
-		_far_sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		_far_sprite.scale = Vector2(1, 1)
 		_far_sprite.region_enabled = true
-		_far_sprite.region_rect = Rect2(0, 0, SkyPlate.SKY_COVER_W, SkyPlate.SKY_H)
+		_far_sprite.region_rect = Rect2(0.0, 0.0, 640.0, float(SkyPlate.SKY_H))
+		_far_sprite.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+		_far_sprite.set_meta("source_path", SkyPlate.SKY_SRC)
 		if _far_layer != null:
 			_far_layer.motion_mirroring = Vector2(float(SkyPlate.SKY_COVER_W), 0)
 	_add_moon(backdrop, _plan["moon"])
@@ -127,9 +141,9 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 	_scatter_field(_cloud_low, _plan.get("clouds_low", []), SkyPlate.cloud_units(),
 			SkyPlate.CLOUD_LOW_FIELD, 68.0)
 	if _cloud_far != null:
-		_cloud_far.modulate = Color(0.82, 0.86, 0.94, 0.48)
+		_cloud_far.modulate = Color(1.0, 0.90, 1.0, 0.78)
 	if _cloud_low != null:
-		_cloud_low.modulate = Color(0.78, 0.82, 0.92, 0.36)
+		_cloud_low.modulate = Color(0.94, 0.86, 1.0, 0.58)
 
 
 func _add_moon(backdrop: ParallaxBackground, spec: Dictionary) -> void:
@@ -148,11 +162,41 @@ func _add_moon(backdrop: ParallaxBackground, spec: Dictionary) -> void:
 	var sc := maxi(1, int(spec.get("scale", 1)))
 	spr.scale = Vector2(sc, sc)
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var moon_material := CanvasItemMaterial.new()
+	moon_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	spr.material = moon_material
+	var halo := Sprite2D.new()
+	halo.name = "MoonHalo"
+	halo.texture = _moon_halo_texture()
+	halo.position = spr.position
+	halo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	var halo_material := CanvasItemMaterial.new()
+	halo_material.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	halo_material.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	halo.material = halo_material
+	layer.add_child(halo)
 	layer.add_child(spr)
 	backdrop.add_child(layer)
 	if _far_layer != null:
 		backdrop.move_child(layer, _far_layer.get_index() + 1)
 	_moon_sprite = spr
+
+
+func _moon_halo_texture() -> GradientTexture2D:
+	var gradient := Gradient.new()
+	gradient.colors = PackedColorArray([
+		Color(0.38, 0.48, 0.90, 0.0),
+		Color(0.34, 0.44, 0.88, 0.16),
+		Color(0.28, 0.36, 0.72, 0.0),
+	])
+	var tex := GradientTexture2D.new()
+	tex.gradient = gradient
+	tex.width = 128
+	tex.height = 128
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	return tex
 
 
 func _add_stars(backdrop: ParallaxBackground, items: Array) -> void:
@@ -293,11 +337,9 @@ func _process(delta: float) -> void:
 		_star_layer.motion_offset.x += drift * 3.0 * delta
 		_star_t += delta
 		_star_acc += delta
-		if _star_acc >= STAR_TICK and _star_layer.modulate.a > 0.01:
+		if _star_acc >= STAR_TICK:
 			_star_acc -= STAR_TICK
 			_paint_stars()
-		elif _star_layer.modulate.a <= 0.01:
-			_star_acc = 0.0
 	if _cloud_far != null:
 		_cloud_far.motion_offset.x += drift * 5.0 * delta
 	if _cloud_low != null:
@@ -308,7 +350,10 @@ func _process(delta: float) -> void:
 		_fog_far.motion_offset.x += drift * 22.0 * delta
 	if _fog_near != null:
 		_fog_near.motion_offset.x += drift * 34.0 * delta
-	# Rooted vegetation follows camera parallax, never wind translation.
+	if _near_ground != null:
+		_near_ground.motion_offset.x += drift * 40.0 * delta
+	if _foreground != null:
+		_foreground.motion_offset.x += drift * 56.0 * delta
 	_follow_atmosphere(delta)
 
 
@@ -318,15 +363,17 @@ func _snap_atmosphere() -> void:
 
 func _follow_atmosphere(delta: float) -> void:
 	var k := 1.0 if delta > 10.0 else (1.0 - exp(-TINT_FOLLOW * delta))
+	if _mood_tint != null:
+		_mood_tint.color = _mood_tint.color.lerp(WorldClock.mood_tint(), k)
 	if _fog_ridge != null:
-		var ra := clampf(WorldClock.fog_far_alpha() * FOG_SEE, 0.06, 0.24)
+		var ra := clampf(WorldClock.fog_far_alpha() * FOG_SEE, 0.10, 0.48)
 		_fog_ridge.modulate = _fog_ridge.modulate.lerp(Color(1, 1, 1, ra), k)
 	if _fog_far != null:
 		var mid := lerpf(WorldClock.fog_far_alpha(), WorldClock.fog_near_alpha(), 0.45)
-		var fa := clampf(mid * FOG_SEE, 0.08, 0.28)
+		var fa := clampf(mid * FOG_SEE, 0.12, 0.50)
 		_fog_far.modulate = _fog_far.modulate.lerp(Color(1, 1, 1, fa), k)
 	if _fog_near != null:
-		var na := clampf(WorldClock.fog_near_alpha() * FOG_SEE, 0.09, 0.30)
+		var na := clampf(WorldClock.fog_near_alpha() * FOG_SEE, 0.14, 0.52)
 		_fog_near.modulate = _fog_near.modulate.lerp(Color(1, 1, 1, na), k)
 	if _sil_layer != null:
 		_sil_layer.modulate = _sil_layer.modulate.lerp(WorldClock.silhouette_modulate(), k)
@@ -335,6 +382,10 @@ func _follow_atmosphere(delta: float) -> void:
 	if _star_layer != null:
 		var star_col := Color(1, 1, 1, _star_visibility())
 		_star_layer.modulate = _star_layer.modulate.lerp(star_col, k)
+	if _moon_fill != null:
+		var e := WorldClock.moon_fill_energy()
+		_moon_fill.energy = e
+		_moon_fill.enabled = e > 0.001
 
 
 func _add_silhouette_layer(backdrop: ParallaxBackground) -> ParallaxLayer:

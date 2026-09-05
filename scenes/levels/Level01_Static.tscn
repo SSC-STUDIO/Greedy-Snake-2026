@@ -1,6 +1,6 @@
-[gd_scene load_steps=23 format=3 uid="uid://c02h087f3omgc"]
+[gd_scene format=3 uid="uid://c02h087f3omgc"]
 
-[ext_resource type="Script" path="res://scripts/levels/level01_static.gd" id="1_level"]
+[ext_resource type="Script" uid="uid://b1j31nsgh8h40" path="res://scripts/levels/level01_static.gd" id="1_level"]
 [ext_resource type="PackedScene" path="res://scenes/world/Platform.tscn" id="2_plat"]
 [ext_resource type="PackedScene" path="res://scenes/world/GearPlatform.tscn" id="3_gear"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/ToxinPool.tscn" id="4_toxin"]
@@ -12,220 +12,293 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/RustyGate.tscn" id="10_gate"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/PurificationShrine.tscn" id="11_shrine"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/SpitterEnemy.tscn" id="12_spitter"]
-[ext_resource type="Texture2D" path="res://assets/env/parallax_sky.png" id="15_sky"]
-[ext_resource type="Texture2D" path="res://assets/env/parallax_mountains.png" id="16_far"]
-[ext_resource type="Texture2D" path="res://assets/env/parallax_graveyard.png" id="17_near"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_sky_px.png" id="15_sky"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_mountains_px.png" id="16_far"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_graveyard_px.png" id="17_near"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/HookAnchor.tscn" id="19_anchor"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/CorePickup.tscn" id="20_pickup"]
 [ext_resource type="Resource" path="res://assets/data/kiln_core.tres" id="21_kiln"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/EmberNest.tscn" id="22_nest"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/ScrapperEnemy.tscn" id="23_scrapper"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/GearShieldEnemy.tscn" id="24_gearshield"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_far_mountains_px.png" id="25_farmt"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_mid_grove_px.png" id="26_grove"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_clouds_px.png" id="27_cloud"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_clouds_low_px.png" id="28_cloud2"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_near_ground_px.png" id="29_near"]
+[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_foreground_px.png" id="30_fore"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/FlyingDemonEnemy.tscn" id="31_demon"]
 
-[node name="Level01_Static" type="Node2D"]
+[node name="Level01_Static" type="Node2D" unique_id=445927691]
 script = ExtResource("1_level")
 
-[node name="ParallaxBackdrop" type="ParallaxBackground" parent="."]
+[node name="ParallaxBackdrop" type="ParallaxBackground" parent="." unique_id=1332310230]
 layer = -10
 
-[node name="Far" type="ParallaxLayer" parent="ParallaxBackdrop"]
+[node name="Far" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1792823595]
 motion_scale = Vector2(0.08, 0.04)
-motion_mirroring = Vector2(668.8, 0)
+motion_mirroring = Vector2(704, 0)
 
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Far"]
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Far" unique_id=934848741]
 texture_filter = 1
-centered = false
 position = Vector2(0, -24)
-scale = Vector2(1.9, 1.9)
 texture = ExtResource("15_sky")
+centered = false
 
-[node name="Mid" type="ParallaxLayer" parent="ParallaxBackdrop"]
+[node name="CloudFar" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1711777092]
+motion_scale = Vector2(0.1, 0.03)
+motion_mirroring = Vector2(744, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/CloudFar" unique_id=977297237]
+modulate = Color(1, 0.88, 1, 0.68)
+texture_filter = 1
+position = Vector2(0, 8)
+texture = ExtResource("27_cloud")
+centered = false
+
+[node name="CloudLow" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1880726473]
+motion_scale = Vector2(0.12, 0.04)
+motion_mirroring = Vector2(744, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/CloudLow" unique_id=92056861]
+modulate = Color(0.92, 0.82, 0.98, 0.52)
+texture_filter = 1
+position = Vector2(0, 68)
+texture = ExtResource("28_cloud2")
+centered = false
+
+[node name="FarMountains" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=675239862]
+motion_scale = Vector2(0.14, 0.05)
+motion_mirroring = Vector2(768, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/FarMountains" unique_id=72689658]
+modulate = Color(0.82, 0.78, 0.9, 1)
+texture_filter = 1
+position = Vector2(-4, 128)
+texture = ExtResource("25_farmt")
+centered = false
+
+[node name="Mid" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1125287443]
 motion_scale = Vector2(0.22, 0.06)
-motion_mirroring = Vector2(326.4, 0)
+motion_mirroring = Vector2(384, 0)
 
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Mid"]
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Mid" unique_id=1491931592]
 texture_filter = 1
-centered = false
-position = Vector2(0, 48)
-scale = Vector2(1.7, 1.7)
+position = Vector2(0, 154)
 texture = ExtResource("16_far")
-
-[node name="Hills" type="ParallaxLayer" parent="ParallaxBackdrop"]
-motion_scale = Vector2(0.48, 0.1)
-motion_mirroring = Vector2(710.4, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Hills"]
-texture_filter = 1
 centered = false
+
+[node name="MidGrove" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=2099969236]
+motion_scale = Vector2(0.35, 0.08)
+motion_mirroring = Vector2(768, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/MidGrove" unique_id=1614378617]
+texture_filter = 1
 position = Vector2(0, 168)
-scale = Vector2(1.85, 1.85)
+texture = ExtResource("26_grove")
+centered = false
+
+[node name="Hills" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1673364233]
+motion_scale = Vector2(0.48, 0.1)
+motion_mirroring = Vector2(768, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Hills" unique_id=1073068007]
+texture_filter = 1
+position = Vector2(0, 168)
 texture = ExtResource("17_near")
+centered = false
 
-[node name="Platforms" type="Node2D" parent="."]
+[node name="NearGround" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=2141366703]
+motion_scale = Vector2(0.78, 0.14)
+motion_mirroring = Vector2(624, 0)
 
-[node name="GroundLeft" parent="Platforms" instance=ExtResource("2_plat")]
-skin = "ground"
+[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/NearGround" unique_id=1675764234]
+modulate = Color(0.72, 0.66, 0.8, 1)
+texture_filter = 1
+position = Vector2(0, 252)
+texture = ExtResource("29_near")
+centered = false
+
+[node name="ParallaxForeground" type="ParallaxBackground" parent="." unique_id=1686955435]
+layer = 1
+
+[node name="Foreground" type="ParallaxLayer" parent="ParallaxForeground" unique_id=41424141]
+motion_scale = Vector2(1.22, 0.18)
+motion_mirroring = Vector2(624, 0)
+
+[node name="Sprite" type="Sprite2D" parent="ParallaxForeground/Foreground" unique_id=1939670683]
+modulate = Color(0.16, 0.12, 0.2, 0.78)
+texture_filter = 1
+position = Vector2(0, 352)
+texture = ExtResource("30_fore")
+centered = false
+
+[node name="Platforms" type="Node2D" parent="." unique_id=2097643483]
+
+[node name="GroundLeft" parent="Platforms" unique_id=2047834209 instance=ExtResource("2_plat")]
 position = Vector2(0, 320)
 size = Vector2(400, 80)
-cap_left = false
 fill = Color(0.545098, 0.270588, 0.0745098, 1)
-
-[node name="ToxinPit" parent="Platforms" instance=ExtResource("2_plat")]
+cap_left = false
 skin = "ground"
-position = Vector2(400, 368)
-size = Vector2(112, 32)
+
+[node name="ToxinPit" parent="Platforms" unique_id=1995105863 instance=ExtResource("2_plat")]
+position = Vector2(400, 352)
+size = Vector2(112, 48)
+fill = Color(0.290196, 0.164706, 0.0941176, 1)
 cap_surface = false
 tone = Color(0.52, 0.47, 0.58, 1)
-fill = Color(0.290196, 0.164706, 0.0941176, 1)
-
-[node name="GroundRight" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "ground"
+
+[node name="GroundRight" parent="Platforms" unique_id=540910394 instance=ExtResource("2_plat")]
 position = Vector2(512, 320)
 size = Vector2(1088, 80)
-cap_right = false
 fill = Color(0.545098, 0.270588, 0.0745098, 1)
-
-[node name="WallLeft" parent="Platforms" instance=ExtResource("2_plat")]
+cap_right = false
 skin = "ground"
+
+[node name="WallLeft" parent="Platforms" unique_id=1416152175 instance=ExtResource("2_plat")]
 position = Vector2(-16, 0)
 size = Vector2(16, 400)
 fill = Color(0.227451, 0.227451, 0.227451, 1)
-
-[node name="WallRight" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "ground"
+
+[node name="WallRight" parent="Platforms" unique_id=1853854108 instance=ExtResource("2_plat")]
 position = Vector2(1600, 0)
 size = Vector2(16, 400)
 fill = Color(0.227451, 0.227451, 0.227451, 1)
+skin = "ground"
 
-[node name="Plat_56_200" parent="Platforms" instance=ExtResource("2_plat")]
-skin = "floating"
+[node name="Plat_56_200" parent="Platforms" unique_id=194483821 instance=ExtResource("2_plat")]
 position = Vector2(56, 200)
 size = Vector2(72, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_160_200" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_160_200" parent="Platforms" unique_id=1793027773 instance=ExtResource("2_plat")]
 position = Vector2(160, 200)
-size = Vector2(64, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_48_144" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_48_144" parent="Platforms" unique_id=1554105806 instance=ExtResource("2_plat")]
 position = Vector2(48, 144)
 size = Vector2(56, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_268_248" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
-position = Vector2(268, 248)
+
+[node name="Plat_268_248" parent="Platforms" unique_id=1157313816 instance=ExtResource("2_plat")]
+position = Vector2(268, 256)
 size = Vector2(88, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_420_236" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_420_236" parent="Platforms" unique_id=1057811403 instance=ExtResource("2_plat")]
 position = Vector2(420, 236)
 size = Vector2(72, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_620_248" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_620_248" parent="Platforms" unique_id=400249984 instance=ExtResource("2_plat")]
 position = Vector2(620, 248)
 size = Vector2(96, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_760_184" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_760_184" parent="Platforms" unique_id=1274363156 instance=ExtResource("2_plat")]
 position = Vector2(760, 184)
 size = Vector2(104, 16)
 fill = Color(0.627451, 0.321569, 0.176471, 1)
-
-[node name="Plat_920_248" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_920_248" parent="Platforms" unique_id=1426230411 instance=ExtResource("2_plat")]
 position = Vector2(920, 248)
 size = Vector2(72, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_980_180" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_980_180" parent="Platforms" unique_id=1578425231 instance=ExtResource("2_plat")]
 position = Vector2(980, 180)
 size = Vector2(72, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
-
-[node name="Plat_1080_220" parent="Platforms" instance=ExtResource("2_plat")]
 skin = "floating"
+
+[node name="Plat_1080_220" parent="Platforms" unique_id=1903230573 instance=ExtResource("2_plat")]
 position = Vector2(1080, 220)
-size = Vector2(64, 16)
 fill = Color(0.368627, 0.352941, 0.337255, 1)
+skin = "floating"
 
-[node name="Gear" parent="Platforms" instance=ExtResource("3_gear")]
+[node name="Gear" parent="Platforms" unique_id=191281285 instance=ExtResource("3_gear")]
 position = Vector2(600, 200)
-radius = 16.0
 
-[node name="Props" type="Node2D" parent="."]
+[node name="Props" type="Node2D" parent="." unique_id=1099043046]
 
-[node name="ToxinPool" parent="Props" instance=ExtResource("4_toxin")]
+[node name="ToxinPool" parent="Props" unique_id=1843087346 instance=ExtResource("4_toxin")]
 position = Vector2(400, 336)
 
-[node name="FilterGear" parent="Props" instance=ExtResource("5_filter")]
+[node name="FilterGear" parent="Props" unique_id=1248521158 instance=ExtResource("5_filter")]
 position = Vector2(352, 308)
 
-[node name="PressurePlate" parent="Props" instance=ExtResource("6_plate")]
+[node name="PressurePlate" parent="Props" unique_id=79261173 instance=ExtResource("6_plate")]
 position = Vector2(1040, 314)
 
-[node name="Door" parent="Props" instance=ExtResource("7_door")]
+[node name="Door" parent="Props" unique_id=1098633727 instance=ExtResource("7_door")]
 position = Vector2(1144, 256)
 
-[node name="ScrapPile" parent="Props" instance=ExtResource("8_scrap")]
+[node name="ScrapPile" parent="Props" unique_id=557426399 instance=ExtResource("8_scrap")]
 position = Vector2(1220, 302)
 
-[node name="SocketStation" parent="Props" instance=ExtResource("9_socket")]
+[node name="SocketStation" parent="Props" unique_id=474490195 instance=ExtResource("9_socket")]
 position = Vector2(1296, 296)
 
-[node name="RustyGate" parent="Props" instance=ExtResource("10_gate")]
+[node name="RustyGate" parent="Props" unique_id=170698888 instance=ExtResource("10_gate")]
 position = Vector2(1384, 256)
 
-[node name="PurificationShrine" parent="Props" instance=ExtResource("11_shrine")]
+[node name="PurificationShrine" parent="Props" unique_id=801350851 instance=ExtResource("11_shrine")]
 position = Vector2(1488, 288)
 
-[node name="EmberNest" parent="Props" instance=ExtResource("22_nest")]
+[node name="EmberNest" parent="Props" unique_id=936879023 instance=ExtResource("22_nest")]
 position = Vector2(150, 306)
 
-[node name="Spitter1" parent="Props" instance=ExtResource("12_spitter")]
+[node name="Spitter1" parent="Props" unique_id=1426501202 instance=ExtResource("12_spitter")]
 position = Vector2(812, 184)
 
-[node name="Spitter2" parent="Props" instance=ExtResource("12_spitter")]
+[node name="Spitter2" parent="Props" unique_id=1079775903 instance=ExtResource("12_spitter")]
 position = Vector2(1018, 180)
 
-[node name="Scrapper1" parent="Props" instance=ExtResource("23_scrapper")]
+[node name="Scrapper1" parent="Props" unique_id=1590711696 instance=ExtResource("23_scrapper")]
 position = Vector2(860, 320)
 
-[node name="GearShield1" parent="Props" instance=ExtResource("24_gearshield")]
+[node name="GearShield1" parent="Props" unique_id=1913946978 instance=ExtResource("24_gearshield")]
 position = Vector2(960, 320)
 
-[node name="Hooks" type="Node2D" parent="."]
+[node name="FlyingDemon1" parent="Props" instance=ExtResource("31_demon")]
+position = Vector2(460, 130)
+patrol_range = 72.0
 
-[node name="Hook_Pit" parent="Hooks" instance=ExtResource("19_anchor")]
-position = Vector2(456, 116)
+[node name="Hooks" type="Node2D" parent="." unique_id=1120667280]
 
-[node name="Hook_Tower" parent="Hooks" instance=ExtResource("19_anchor")]
+[node name="Hook_Pit" parent="Hooks" unique_id=649687408 instance=ExtResource("19_anchor")]
+position = Vector2(460, 160)
+
+[node name="Hook_Tower" parent="Hooks" unique_id=637074543 instance=ExtResource("19_anchor")]
 position = Vector2(120, 84)
 
-[node name="Hook_Mid" parent="Hooks" instance=ExtResource("19_anchor")]
+[node name="Hook_Mid" parent="Hooks" unique_id=1611035713 instance=ExtResource("19_anchor")]
 position = Vector2(700, 96)
 
-[node name="Hook_Plate" parent="Hooks" instance=ExtResource("19_anchor")]
+[node name="Hook_Plate" parent="Hooks" unique_id=457302523 instance=ExtResource("19_anchor")]
 position = Vector2(1150, 110)
 
-[node name="Pickups" type="Node2D" parent="."]
+[node name="Pickups" type="Node2D" parent="." unique_id=1967794424]
 
-[node name="Kiln_LowTower" parent="Pickups" instance=ExtResource("20_pickup")]
+[node name="Kiln_LowTower" parent="Pickups" unique_id=910046345 instance=ExtResource("20_pickup")]
 position = Vector2(60, 120)
 core = ExtResource("21_kiln")
 
-[node name="Kiln_Pit" parent="Pickups" instance=ExtResource("20_pickup")]
+[node name="Kiln_Pit" parent="Pickups" unique_id=348792358 instance=ExtResource("20_pickup")]
 position = Vector2(495, 210)
 core = ExtResource("21_kiln")
 
-[node name="Kiln_TowerTop" parent="Pickups" instance=ExtResource("20_pickup")]
+[node name="Kiln_TowerTop" parent="Pickups" unique_id=1054349286 instance=ExtResource("20_pickup")]
 position = Vector2(120, 50)
 core = ExtResource("21_kiln")
