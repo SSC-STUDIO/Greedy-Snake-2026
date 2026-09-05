@@ -1,12 +1,15 @@
 extends Node
 ## Sfx autoload: tiny pooled sound-effect player keyed by short names.
-## One-shots live under assets/kenney_clean/audio/*.ogg (CC0, Kenney).
-## Weather loops live under assets/audio/ambience/ (project-original CC0).
+## One-shots live under assets/kenney_clean/audio/*.ogg (CC0, Kenney)
+## plus a project-original splash slap. Weather loops live under
+## assets/audio/ambience/ (project-original CC0).
 ## Loads are guarded so the suite stays green even before/without assets.
 
-const POOL_SIZE := 10
+const POOL_SIZE := 14
 const BASE_DB := -9.0
 const AMBIENCE_FADE := 2.6
+const NEST_HISS_FADE := 1.1
+const STRIDE_INTERVAL := 0.38
 
 ## key -> curated CC0 sound (see assets/external/CREDITS.md for sources).
 const LIBRARY := {
@@ -16,6 +19,9 @@ const LIBRARY := {
 	&"parry": "res://assets/kenney_clean/audio/parry.ogg",
 	&"dash": "res://assets/kenney_clean/audio/dash.ogg",
 	&"jump": "res://assets/kenney_clean/audio/jump.ogg",
+	&"land": "res://assets/kenney_clean/audio/land.ogg",
+	&"step": "res://assets/kenney_clean/audio/step.ogg",
+	&"splash": "res://assets/audio/sfx/splash.wav",
 	&"spit": "res://assets/kenney_clean/audio/spit.ogg",
 	&"pickup": "res://assets/kenney_clean/audio/pickup.ogg",
 	&"insert": "res://assets/kenney_clean/audio/insert.ogg",
@@ -26,17 +32,29 @@ const LIBRARY := {
 	&"ui_denied": "res://assets/kenney_clean/audio/ui_denied.ogg",
 }
 
-## Looping weather beds (project-original CC0 rain; Kenney has no rain).
+## Looping weather beds (project-original CC0 rain / nest steam; Kenney has none).
 const AMBIENCE := {
 	&"rain": "res://assets/audio/ambience/rain.wav",
 	&"rust_rain": "res://assets/audio/ambience/rust_rain.wav",
 	&"cemetery": "res://assets/audio/ambience/cemetery_drone.wav",
+	&"nest_hiss": "res://assets/audio/ambience/nest_hiss.wav",
+}
+
+const AMBIENCE_LEVEL := {
+	&"rain": 0.28,
+	&"rust_rain": 0.28,
+	&"cemetery": 0.28,
+	&"nest_hiss": 0.20,
 }
 
 var _pool: Array[AudioStreamPlayer] = []
 var _streams: Dictionary = {}
 var _ambience: Dictionary = {}
 var _ambience_gain: Dictionary = {}
+var _nest_steam: Dictionary = {}
+var _stride_t := 0.0
+var _stride_on := false
+var _drip_t := 0.0
 
 
 func _ready() -> void:
@@ -57,9 +75,11 @@ func _process(delta: float) -> void:
 	_fade_ambience(&"rain", WorldClock.rain_audio_gain(), delta)
 	_fade_ambience(&"rust_rain", WorldClock.rust_rain_audio_gain(), delta)
 	_fade_ambience(&"cemetery", WorldClock.drone_audio_gain(), delta)
+	_fade_ambience(&"nest_hiss", _nest_steam_target(), delta, NEST_HISS_FADE)
+	_tick_rain_hits(delta)
 
 
-func play(key: StringName, pitch_jitter: float = 0.08) -> void:
+func play(key: StringName, pitch_jitter: float = 0.08, volume_db: float = BASE_DB) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	var stream := _resolve_stream(key)
@@ -68,9 +88,38 @@ func play(key: StringName, pitch_jitter: float = 0.08) -> void:
 	for p in _pool:
 		if not p.playing:
 			p.stream = stream
+			p.volume_db = volume_db
 			p.pitch_scale = 1.0 + randf_range(-pitch_jitter, pitch_jitter)
 			p.play()
 			return
+
+
+## Grounded walk cadence. Presentation only — callers already decided "moving".
+func tick_stride(moving: bool, wet: bool, delta: float) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	if not moving:
+		_stride_on = false
+		_stride_t = 0.0
+		return
+	if not _stride_on:
+		_stride_on = true
+		_stride_t = 0.0
+	_stride_t -= delta
+	if _stride_t > 0.0:
+		return
+	_stride_t = STRIDE_INTERVAL
+	play(&"step", 0.11, -15.0)
+	if wet:
+		play(&"splash", 0.16, -21.0)
+
+
+## Lit nests report rain-gated steam; the loudest one drives the hiss bed.
+func set_nest_steam(id: int, gain: float) -> void:
+	if gain <= 0.001:
+		_nest_steam.erase(id)
+	else:
+		_nest_steam[id] = clampf(gain, 0.0, 1.0)
 
 
 ## Lazily resolve + cache; missing files degrade to silence, not errors.
@@ -113,23 +162,43 @@ func _ensure_ambience() -> void:
 		_ambience_gain[key] = 0.0
 
 
-func _fade_ambience(key: StringName, target: float, delta: float) -> void:
+func _fade_ambience(key: StringName, target: float, delta: float, fade: float = AMBIENCE_FADE) -> void:
 	if not _ambience.has(key):
 		return
 	var player: AudioStreamPlayer = _ambience[key]
 	if player.stream == null:
 		return
 	var cur := float(_ambience_gain.get(key, 0.0))
-	var next := move_toward(cur, clampf(target, 0.0, 1.0), delta / AMBIENCE_FADE)
+	var next := move_toward(cur, clampf(target, 0.0, 1.0), delta / maxf(fade, 0.05))
 	_ambience_gain[key] = next
 	if next <= 0.001:
 		player.volume_db = -80.0
 		if player.playing:
 			player.stop()
 		return
-	player.volume_db = linear_to_db(next * 0.28)
+	var level := float(AMBIENCE_LEVEL.get(key, 0.28))
+	player.volume_db = linear_to_db(next * level)
 	if not player.playing:
 		player.play()
+
+
+func _nest_steam_target() -> float:
+	var best := 0.0
+	for g in _nest_steam.values():
+		best = maxf(best, float(g))
+	return best
+
+
+func _tick_rain_hits(delta: float) -> void:
+	var rain := WorldClock.rain_audio_gain() + WorldClock.rust_rain_audio_gain()
+	if rain <= 0.12:
+		_drip_t = 0.0
+		return
+	_drip_t -= delta
+	if _drip_t > 0.0:
+		return
+	_drip_t = lerpf(0.72, 0.28, clampf(rain, 0.0, 1.0))
+	play(&"splash", 0.22, lerpf(-24.0, -18.0, clampf(rain, 0.0, 1.0)))
 
 
 func _bus_or_master(name: StringName) -> StringName:

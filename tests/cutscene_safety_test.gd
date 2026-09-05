@@ -33,6 +33,7 @@ func test_toxin_pool_stops_expose_while_director_locked() -> void:
 	build_floor(arena)
 	var player := await spawn_player(arena)
 	var pool := ToxinPool.new()
+	pool.position = player.global_position + Vector2(-56, -8)
 	arena.add_child(pool)
 	pool._bodies.append(player)
 	player.toxin.toxin = 10.0

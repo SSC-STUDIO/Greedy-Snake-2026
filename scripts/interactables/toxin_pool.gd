@@ -23,21 +23,43 @@ const SCUM_BOB := 1.0
 var _scum_sprites: Array[Sprite2D] = []
 var _scum_frames: Array[Texture2D] = []
 var _scum_time := 0.0
+var _hinted := false
+var _immersed: Dictionary = {}
 
 
 func _ready() -> void:
+	# Sensor only — never a solid lid. Player mask is layer 1; this stays on 128.
 	collision_layer = 128
 	collision_mask = 2
 	monitoring = true
 	monitorable = true
-	body_entered.connect(func(b: Node2D) -> void: _bodies.append(b))
-	body_exited.connect(func(b: Node2D) -> void: _bodies.erase(b))
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 	_rebuild_visual()
 
 
 func configure(size: Vector2) -> void:
 	_pool_size = size
 	_rebuild_visual()
+
+
+## World-space water film. Rain / splash FX use the top edge as the hit plane,
+## not the pit floor. Do not shrink this to a collision inset — weather_fx
+## samples `y = rect.position.y` as the scum surface.
+func surface_rect() -> Rect2:
+	return Rect2(global_position, _pool_size)
+
+
+func _on_body_entered(body: Node2D) -> void:
+	if not _bodies.has(body):
+		_bodies.append(body)
+
+
+func _on_body_exited(body: Node2D) -> void:
+	_bodies.erase(body)
+	_immersed.erase(body.get_instance_id())
+	if body is Player:
+		_hinted = false
 
 
 func _rebuild_visual() -> void:
@@ -109,6 +131,15 @@ func _rebuild_visual() -> void:
 		add_child(col)
 	(col.shape as RectangleShape2D).size = _pool_size
 	col.position = _pool_size * 0.5
+	# Render water in front of the submerged boots, instead of drawing the
+	# entire knight above an opaque background that looks like solid ground.
+	var veil := Polygon2D.new()
+	veil.name = "ImmersionVeil"
+	veil.z_index = 2
+	veil.color = Color(0.07, 0.23, 0.19, 0.52)
+	veil.polygon = PackedVector2Array([Vector2.ZERO, Vector2(_pool_size.x, 0),
+		_pool_size, Vector2(0, _pool_size.y)])
+	add_child(veil)
 
 
 func _load_tex(path: String) -> Texture2D:
@@ -135,15 +166,50 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	# 过场锁输入时人走不开，继续灌毒会在台词里把骑士灌满并触发满溢。
+	# 池不改 velocity：人在腐液里仍能左右走、跳，爬岸靠关卡矮唇。
 	if Director.is_input_locked():
 		return
+	_prune_bodies()
 	for body in _bodies:
-		if body is Player:
+		if body is Player and is_submerged(body):
+			if not _immersed.has(body.get_instance_id()):
+				_immersed[body.get_instance_id()] = true
+				Sfx.play(&"splash", 0.08, -8.0)
 			(body as Player).toxin.expose(toxin_per_second * delta)
+			_maybe_hint()
+		elif is_instance_valid(body):
+			_immersed.erase(body.get_instance_id())
 	_bubble_accum += delta
 	if _bubble_accum >= BUBBLE_INTERVAL:
 		_bubble_accum -= BUBBLE_INTERVAL
 		Fx.toxin_bubbles(self, _bubble_rect())
+
+
+func is_submerged(body: Node2D) -> bool:
+	var foot := to_local(body.global_position)
+	# Character origins are their boot soles. Contact at the bank/water lip
+	# must not count as immersion; the visible film stays at local y=0.
+	return foot.y > 0.75 and foot.y < _pool_size.y + 26.0 \
+		and foot.x > 0.0 and foot.x < _pool_size.x
+
+
+func _prune_bodies() -> void:
+	var i := _bodies.size() - 1
+	while i >= 0:
+		if not is_instance_valid(_bodies[i]):
+			_bodies.remove_at(i)
+		i -= 1
+
+
+func _maybe_hint() -> void:
+	if _hinted:
+		return
+	# 初次入池由剧情字幕请客；过场中也先记一笔，避免解锁后再叠一句。
+	if Director.is_input_locked() or Director.playing:
+		_hinted = true
+		return
+	_hinted = true
+	GameEvents.announcement.emit("腐液咬着靴底")
 
 
 func _bubble_rect() -> Rect2:
