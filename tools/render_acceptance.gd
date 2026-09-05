@@ -194,7 +194,9 @@ func _capture(requested: Vector2i, fixture: String, overlays: Array[Control] = [
 	var metrics := PresentationMetrics.for_window(win)
 	var expected: Rect2 = metrics["physical_rect"]
 	var world_image_rect := _physical_bounds(_presentation.world_image)
-	var hud := _presentation.get_node("UiHost/HUD")
+	var hud := _presentation.find_child("HUD", true, false) as CanvasLayer
+	if hud == null:
+		hud = _world.find_child("HUD", true, false) as CanvasLayer
 	var hud_root := hud.get_node("Root") as Control
 	var ui_bounds := _physical_bounds(hud_root)
 	var widgets: Dictionary = {}
