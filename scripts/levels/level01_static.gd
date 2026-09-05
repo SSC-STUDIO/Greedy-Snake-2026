@@ -106,7 +106,7 @@ func _spawn_actors(restored: bool) -> void:
 	cam.global_position = _player.global_position + Vector2(0, -18)
 
 	var hud: CanvasLayer = HUD.instantiate()
-	add_child(hud)
+	GameContext.ui_host(self).add_child(hud)
 
 
 func _tune_play_layout() -> void:

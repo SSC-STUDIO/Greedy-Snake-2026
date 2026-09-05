@@ -3,10 +3,9 @@ extends Object
 ## Rustgrave 全分辨率与多比例自适应控制器。
 ##
 ## 基础逻辑视口：1280x720 (16:9)
-## 支持 3 种缩放呈现模式：
-## - FIT_ADAPTIVE: 自适应铺满 (Keep Aspect + Fractional) — 1080p, 1440p, 4K 满屏无黑边，非 16:9 留对称窄黑边；
-## - FIT_EXPAND: 视野扩展 (Expand Aspect) — 16:10 (Steam Deck) 和 21:9 超宽屏动态拓宽视野，零黑边；
-## - FIT_INTEGER: 点对点整数缩放 (Pixel Perfect) — 严格整倍率 (1x/2x/3x)，适合追求纯粹像素颗粒的玩家。
+## The root stays in canvas-items mode. GamePresentation owns the 640x360
+## world image and PresentationMetrics owns its centered integer-sized rect;
+## keeping both layers in viewport mode would scale the world a second time.
 
 const VIEW_W := 1280
 const VIEW_H := 720
@@ -48,27 +47,16 @@ static func apply(win: Window = null) -> void:
 
 
 static func apply_fit_mode(mode: FitMode, win: Window = null) -> void:
-	# World rendering is always presented at the largest centered integer scale.
-	# Keep the legacy enum inputs accepted, but normalize them to the pixel-safe
-	# mode so menus and saved preferences cannot reintroduce fractional scaling.
+	# Keep the legacy enum inputs accepted, but use the single canvas-items
+	# presentation path so world and UI share one final content rectangle.
 	_current_fit_mode = FitMode.INTEGER
 	var root := _get_root_window(win)
 	if root == null or DisplayServer.get_name() == "headless":
 		return
 
-	match FitMode.INTEGER:
-		FitMode.ADAPTIVE:
-			root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-			root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-			root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
-		FitMode.EXPAND:
-			root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-			root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
-			root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
-		FitMode.INTEGER:
-			root.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-			root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-			root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_INTEGER
+	root.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
+	root.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
 
 
 static func get_fit_mode() -> FitMode:

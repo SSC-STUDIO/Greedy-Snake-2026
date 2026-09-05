@@ -24,6 +24,10 @@ const SIL_FEET_MAX := 340.0
 const SIL_SPAN := 512.0
 const TINT_FOLLOW := 2.8
 const STAR_TICK := 1.0 / 12.0
+## Keep the authored wide sky plate as the primary backdrop.  The generated
+## wash + 56px moon made the whole scene read flatter and smaller than the
+## original presentation; weather/fog layers remain available on top.
+const USE_AUTHORED_SKY_PLATE := true
 
 var _far_layer: ParallaxLayer
 var _star_layer: ParallaxLayer
@@ -134,7 +138,32 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 		_far_sprite.set_meta("source_path", SkyPlate.SKY_SRC)
 		if _far_layer != null:
 			_far_layer.motion_mirroring = Vector2(float(SkyPlate.SKY_COVER_W), 0)
+		if USE_AUTHORED_SKY_PLATE:
+			var authored := Sprite2D.new()
+			authored.name = "AuthoredSkyPlate"
+			authored.texture = load(SkyPlate.SKY_SRC) as Texture2D
+			authored.centered = false
+			authored.position = _far_sprite.position
+			authored.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+			authored.region_enabled = true
+			authored.region_rect = Rect2(0.0, 0.0, SkyPlate.SKY_COVER_W, float(SkyPlate.SKY_H))
+			authored.set_meta("source_path", SkyPlate.SKY_SRC)
+			_far_layer.add_child(authored)
 	_add_moon(backdrop, _plan["moon"])
+	if USE_AUTHORED_SKY_PLATE:
+		# The authored plate already contains its large moon, clouds and stars.
+		# Keep generated nodes for tooling compatibility but prevent double images.
+		var moon := backdrop.get_node_or_null("SkyMoon") as CanvasItem
+		if moon != null:
+			moon.visible = false
+		var stars := backdrop.get_node_or_null("SkyStars") as CanvasItem
+		if stars != null:
+			stars.visible = false
+		if _cloud_far != null:
+			_cloud_far.visible = false
+		if _cloud_low != null:
+			_cloud_low.visible = false
 	_add_stars(backdrop, _plan.get("stars", []))
 	_scatter_field(_cloud_far, _plan.get("clouds_far", []), SkyPlate.cloud_units(),
 			SkyPlate.CLOUD_FAR_FIELD, 8.0)

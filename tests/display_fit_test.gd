@@ -10,7 +10,7 @@ func test_logical_viewport_stays_1280() -> void:
 
 
 func test_stretch_mode_and_aspect() -> void:
-	eq(String(ProjectSettings.get_setting("display/window/stretch/mode")), "viewport")
+	eq(String(ProjectSettings.get_setting("display/window/stretch/mode")), "canvas_items")
 	eq(String(ProjectSettings.get_setting("display/window/stretch/aspect")), "keep")
 	var scale_mode: Variant = ProjectSettings.get_setting("display/window/stretch/scale_mode")
 	ok(String(scale_mode) in ["fractional", "integer"], "scale mode supports smooth scaling or integer")
