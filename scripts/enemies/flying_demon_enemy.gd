@@ -3,7 +3,9 @@ extends EnemyBase
 ## Airborne gargoyle-demon that patrols the skies and perches above hazards.
 ## Keeps flapping while it winds up, swoops, then returns to its patrol height.
 
-const DEMON_CHAR := "flying_demon_px"
+## Keep the authored demon frame density. The offline px variant was half-size
+## and made the aerial enemy read too small against the original platforms.
+const DEMON_CHAR := "flying_demon"
 const DEMON_POS := Vector2(0.0, 0.0)
 
 enum State { PATROL, AGGRO, ATTACK, SWOOP, RECOVERY }
