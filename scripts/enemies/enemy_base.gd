@@ -9,6 +9,11 @@ const GRAVITY := 980.0
 ## Overbright modulate clamps to a white silhouette in the LDR framebuffer,
 ## which reads as a hit flash for sprites and ColorRect bodies alike.
 const FLASH_MODULATE := Color(6.0, 6.0, 6.0)
+## 受击硬直：挡住状态机改 velocity，否则巡逻/冲锋下一帧就把击退盖掉。
+const HURT_LOCK := 0.12
+## 与玩家身体重叠时的挤开半径（像素）；不改玩家碰撞层，只推开重叠。
+const BODY_SEPARATE_X := 16.0
+const BODY_SEPARATE_Y := 26.0
 
 @export var patrol_range: float = 64.0
 @export var patrol_speed: float = 40.0
@@ -19,8 +24,13 @@ var _anchor_x: float = 0.0
 var _anim: FrameAnimSprite     # 有帧素材时非 null
 var _flash_target: CanvasItem  # 受击白闪作用的节点（默认 $Visual）
 var _flash_tween: Tween
+var _recoil_tween: Tween
 ## 静止敌人置 false：跳过重力与 move_and_slide。
 var _mobile := true
+var _dead := false
+var _hurt_lock: float = 0.0
+var _recoil_home_x: float = 0.0
+var _recoil_home_ready := false
 
 
 func _ready() -> void:
@@ -39,7 +49,13 @@ func _enemy_ready() -> void:
 	pass
 
 
+func is_hurt_locked() -> bool:
+	return _dead or _hurt_lock > 0.0
+
+
 func _physics_process(delta: float) -> void:
+	if _dead:
+		return
 	# 过场锁玩家时敌人也停手，否则 Boss 介绍里仍会被砍/被射。
 	if Director.is_input_locked():
 		if _mobile:
@@ -47,6 +63,15 @@ func _physics_process(delta: float) -> void:
 				velocity.y += GRAVITY * delta
 			velocity.x = 0.0
 			move_and_slide()
+		return
+	if _hurt_lock > 0.0:
+		_hurt_lock = maxf(0.0, _hurt_lock - delta)
+		if _mobile:
+			if not is_on_floor():
+				velocity.y += GRAVITY * delta
+			move_and_slide()
+			_after_move()
+			_separate_from_player()
 		return
 	if not _mobile:
 		_tick_state(delta)
@@ -56,6 +81,7 @@ func _physics_process(delta: float) -> void:
 	_tick_state(delta)
 	move_and_slide()
 	_after_move()
+	_separate_from_player()
 
 
 ## 子类状态机步进（move_and_slide 之前）。
@@ -90,18 +116,61 @@ func _flash_white() -> void:
 		_flash_tween.kill()
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(_flash_target, "modulate", FLASH_MODULATE, 0.03)
-	_flash_tween.tween_interval(0.05)
-	_flash_tween.tween_property(_flash_target, "modulate", _flash_restore_color(), 0.12)
+	_flash_tween.tween_interval(0.06)
+	_flash_tween.tween_property(_flash_target, "modulate", _flash_restore_color(), 0.10)
 
 
 func _flash_restore_color() -> Color:
 	return Color.WHITE
 
 
-func _on_hit(_attacker: Node, target: Node, _amount: int) -> void:
-	if target != self:
+func _on_hit(attacker: Node, target: Node, amount: int) -> void:
+	if target != self or _dead:
 		return
 	_flash_white()
+	if amount <= 0:
+		return
+	_hurt_lock = HURT_LOCK
+	_pixel_recoil(attacker)
+
+
+## 受击往攻击者反方向挪 2px，再弹回。只动视觉节点，不改碰撞原点。
+func _pixel_recoil(attacker: Node) -> void:
+	if _flash_target == null:
+		return
+	if not _recoil_home_ready:
+		_recoil_home_x = _flash_target.position.x
+		_recoil_home_ready = true
+	var dir := -_dir
+	if attacker is Node2D:
+		var ax := (attacker as Node2D).global_position.x
+		if absf(ax - global_position.x) > 0.5:
+			dir = signf(global_position.x - ax)
+	if dir == 0.0:
+		dir = -1.0
+	if _recoil_tween != null and _recoil_tween.is_valid():
+		_recoil_tween.kill()
+	_flash_target.position.x = _recoil_home_x + dir * 2.0
+	_recoil_tween = create_tween()
+	_recoil_tween.tween_property(_flash_target, "position:x", _recoil_home_x, 0.10)
+
+
+## 玩家与敌人互相不在对方 collision_mask 里，会穿模。从敌人侧把重叠的玩家挤开，
+## 不改玩家移动公式、也不让冲锋把玩家当成墙。
+func _separate_from_player() -> void:
+	if not _mobile:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Player
+	if player == null or player.is_invincible():
+		return
+	var to_p := player.global_position - global_position
+	if absf(to_p.x) > BODY_SEPARATE_X or absf(to_p.y) > BODY_SEPARATE_Y:
+		return
+	var push := signf(to_p.x)
+	if push == 0.0:
+		push = -_dir if _dir != 0.0 else 1.0
+	if absf(player.velocity.x) < 90.0 or signf(player.velocity.x) != push:
+		player.velocity.x = push * 88.0
 
 
 ## 装配 CharFrames 帧动画。specs 每行 [动作名, 帧目录名("" = 同动作名),
@@ -131,6 +200,7 @@ static func _hide_placeholder_rects(container: Node) -> void:
 ## 播报，最后 queue_free。掉落物等差异由子类在调用前自行生成。
 func _death_burst(frames: Array[Texture2D], fps: float, flip: bool,
 		baseline: float, message: String) -> void:
+	_disable_combat()
 	if frames.is_empty():
 		Fx.enemy_death_smoke(global_position)
 	else:
@@ -141,6 +211,22 @@ func _death_burst(frames: Array[Texture2D], fps: float, flip: bool,
 		GameEvents.announcement.emit(message)
 	Sfx.play(&"hit_flesh")
 	queue_free()
+
+
+## 死亡当帧立刻收刀：关掉 hit/hurt、去掉身体碰撞，并挡住本帧剩余 AI。
+func _disable_combat() -> void:
+	_dead = true
+	_hurt_lock = 0.0
+	velocity = Vector2.ZERO
+	collision_layer = 0
+	collision_mask = 0
+	for node in get_children():
+		if node is Hitbox or node is Hurtbox:
+			var area := node as Area2D
+			area.monitoring = false
+			area.monitorable = false
+			area.collision_layer = 0
+			area.collision_mask = 0
 
 
 ## 子类死亡回调（health.died）。
