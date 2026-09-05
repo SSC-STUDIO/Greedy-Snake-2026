@@ -23,7 +23,6 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_rendered = DisplayServer.get_name() != "headless"
 	if _rendered:
-		DisplayFit._applied = true
 		get_tree().root.mode = Window.MODE_WINDOWED
 		get_tree().root.borderless = true
 		get_tree().root.size = Vector2i(1920, 1080)

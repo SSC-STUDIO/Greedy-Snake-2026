@@ -19,7 +19,6 @@ func _enter_tree() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if "--supplement" in OS.get_cmdline_user_args():
 		OUT += "/supplement"
-	DisplayFit._applied = true # CLI --windowed remains windowed throughout this tool.
 	_errors = LOGGER.new()
 	OS.add_logger(_errors)
 	_deadline = Time.get_ticks_msec() + 300000
