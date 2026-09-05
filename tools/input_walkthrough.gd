@@ -261,6 +261,16 @@ func _fight_spitter() -> bool:
 			_jump_hold = 16
 			_jump_cd = 34
 		_set_action(&"jump", _jump_hold > 0)
+		_dash_cd = maxi(0, _dash_cd - 1)
+		var evade := false
+		if _dash_cd == 0:
+			for effect in GameContext.world_effects(player).get_children():
+				if effect is Projectile and effect.team == &"enemy":
+					var future: Vector2 = effect.global_position + effect.velocity * 0.10
+					if future.distance_to(player.global_position + Vector2(0, -14)) < 28.0:
+						evade = true
+						_dash_cd = 30
+		_set_action(&"dash", evade)
 		_set_action(&"attack", absf(dx) < 42.0 and absf(player.global_position.y - spitter.global_position.y) < 58.0 and i % 24 == 0)
 		if i % 120 == 0:
 			print("[SPITTER] player=%s hp=%d spitter=%s hp=%d" % [player.position, player.health.current, spitter.position, spitter.health.current])
