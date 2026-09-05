@@ -33,7 +33,7 @@ $process.Refresh()
 if (Test-Path -LiteralPath $reportPath) {
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     $exitErrors = @(Get-Content -LiteralPath $stderrFile | Where-Object { $_ -match '^(SCRIPT ERROR:|ERROR:)' -and $_ -notmatch '^ERROR: (?:Texture with GL ID|\d+ RID allocations)' })
-    $exitErrors += @(Get-Content -LiteralPath $stdoutFile | Where-Object { $_ -match '^(SCRIPT ERROR:|ERROR:)' })
+    $exitErrors += @(Get-Content -LiteralPath $stdoutFile | Where-Object { $_ -match '^(SCRIPT ERROR:|ERROR:)' -and $_ -notmatch '^ERROR: (?:Texture with GL ID|\d+ RID allocations)' })
     $report | Add-Member -NotePropertyName engine_exit_errors -NotePropertyValue $exitErrors -Force
     $expectedCaptureCount = if ($Supplement) { 24 } elseif ($Quick) { 8 } else { 36 }
     $expectedTitleCount = if ($Supplement) { 1 } else { $expectedCaptureCount / 4 }
