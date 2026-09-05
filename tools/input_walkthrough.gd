@@ -253,7 +253,15 @@ func _fight_spitter() -> bool:
 		var dx := spitter.position.x - player.position.x
 		var face := signf(dx)
 		_move(face if absf(dx) > 28.0 or player.controller.facing != int(face) else 0.0)
-		_set_action(&"attack", absf(dx) < 38.0 and i % 24 == 0)
+		# The spitter is intentionally placed on the first combat platform. Reach
+		# it with the same jump input a player uses, then keep melee pressure.
+		_jump_cd = maxi(0, _jump_cd - 1)
+		_jump_hold = maxi(0, _jump_hold - 1)
+		if player.is_on_floor() and _jump_cd == 0 and absf(dx) < 90.0:
+			_jump_hold = 16
+			_jump_cd = 34
+		_set_action(&"jump", _jump_hold > 0)
+		_set_action(&"attack", absf(dx) < 42.0 and absf(player.global_position.y - spitter.global_position.y) < 58.0 and i % 24 == 0)
 		if i % 120 == 0:
 			print("[SPITTER] player=%s hp=%d spitter=%s hp=%d" % [player.position, player.health.current, spitter.position, spitter.health.current])
 		await _frames(1)

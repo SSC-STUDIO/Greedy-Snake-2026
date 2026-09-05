@@ -205,7 +205,8 @@ fill = Color(0.368627, 0.352941, 0.337255, 1)
 skin = "floating"
 
 [node name="Plat_760_184" parent="Platforms" unique_id=1274363156 instance=ExtResource("2_plat")]
-position = Vector2(760, 184)
+## First spitter ledge is one jump above the 248px approach platform.
+position = Vector2(760, 216)
 size = Vector2(104, 16)
 fill = Color(0.627451, 0.321569, 0.176471, 1)
 skin = "floating"
@@ -260,7 +261,7 @@ position = Vector2(1488, 288)
 position = Vector2(150, 306)
 
 [node name="Spitter1" parent="Props" unique_id=1426501202 instance=ExtResource("12_spitter")]
-position = Vector2(812, 184)
+position = Vector2(812, 216)
 
 [node name="Spitter2" parent="Props" unique_id=1079775903 instance=ExtResource("12_spitter")]
 position = Vector2(1018, 180)
