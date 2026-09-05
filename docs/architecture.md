@@ -2,6 +2,8 @@
 
 Target: **Godot 4.7** · GDScript only · zero external deps.
 
+显示边界：世界始终在 **640×360 SubViewport** 中以原生像素渲染，`GameCamera.zoom=1`；`GamePresentation` 将世界图像和 1280×720 设计单位的 UI 一起放入最大整数倍率内容矩形。非 16:9 窗口只增加黑边。`stretch/mode` 必须是 `canvas_items`。标题进关走 `GameContext.route_scene()`，存档标识仍是 `Level01_Static.tscn`。HUD / 炉心选择 / Director 字幕挂在 `UiHost` 或运行时 overlay，不进世界视口。一次性粒子（尘、火花、死亡烟、雨溅）进 `WorldEffects`。雨粒按世界坐标下落（尖端即碰撞点），碰到地面 / 毒池水面 / 余烬巢后在接触点溅开并回收到镜头上方；画在独立 CanvasLayer 上以免被 MoodTint 压暗。骑士踏进或蹚过毒池会在水膜上溅。
+
 ## Autoloads
 
 Do not give autoload scripts a `class_name` — the autoload name is the API.
@@ -14,7 +16,7 @@ Do not give autoload scripts a `class_name` — the autoload name is the API.
 | `Fx` | `scripts/autoload/fx.gd` | Particles, ember attach, death puffs. |
 | `SaveData` | `scripts/autoload/save_data.gd` | `user://` save: player, inventory, persistent world, consumed paths, story `flags`, ending. |
 | `Director` | `scripts/autoload/director.gd` | Fade, sequenced cutscenes, cinematic letterbox. Never touches `Engine.time_scale`. |
-| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `nest_light_*()` `moon_fill_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
+| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `outdoor_tint()` `indoor_tint()` `nest_light_*()` `moon_fill_energy()` `outdoor_moon_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
 
 ## Level01 (`scenes/levels/Level01_Static.tscn`)
 
@@ -37,7 +39,7 @@ Night is a cold corridor (`mood_tint` ≈ 30–40% luminance). Lights carve warm
 |---|---|---|
 | `WorldLight` | `scripts/world/world_light.gd` | Additive PointLight2D. `follow` is `nest` / `indoor` / `heart`. Shadows on. |
 | `EmberNest/NestLight` + `Halo` | planted by the nest | Lit fire only: warm pool + additive glow sprite. Unlit = energy 0. |
-| `DisplayFit` | `scripts/ui/display_fit.gd` | Integer-scale 1280×720 onto 1440p (2×) and 4K (3×). Not an Autoload. |
+| `DisplayFit` | `scripts/ui/display_fit.gd` | 保持 canvas-items 与整数内容矩形。不是 Autoload。 |
 | `MoonFill` | `Level01Parallax` | Weak cool `DirectionalLight2D`. Off indoors and on the title. |
 | `ForgeShelter/WarmPool` | `Level01EastWing.place_forge_shelter` | Large dim indoor fill. |
 | `ForgeHeart/HeartLight` | `forge_heart.gd` | Residual heat after `unlock()`. |

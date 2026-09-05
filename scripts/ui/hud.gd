@@ -107,6 +107,7 @@ func _build() -> void:
 	_pause = PAUSE_MENU.instantiate()
 	add_child(_pause)
 	WorldClock.isolate_ui_layer(_pause)
+	PresentationMetrics.bind_descendants(self)
 
 
 func _build_stat_panel(root: Control) -> void:
@@ -171,8 +172,8 @@ func _build_prompt(root: Control) -> void:
 	_prompt_panel.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_prompt_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	_prompt_panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_prompt_panel.offset_top = -74.0
-	_prompt_panel.offset_bottom = -74.0
+	_prompt_panel.offset_top = -22.0
+	_prompt_panel.offset_bottom = -22.0
 	_prompt_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_prompt_panel.visible = false
 	root.add_child(_prompt_panel)

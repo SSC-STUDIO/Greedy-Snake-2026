@@ -326,9 +326,17 @@ func hud_line() -> String:
 func mood_tint() -> Color:
 	if zone == Zone.INDOORS:
 		return _indoor_tint()
+	return outdoor_tint()
+
+
+func outdoor_tint() -> Color:
 	var a := _phase_tint(phase)
 	var b := _weather_mul(_blend_weather())
 	return Color(a.r * b.r, a.g * b.g, a.b * b.b, 1.0)
+
+
+func indoor_tint() -> Color:
+	return _indoor_tint()
 
 
 func _indoor_tint() -> Color:
@@ -406,7 +414,13 @@ func nest_light_radius() -> float:
 
 
 func moon_fill_energy() -> float:
-	if menu_hold or zone == Zone.INDOORS:
+	if zone == Zone.INDOORS:
+		return 0.0
+	return outdoor_moon_energy()
+
+
+func outdoor_moon_energy() -> float:
+	if menu_hold:
 		return 0.0
 	match phase:
 		Phase.NIGHT:

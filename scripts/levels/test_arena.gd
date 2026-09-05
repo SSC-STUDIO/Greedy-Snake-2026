@@ -17,6 +17,10 @@ const SOCKET := preload("res://scenes/interactables/SocketStation.tscn")
 const GATE := preload("res://scenes/interactables/RustyGate.tscn")
 
 
+func _enter_tree() -> void:
+	add_to_group("game_world")
+
+
 func _ready() -> void:
 	_build_backdrop()
 	_build_collision()
@@ -124,7 +128,7 @@ func _spawn_actors() -> void:
 	cam.global_position = player.global_position + Vector2(0, -18)
 
 	var hud: CanvasLayer = HUD.instantiate()
-	add_child(hud)
+	GameContext.ui_host(self).add_child(hud)
 
 	GameEvents.announcement.emit("锈墓试验场 — 用斩击的判定帧把渣弹打回去")
 

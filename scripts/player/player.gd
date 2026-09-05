@@ -86,9 +86,11 @@ func _physics_process(delta: float) -> void:
 	var face := float(controller.facing)
 	visual.scale.x = face
 	melee.scale.x = face
-	# 落地扬尘：从明显下落转为触地时在脚边 puff 一团灰。
-	if is_on_floor() and not _was_on_floor and fall_speed > 60.0:
+	# 落地扬尘：从明显下落转为触地时在脚边 puff；重落再给镜头一下。
+	if is_on_floor() and not _was_on_floor and fall_speed > 48.0:
 		Fx.dust_puff(global_position + Vector2(0.0, -2.0))
+		if fall_speed > 130.0:
+			Juice.shake(2.2, 90)
 	_was_on_floor = is_on_floor()
 	_update_visual(delta)
 	_poll_slash_arc(face)
@@ -316,16 +318,13 @@ func _spawn_fire_trail() -> void:
 	box_rect.size = Vector2(42, 10)
 	box_shape.shape = box_rect
 	box.add_child(box_shape)
-	var host: Node = get_tree().current_scene
+	var host: Node = GameContext.world_effects(self)
 	if host == null:
 		host = get_parent()
 	host.add_child(box)
 	box.global_position = origin
 	box.monitoring = true
-	get_tree().create_timer(1.2).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	GameContext.free_after(box, 1.2)
 
 
 func _spawn_blast() -> void:
@@ -345,16 +344,16 @@ func _spawn_blast() -> void:
 	box_rect.size = Vector2(48, 20)
 	box_shape.shape = box_rect
 	box.add_child(box_shape)
-	get_parent().add_child(box)
+	var host: Node = GameContext.world_effects(self)
+	if host == null:
+		host = get_parent()
+	host.add_child(box)
 	box.global_position = origin
 	box.monitoring = true
 	for node in get_tree().get_nodes_in_group("pressure_plate"):
 		if node is PressurePlate and (node as Node2D).global_position.distance_to(origin) < 56.0:
 			(node as PressurePlate).slam()
-	get_tree().create_timer(0.18).timeout.connect(func() -> void:
-		if is_instance_valid(box):
-			box.queue_free()
-	)
+	GameContext.free_after(box, 0.18)
 
 
 func _poll_interact() -> void:
@@ -417,14 +416,19 @@ func _on_died() -> void:
 	add_child(wait)
 	wait.start()
 	await wait.timeout
-	if not is_instance_valid(self) or get_tree() == null or get_tree().current_scene == null:
+	if not is_instance_valid(self) or get_tree() == null:
 		return
 	var nest := _resolve_lit_nest()
+	var reload := GameContext.world_scene_path(self)
+	if reload == "" and get_tree().current_scene != null:
+		reload = get_tree().current_scene.scene_file_path
+	if reload == "":
+		return
 	if nest != null:
 		GameEvents.player_respawned.emit()
-		SaveData.respawn(get_tree().current_scene.scene_file_path, nest.global_position)
+		SaveData.respawn(reload, nest.global_position)
 	else:
-		Director.fade_to(get_tree().current_scene.scene_file_path)
+		Director.fade_to(reload)
 
 
 ## 存档里的巢路径是绝对 NodePath；换场景根名或测试宿主时可能对不上，再试叶子名。
@@ -432,16 +436,16 @@ func _resolve_lit_nest() -> Node2D:
 	var nest_path := SaveData.last_lit_nest()
 	if nest_path == "" or get_tree() == null:
 		return null
-	var scene := get_tree().current_scene
+	var scene := GameContext.world_root(self)
+	if scene == null:
+		scene = get_tree().current_scene
 	if scene == null:
 		return null
-	var nest := scene.get_node_or_null(nest_path)
+	var nest := SaveData.resolve_saved_node(scene, nest_path)
+	if nest == null:
+		nest = scene.get_node_or_null(nest_path)
 	if nest == null:
 		nest = get_tree().root.get_node_or_null(nest_path)
-	if nest == null:
-		var leaf := nest_path.get_file()
-		if leaf != "":
-			nest = scene.find_child(leaf, true, false)
 	if nest is Node2D and is_instance_valid(nest):
 		return nest as Node2D
 	return null

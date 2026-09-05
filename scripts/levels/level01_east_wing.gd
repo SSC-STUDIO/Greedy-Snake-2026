@@ -16,6 +16,17 @@ const EAST_FLOOR_X := 1600.0
 ## Roofed forge remnant past the Executioner — indoor lighting, rain stops.
 const FORGE_SHELTER_POS := Vector2(2112, 240)
 const FORGE_SHELTER_SIZE := Vector2(256, 160)
+const PIT_X0 := 400.0
+const PIT_X1 := 512.0
+const PIT_BANK_Y := 320.0
+const PIT_WATER_Y := 336.0
+const PIT_FLOOR_Y := 352.0
+const PIT_FLOOR_SIZE := Vector2(112, 48)
+const PIT_WATER_SIZE := Vector2(112, 32)
+const PIT_CLIMB_LEFT_POS := Vector2(400, 336)
+const PIT_CLIMB_LEFT_SIZE := Vector2(32, 16)
+const PIT_CLIMB_RIGHT_POS := Vector2(480, 336)
+const PIT_CLIMB_RIGHT_SIZE := Vector2(32, 16)
 
 signal boss_gate_entered(body: Node)
 signal boss_slain
@@ -51,9 +62,10 @@ func build(host: Node2D) -> ExecutionerBoss:
 	if platforms == null or hooks == null or pickups == null or props == null:
 		return null
 
-	# 毒坑两级踏脚。旧坐标把低梁贴在地面行人头顶（424,300），
-	# 小台埋进 GroundRight 土层（496,336）。单跳约 37px（v=-268,g=980），
-	# 低台离地 64px、高台再高 36px，coyote 单跳能从低接到高。
+	# 毒坑：抬底 + 两岸矮唇，单跳能爬回地面。高踏石仍是可选路线。
+	_tune_toxin_pit(platforms)
+	_place_pit_step(platforms, "PitClimbLeft", "ground", PIT_CLIMB_LEFT_POS, PIT_CLIMB_LEFT_SIZE)
+	_place_pit_step(platforms, "PitClimbRight", "ground", PIT_CLIMB_RIGHT_POS, PIT_CLIMB_RIGHT_SIZE)
 	var beam := PLATFORM.instantiate()
 	beam.name = "PitStepHigh"
 	beam.skin = "floating"
@@ -144,6 +156,25 @@ static func place_forge_shelter(host: Node2D) -> AtmosphereZone:
 	shelter.add_child(pool)
 	host.add_child(shelter)
 	return shelter
+
+
+func _tune_toxin_pit(platforms: Node2D) -> void:
+	var pit := platforms.get_node_or_null("ToxinPit") as SolidPlatform
+	if pit == null:
+		return
+	pit.position = Vector2(PIT_X0, PIT_FLOOR_Y)
+	pit.size = PIT_FLOOR_SIZE
+
+
+func _place_pit_step(platforms: Node2D, node_name: String, skin: String, pos: Vector2, size: Vector2) -> void:
+	if platforms.get_node_or_null(node_name) != null:
+		return
+	var step: SolidPlatform = PLATFORM.instantiate()
+	step.name = node_name
+	step.skin = skin
+	step.position = pos
+	step.size = size
+	platforms.add_child(step)
 
 
 func _on_boss_gate(body: Node) -> void:

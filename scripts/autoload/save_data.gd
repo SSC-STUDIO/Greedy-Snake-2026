@@ -24,6 +24,7 @@ var data: Dictionary = {}
 ## One-shot spawn override consumed by a level right after it instantiates the
 ## player. Set by respawn flow so the player appears at the last Ember Nest.
 var pending_spawn: Vector2 = Vector2.INF
+var entering_from_checkpoint: bool = false
 
 ## Absolute node paths of one-shot interactables that died (picked up cores,
 ## used filter gears, melted gates). Persisted even though their nodes are
@@ -158,6 +159,8 @@ func delete_save() -> void:
 	lit_nests.clear()
 	flags.clear()
 	ending = ""
+	pending_spawn = Vector2.INF
+	entering_from_checkpoint = false
 	WorldClock.reset()
 
 
@@ -177,7 +180,7 @@ func apply_consumed(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	for p in consumed:
-		var target := node.get_node_or_null(p)
+		var target := resolve_saved_node(node, String(p))
 		if target != null and is_instance_valid(target):
 			target.queue_free()
 
@@ -262,7 +265,7 @@ func _collect_world() -> Dictionary:
 			continue
 		var state: Dictionary = node.get_persistent_state()
 		if not state.is_empty():
-			world[String(node.get_path())] = state
+			world[persist_path(node)] = state
 	return world
 
 
@@ -273,7 +276,7 @@ func apply_world(node: Node) -> void:
 	if node == null or not is_instance_valid(node):
 		return
 	for key in data["world"]:
-		var target := node.get_node_or_null(String(key))
+		var target := resolve_saved_node(node, String(key))
 		if target == null or not target.has_method("apply_persistent_state"):
 			continue
 		target.apply_persistent_state(data["world"][key])
@@ -323,6 +326,7 @@ func apply_player(player: Node) -> void:
 ## Record the scene we should boot into and the spawn point, then reload there.
 func respawn(scene_path: String, spawn: Vector2) -> void:
 	pending_spawn = spawn
+	entering_from_checkpoint = true
 	Director.fade_to(scene_path)
 
 
@@ -334,3 +338,44 @@ func consume_pending_spawn() -> Vector2:
 
 func has_pending_spawn() -> bool:
 	return pending_spawn != Vector2.INF
+
+
+func persist_path(node: Node) -> String:
+	if node == null or not is_instance_valid(node) or not node.is_inside_tree():
+		return ""
+	return _normalize_saved_path(String(node.get_path()))
+
+
+func resolve_saved_node(root: Node, saved_path: String) -> Node:
+	if root == null or not is_instance_valid(root) or saved_path == "":
+		return null
+	saved_path = saved_path.strip_edges()
+	if saved_path == ".":
+		return root
+	var found := root.get_node_or_null(NodePath(saved_path))
+	if found != null:
+		return found
+	var leaf := saved_path.get_file()
+	if leaf != "":
+		found = root.find_child(leaf, true, false)
+		if found != null:
+			return found
+	return null
+
+
+func _normalize_saved_path(path: String) -> String:
+	if path == "" or path == ".":
+		return path
+	if not is_inside_tree():
+		return path
+	var scene := GameContext.world_root()
+	if scene == null or not scene.is_inside_tree():
+		scene = get_tree().current_scene
+	if scene == null or not scene.is_inside_tree():
+		return path
+	var root := String(scene.get_path())
+	if path == root:
+		return "."
+	if path.begins_with(root + "/"):
+		return path.substr(root.length() + 1)
+	return path
