@@ -145,9 +145,10 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 			authored.centered = false
 			authored.position = _far_sprite.position
 			authored.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-			authored.region_enabled = true
-			authored.region_rect = Rect2(0.0, 0.0, SkyPlate.SKY_COVER_W, float(SkyPlate.SKY_H))
+		# The authored plate is one composed 704px scene. Repeating it across
+		# the 1280px wash creates the two-moon artifact visible in the new build.
+		authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
+		authored.region_enabled = false
 			authored.set_meta("source_path", SkyPlate.SKY_SRC)
 			_far_layer.add_child(authored)
 	_add_moon(backdrop, _plan["moon"])
