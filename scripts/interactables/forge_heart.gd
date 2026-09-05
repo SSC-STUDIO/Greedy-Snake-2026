@@ -79,6 +79,7 @@ func _open_choice() -> void:
 	_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_layer)
 	var root := Control.new()
+	root.name = "ChoiceRoot"
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	_layer.add_child(root)
