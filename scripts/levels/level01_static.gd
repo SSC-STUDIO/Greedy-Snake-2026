@@ -51,7 +51,7 @@ const PLAY_DECOR := [
 	[Level01Env.DECOR_STONE_2, Vector2(1020, 320), 1.0],
 	[Level01Env.DECOR_TREE_1, Vector2(1210, 320), 0.48],
 	[Level01Env.DECOR_BUSH_L, Vector2(1440, 320), 0.62],
-	[Level01Env.DECOR_STONE_1, Vector2(1540, 320), 1.0],
+	[Level01Env.DECOR_STONE_1, Vector2(1496, 320), 1.0],
 	[Level01Env.DECOR_STONE_4, Vector2(1580, 320), 1.0],
 ]
 

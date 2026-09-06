@@ -28,7 +28,21 @@ func _enemy_ready() -> void:
 			_anim.register("skill", CharFrames.anim(EXEC_CHAR, "skill"), 10.0, false, EXEC_POS)
 
 
+## Boss 血条只在骑士跨进拱门（或先手打到他）时出现；以前在第一帧就弹出来，
+## 玩家还在余烬高台上就顶着一条 Boss 血条。
+func announce() -> void:
+	if _intro_announced:
+		return
+	_intro_announced = true
+	GameEvents.boss_appeared.emit("炉 约 刽 子 手 · 铸 渣 残 躯", health.current, health.max_hp)
+
+
+func is_announced() -> bool:
+	return _intro_announced
+
+
 func _on_hp_changed(current: int, maximum: int) -> void:
+	announce()
 	GameEvents.boss_hp_changed.emit(current, maximum)
 	if _enraged or maximum <= 0:
 		return
@@ -42,9 +56,6 @@ func _on_hp_changed(current: int, maximum: int) -> void:
 
 
 func _tick_block(delta: float) -> void:
-	if not _intro_announced:
-		_intro_announced = true
-		GameEvents.boss_appeared.emit("炉 约 刽 子 手 · 铸 渣 残 躯", health.current, health.max_hp)
 	_slash_cd = maxf(0.0, _slash_cd - delta)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player != null and _slash_cd <= 0.0 \

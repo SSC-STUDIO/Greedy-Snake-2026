@@ -411,7 +411,7 @@ func _poll_hookshot() -> void:
 	if not Input.is_action_just_pressed("hookshot"):
 		return
 	if not inventory.has_ability(AbilityIds.HOOKSHOT_TETHER):
-		GameEvents.announcement.emit("需要钩锁核（Hookshot Tether）— 击败喷吐者可得")
+		GameEvents.announcement.emit("需要系核（钩锁）— 击败喷吐者可得")
 		return
 	if hookshot.is_active():
 		return

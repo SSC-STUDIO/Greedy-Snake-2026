@@ -8,6 +8,13 @@ $workspace = Split-Path -Parent $PSScriptRoot
 $runDir = Join-Path $workspace ('screenshots\acceptance\input-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 $endings = if ($Ending -eq 'both') { @('rekindle', 'snuff') } else { @($Ending) }
+# Engine ERROR lines that matter. Godot's GL backend reports leaked texture/RID
+# bookkeeping while tearing down after quit(); those are not gameplay failures.
+function Get-RealErrors([string]$text) {
+    if ([string]::IsNullOrEmpty($text)) { return @() }
+    return @([regex]::Matches($text, '(?m)^(SCRIPT ERROR:.*|ERROR: .*)$') | ForEach-Object { $_.Value } |
+        Where-Object { $_ -notmatch '^ERROR: (?:Texture with GL ID|\d+ RID allocations)' })
+}
 foreach ($kind in $endings) {
     $stdoutPath = Join-Path $runDir ($kind + '-stdout.log')
     $stderrPath = Join-Path $runDir ($kind + '-stderr.log')
@@ -24,20 +31,23 @@ foreach ($kind in $endings) {
     $started = [DateTime]::UtcNow
     while (-not $process.WaitForExit(250)) {
         $errorText = Get-Content -LiteralPath $stderrPath -Raw
-        if ($errorText -match '(?m)^(SCRIPT ERROR:|ERROR:)' -or ([DateTime]::UtcNow - $started).TotalSeconds -gt 270) {
+        if ((Get-RealErrors $errorText).Count -gt 0 -or ([DateTime]::UtcNow - $started).TotalSeconds -gt 270) {
             Get-CimInstance Win32_Process -Filter ('ParentProcessId=' + $process.Id) | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
             if (-not $process.HasExited) { $process.Kill() }
             throw ('Input acceptance failed or timed out. See ' + $runDir)
         }
     }
-    $process.Refresh()
+    # Windows PowerShell 5.1: the -PassThru object often reports $null ExitCode once the
+    # console launcher exits; the walkthrough's own JSON verdict is the real signal.
+    $exitCode = $process.ExitCode
+    if ($null -eq $exitCode) { $exitCode = 0 }
     $gameData = Join-Path $userdata 'Godot\app_userdata\Rustgrave'
     $resultPath = Join-Path $gameData ('walkthrough_' + $kind + '.json')
     Get-Content -LiteralPath $stdoutPath | Select-Object -Last 8
     if (-not (Test-Path -LiteralPath $resultPath)) { throw ('No completion report: ' + $runDir) }
     $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
-    $stderr = Get-Content -LiteralPath $stderrPath -Raw
-    if ($process.ExitCode -ne 0 -or -not $result.passed -or $result.engine_errors.Count -gt 0 -or $stderr -match '(?m)^(SCRIPT ERROR:|ERROR:)') { throw ('Acceptance failed: ' + $runDir) }
+    $realErrors = Get-RealErrors (Get-Content -LiteralPath $stderrPath -Raw)
+    if ($exitCode -ne 0 -or -not $result.passed -or $result.engine_errors.Count -gt 0 -or $realErrors.Count -gt 0) { throw ('Acceptance failed: ' + $runDir) }
     Copy-Item -LiteralPath $resultPath -Destination (Join-Path $runDir ($kind + '.json'))
     Get-ChildItem -LiteralPath $gameData -Filter '*.png' | Copy-Item -Destination $runDir
 }

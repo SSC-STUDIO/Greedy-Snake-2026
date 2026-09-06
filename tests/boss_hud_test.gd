@@ -33,3 +33,42 @@ func test_boss_health_bar_tracks_events() -> void:
 	# Boss defeated
 	GameEvents.boss_defeated.emit()
 	await flush(2)
+
+
+## The bar used to pop up on the boss's first physics tick, i.e. while the
+## knight was still grappling the ember ledge three screens away.
+func test_executioner_announces_at_the_gate_not_at_spawn() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var boss := preload("res://scenes/enemies/ExecutionerBoss.tscn").instantiate() as ExecutionerBoss
+	boss.position = Vector2(200, 0)
+	arena.add_child(boss)
+	var heard: Array = []
+	var on_appear := func(name_: String, _cur: int, _max: int) -> void: heard.append(name_)
+	GameEvents.boss_appeared.connect(on_appear)
+	await flush(4)
+	ok(not boss.is_announced(), "ticking in BLOCK does not announce")
+	eq(heard.size(), 0, "no boss bar before the gate")
+	boss.announce()
+	boss.announce()
+	eq(heard.size(), 1, "gate entry announces exactly once")
+	ok(boss.is_announced())
+	GameEvents.boss_appeared.disconnect(on_appear)
+
+
+func test_hitting_the_executioner_first_also_announces_him() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var boss := preload("res://scenes/enemies/ExecutionerBoss.tscn").instantiate() as ExecutionerBoss
+	boss.position = Vector2(200, 0)
+	arena.add_child(boss)
+	await flush(2)
+	var heard: Array = []
+	var on_appear := func(_n: String, cur: int, _max: int) -> void: heard.append(cur)
+	GameEvents.boss_appeared.connect(on_appear)
+	boss.health.current -= 1
+	boss.health.changed.emit(boss.health.current, boss.health.max_hp)
+	eq(heard.size(), 1, "damage before the gate still shows the bar")
+	GameEvents.boss_appeared.disconnect(on_appear)

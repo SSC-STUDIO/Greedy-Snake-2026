@@ -125,6 +125,10 @@ func _run() -> void:
 	for i in 600:
 		await _frames(1)
 		var current := get_tree().current_scene
+		if i % 120 == 0:
+			print("[ENDING] i=%d playing=%s hold=%s fading=%s scene=%s" % [
+				i, Director.playing, Director.choice_hold, Director.is_fading(),
+				current.scene_file_path if current != null else "null"])
 		if current != null and current.scene_file_path == TITLE:
 			if not _require(SaveData.peek_ending() == _ending, "ending persists on title"): return
 			_record("ending_" + _ending)

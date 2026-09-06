@@ -216,6 +216,48 @@ func test_waymarks_name_the_route() -> void:
 	eq(text.position, text.position.round(), "label origin is on the pixel grid")
 
 
+## The ember hook must pull the knight past the ledge's edge and drop them on
+## top of it. With the anchor centred over the ledge, the pull line clipped the
+## ledge's underside and the tether popped off (input walkthrough failed here).
+func test_ember_hook_pull_clears_the_ledge_and_lands_on_it() -> void:
+	var tether := HookshotTether.new()
+	var ledge := Rect2(Level01EastWing.EMBER_LEDGE_POS, Level01EastWing.EMBER_LEDGE_SIZE)
+	var anchor := Level01EastWing.EMBER_HOOK_POS
+	const HALF_W := 7.0    # Player body 14x26, feet at origin
+	const BODY_H := 26.0
+	ok(anchor.x + HALF_W < ledge.position.x, "anchor sits outside the ledge's left edge, so the pull never clips it")
+	ok(anchor.y < ledge.position.y - 40.0, "anchor is high enough above the ledge to pop off over it")
+	# Launch as the walkthrough does: jump from the approach floor, fire mid-air.
+	var pos := Vector2(1447.0, 271.0)
+	var dir := (anchor - pos).normalized()
+	var released := false
+	for i in 120:
+		var to_anchor := anchor - pos
+		if to_anchor.length() <= tether.release_radius:
+			released = true
+			break
+		pos += dir * tether.pull_speed / 60.0
+		var body := Rect2(pos.x - HALF_W, pos.y - BODY_H, HALF_W * 2.0, BODY_H)
+		ok(not body.intersects(ledge), "pull path clears the ledge at %s" % pos)
+	ok(released, "the tether reaches its release radius")
+	# Pop-off as HookshotTether._pop_off does, then a plain fall (no air input).
+	var vel := dir * tether.pull_speed
+	vel.x = vel.x * 0.5 + 130.0
+	vel.y = tether.release_pop
+	var landed := false
+	for i in 120:
+		var g := 980.0 if vel.y < 0.0 else 980.0 * 1.85
+		vel.y += g / 60.0
+		pos += vel / 60.0
+		if vel.y > 0.0 and pos.y >= ledge.position.y and pos.x >= ledge.position.x and pos.x <= ledge.end.x:
+			landed = true
+			break
+		if pos.y > ledge.end.y + 8.0:
+			break
+	ok(landed, "after popping off the knight comes down on the ledge (%s)" % pos)
+	tether.free()
+
+
 func test_east_constants_stay_aligned() -> void:
 	eq(Level01Static.EAST_LIMIT, Level01EastWing.EAST_LIMIT)
 	almost(Level01Static.EAST_FLOOR_X, Level01EastWing.EAST_FLOOR_X, 0.01)
@@ -237,6 +279,12 @@ func test_east_wing_places_heart_gate_and_boss() -> void:
 	ok(not heart.unlocked, "heart stays locked while boss lives")
 	ok(host.get_node_or_null("BossGate") != null, "BossGate on the level root")
 	ok(host.get_node_or_null("Pickups/EmberCore") != null, "east ember pickup has a stable save path")
+	var east_nest := host.get_node_or_null("Props/EmberNestEast") as EmberNest
+	ok(east_nest != null, "a second checkpoint waits before the boss gate")
+	if east_nest != null:
+		eq(east_nest.position, Level01EastWing.EMBER_NEST_EAST_POS)
+		ok(east_nest.position.x < host.get_node("BossGate").position.x - 100.0, "east nest is outside the arena")
+		almost(east_nest.position.y, Level01Static.GROUND_TOP - 14.0, 0.01, "brazier feet sit on the ground")
 	var shelter := host.get_node_or_null("ForgeShelter") as AtmosphereZone
 	ok(shelter != null, "forge remnant is an indoor AtmosphereZone")
 	if shelter != null:

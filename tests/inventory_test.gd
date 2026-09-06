@@ -37,7 +37,11 @@ func test_catalog_cores_carry_expected_ids() -> void:
 	eq(AbilityCatalog.kiln_core().ability_id, AbilityIds.HEAT_FORGE)
 	eq(AbilityCatalog.tether_core().ability_id, AbilityIds.HOOKSHOT_TETHER)
 	eq(AbilityCatalog.ember_core().ability_id, AbilityIds.EMBER_STEP)
-	eq(AbilityIds.display_name(AbilityIds.HEAT_FORGE), "Heat Forge")
+	eq(AbilityIds.display_name(AbilityIds.HEAT_FORGE), "热锻")
+	for id in [AbilityIds.HEAT_FORGE, AbilityIds.HOOKSHOT_TETHER, AbilityIds.EMBER_STEP]:
+		ok(not AbilityIds.display_name(id).is_valid_identifier(), "HUD ability names are localized, not raw ids")
+	for core in [AbilityCatalog.kiln_core(), AbilityCatalog.tether_core(), AbilityCatalog.ember_core()]:
+		ok(core.display_name.length() >= 2 and core.display_name.length() <= 4, "%s has a short Chinese label" % core.id)
 	ok(String(AbilityIds.display_name(&"unknown_x")).length() > 0)
 
 

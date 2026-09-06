@@ -77,7 +77,10 @@ func _open_choice() -> void:
 	_layer = CanvasLayer.new()
 	_layer.layer = 25
 	_layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_layer)
+	# 菜单必须住在根视口的 UI 宿主（和 HUD / 暂停菜单一层）。挂在炉心自己底下就是
+	# 挂进 640×360 的世界子视口，而 GamePresentation 在 choice_hold + 暂停时不再向
+	# 子视口转发输入——结局菜单会打开却永远按不动。
+	GameContext.ui_host(self).add_child(_layer)
 	var root := Control.new()
 	root.name = "ChoiceRoot"
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -109,6 +112,7 @@ func _on_chosen(id: StringName) -> void:
 	get_tree().paused = false
 	if _layer:
 		_layer.queue_free()
+		_layer = null
 	var kind := "rekindle" if id == ID_REKINDLE else "snuff"
 	SaveData.ending = kind
 	GameEvents.ending_chosen.emit(id)

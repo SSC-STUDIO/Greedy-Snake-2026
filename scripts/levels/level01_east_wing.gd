@@ -10,12 +10,21 @@ const ANCHOR := preload("res://scenes/interactables/HookAnchor.tscn")
 const PICKUP := preload("res://scenes/interactables/CorePickup.tscn")
 const BOSS := preload("res://scenes/enemies/ExecutionerBoss.tscn")
 const FORGE := preload("res://scenes/interactables/ForgeHeart.tscn")
+const NEST := preload("res://scenes/interactables/EmberNest.tscn")
+## 东侧余烬巢：Boss 门前最后一个存档点。没有它，死在刽子手手里要从 x=150 重走整条走廊。
+const EMBER_NEST_EAST_POS := Vector2(1536, 306)
 
 const EAST_LIMIT := 2240
 const EAST_FLOOR_X := 1600.0
 ## Roofed forge remnant past the Executioner — indoor lighting, rain stops.
 const FORGE_SHELTER_POS := Vector2(2112, 240)
 const FORGE_SHELTER_SIZE := Vector2(256, 160)
+## 余烬高台 + 钩锁锚点。锚点必须在台子左端外侧上方：以前放在台子正中上方 (1568,48)，
+## 从左下拉过去的直线穿过台子左端底面，一撞就按「撞墙」脱钩掉下去；从正下方拉则顶在
+## 台底卡住。锚点在 x=1512（台左沿 1528 之外）时牵引线净空，脱钩后向右弹到台面上。
+const EMBER_LEDGE_POS := Vector2(1528, 112)
+const EMBER_LEDGE_SIZE := Vector2(80, 16)
+const EMBER_HOOK_POS := Vector2(1512, 56)
 ## 毒坑可读跳：踏步 32px（单跳约 37px）。悬空石只铺在坑上，岸边用实心抵地唇，避免挡头。
 const PIT_X0 := 400.0
 const PIT_X1 := 512.0
@@ -98,12 +107,14 @@ func build(host: Node2D) -> ExecutionerBoss:
 	floor.cap_right = false
 	platforms.add_child(floor)
 	var ledge := PLATFORM.instantiate()
+	ledge.name = "EmberLedge"
 	ledge.skin = "floating"
-	ledge.position = Vector2(1528, 112)
-	ledge.size = Vector2(80, 16)
+	ledge.position = EMBER_LEDGE_POS
+	ledge.size = EMBER_LEDGE_SIZE
 	platforms.add_child(ledge)
 	var hook := ANCHOR.instantiate()
-	hook.position = Vector2(1568, 48)
+	hook.name = "Hook_Ember"
+	hook.position = EMBER_HOOK_POS
 	hooks.add_child(hook)
 	var ember := PICKUP.instantiate() as CorePickup
 	ember.name = "EmberCore"
@@ -113,6 +124,11 @@ func build(host: Node2D) -> ExecutionerBoss:
 	var shrine := props.get_node_or_null("PurificationShrine") as Node2D
 	if shrine:
 		shrine.position = Vector2(1464, 288)
+	if props.get_node_or_null("EmberNestEast") == null:
+		var nest := NEST.instantiate()
+		nest.name = "EmberNestEast"
+		nest.position = EMBER_NEST_EAST_POS
+		props.add_child(nest)
 	if should_spawn_executioner():
 		boss = BOSS.instantiate()
 		boss.position = Vector2(1860, 320)
@@ -332,6 +348,8 @@ static func _box_occluder(node_name: String, rect: Rect2) -> LightOccluder2D:
 
 
 func _on_boss_gate(body: Node) -> void:
+	if body is Player and boss != null and is_instance_valid(boss):
+		boss.announce()
 	boss_gate_entered.emit(body)
 
 
