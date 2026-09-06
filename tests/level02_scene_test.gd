@@ -110,6 +110,11 @@ func test_bell_door_ends_the_chapter() -> void:
 	Director.abort()
 	await flush(3)
 	ok(SaveData.has_flag("undercroft_done"), "chapter flag is written")
+	# last_fade_target is written when the fade-out completes, not when it starts.
+	for i in 120:
+		if Director.last_fade_target == LevelExit.TITLE_PATH:
+			break
+		await flush(1)
 	eq(Director.last_fade_target, LevelExit.TITLE_PATH, "finale returns to the title")
 	ok(SaveData.load_game(), "the finale left a save")
 	eq(SaveData.saved_scene(), GameContext.LEVEL02_PATH, "continue reopens the undercroft at the bell door")
