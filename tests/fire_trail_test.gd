@@ -28,3 +28,19 @@ func test_fire_trail_is_not_parented_to_player() -> void:
 	await flush(1)
 	almost(trail.global_position.x, parked.x, 0.5, "trail stays in world space")
 	almost(trail.global_position.y, parked.y, 0.5)
+
+
+func test_fx_one_shots_host_inside_the_game_world() -> void:
+	# No level registered: the autoload keeps hosting itself (TestArena, F6 runs).
+	eq(Fx._effects_host(), Fx, "without a game_world, Fx hosts its own particles")
+	var world := Node2D.new()
+	world.name = "Level01_Static"
+	world.add_to_group("game_world")
+	add_child(world)
+	var host := Fx._effects_host()
+	ok(host != Fx, "with a game_world, particles leave the root-window autoload")
+	eq(host.name, "WorldEffects")
+	eq(host.get_parent(), world, "dust/sparks render under the level, inside its viewport")
+	world.queue_free()
+	await flush(1)
+	eq(Fx._effects_host(), Fx, "freed level releases the host again")

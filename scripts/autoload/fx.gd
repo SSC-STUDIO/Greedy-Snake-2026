@@ -23,6 +23,15 @@ var _headless := false
 var _weaponhit_sheet: Texture2D = null
 var _bubbles_sheet: Texture2D = null
 var _brightfire_sheet: Texture2D = null
+static var _additive: CanvasItemMaterial = null
+
+
+## Shared additive material so night CanvasModulate cannot crush 2px motes.
+static func additive_mat() -> CanvasItemMaterial:
+	if _additive == null:
+		_additive = CanvasItemMaterial.new()
+		_additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _additive
 
 
 func _ready() -> void:
@@ -36,6 +45,19 @@ func _ready() -> void:
 		_bubbles_sheet = load(BUBBLES_SHEET_PATH) as Texture2D
 	if ResourceLoader.exists(BRIGHTFIRE_SHEET_PATH):
 		_brightfire_sheet = load(BRIGHTFIRE_SHEET_PATH) as Texture2D
+
+
+## One-shot particles must render inside the world viewport. The level runs in
+## GamePresentation's 640×360 SubViewport with its own World2D and camera, so
+## anything parented to this autoload would sit in root-window space and never
+## line up with the knight. Fall back to self for standalone scenes (TestArena).
+func _effects_host() -> Node:
+	var scene_tree := get_tree()
+	if scene_tree != null and scene_tree.get_first_node_in_group("game_world") != null:
+		var host := GameContext.world_effects()
+		if host != null and host.is_inside_tree():
+			return host
+	return self
 
 
 ## Persistent embers drifting around a living actor (the ember knight keeps
@@ -57,11 +79,12 @@ func attach_ember(target: Node2D) -> void:
 func dust_puff(pos: Vector2, dir: float = 0.0) -> void:
 	if _headless:
 		return
+	var host := _effects_host()
 	for i in randi_range(4, 6):
 		var mote := DustMote.new()
 		mote.launch(pos, dir)
 		mote.z_index = FX_Z
-		add_child(mote)
+		host.add_child(mote)
 
 
 ## Weapon-hit flash: first six frames of the CC0 Kenney/CodeManu sheet,
@@ -72,7 +95,7 @@ func hit_sparks(pos: Vector2) -> void:
 	var spark := HitSpark.new(_weaponhit_sheet)
 	spark.position = pos
 	spark.z_index = FX_Z
-	add_child(spark)
+	_effects_host().add_child(spark)
 
 
 ## Rust debris bursting out of a destroyed enemy: gravity, a floor bounce,
@@ -80,11 +103,12 @@ func hit_sparks(pos: Vector2) -> void:
 func rust_debris(pos: Vector2) -> void:
 	if _headless:
 		return
+	var host := _effects_host()
 	for i in randi_range(6, 8):
 		var bit := RustDebris.new()
 		bit.launch(pos)
 		bit.z_index = FX_Z
-		add_child(bit)
+		host.add_child(bit)
 
 
 ## 世界坐标一次性帧动画（敌人死亡尸体动画/烟雾等）。播完自毁；headless 或
@@ -99,7 +123,7 @@ func play_frames_once(frames: Array[Texture2D], pos: Vector2, fps: float,
 	player.position = pos + Vector2(0.0, baseline)
 	player.flip_h = flip
 	player.z_index = FX_Z
-	add_child(player)
+	_effects_host().add_child(player)
 
 
 ## 通用敌人死亡烟雾（Gothicvania cemetery 5 帧，44x52，底部留白 2px）。
@@ -236,6 +260,8 @@ class EmberBit extends Node2D:
 ## dissolving.
 class DustMote extends Node2D:
 	var _velocity := Vector2.ZERO
+	## Sub-pixel position; `position` is snapped so NEAREST never smears.
+	var _drift := Vector2.ZERO
 	var _age := 0.0
 	var _lifetime := 0.5
 
@@ -245,7 +271,8 @@ class DustMote extends Node2D:
 
 
 	func launch(pos: Vector2, dir: float) -> void:
-		position = pos
+		_drift = pos
+		position = Vector2(roundf(pos.x), roundf(pos.y))
 		var angle := dir + randf_range(-0.85, 0.85)
 		var speed := randf_range(26.0, 62.0)
 		_velocity = Vector2(cos(angle), sin(angle)) * speed
@@ -253,13 +280,15 @@ class DustMote extends Node2D:
 
 
 	func _ready() -> void:
-		var half := randf_range(1.0, 1.5)
+		var half := randf_range(1.2, 1.8)
 		var poly := Polygon2D.new()
 		poly.polygon = PackedVector2Array([
 			Vector2(-half, -half), Vector2(half, -half),
 			Vector2(half, half), Vector2(-half, half),
 		])
-		poly.color = Palette.IRON.lerp(Palette.CONCRETE, randf())
+		# 夜廊的 CanvasModulate 会把中灰压成看不见；加法 + 提亮后落地尘在夜色里仍可读。
+		poly.color = Palette.IRON.lerp(Palette.CONCRETE, randf()) * 1.35
+		poly.material = Fx.additive_mat()
 		add_child(poly)
 
 
@@ -270,7 +299,8 @@ class DustMote extends Node2D:
 			return
 		_velocity.x *= maxf(0.0, 1.0 - 3.2 * delta)
 		_velocity.y += 90.0 * delta
-		position += _velocity * delta
+		_drift += _velocity * delta
+		position = Vector2(roundf(_drift.x), roundf(_drift.y))
 		var k := _age / _lifetime
 		modulate.a = minf(k * 10.0, 1.0) * (1.0 - k)
 

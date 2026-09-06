@@ -40,9 +40,14 @@ if ($timedOut -or $earlyError) {
     if (-not $process.HasExited) { $process.Kill() }
     $process.WaitForExit()
 }
-$process.Refresh()
-$stdout = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw } else { '' }
-$stderr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw } else { '' }
+# Windows PowerShell 5.1 hands back a -PassThru object without the start handle,
+# so ExitCode is often $null once the console launcher exits. $null -ne 0 used to
+# flag every green run as a failure; treat the code as advisory and rely on the
+# runner's completion marker plus the error scan below.
+$exitCode = $process.ExitCode
+if ($null -eq $exitCode) { $exitCode = 0 }
+$stdout = if (Test-Path -LiteralPath $stdoutPath) { Get-Content -LiteralPath $stdoutPath -Raw -Encoding UTF8 } else { '' }
+$stderr = if (Test-Path -LiteralPath $stderrPath) { Get-Content -LiteralPath $stderrPath -Raw -Encoding UTF8 } else { '' }
 Write-Output $stdout
 if ($stderr) { Write-Output $stderr }
 Write-Output ('Test artifacts: ' + $runDir)
@@ -50,7 +55,7 @@ Write-Output ('Test artifacts: ' + $runDir)
 # Also catch errors before the scene/logger could load, and require completion.
 $hasErrors = ($stdout + "`n" + $stderr) -match '(?m)^(?:SCRIPT ERROR|ERROR|\[ENGINE ERROR\]):?'
 $completed = $stdout -match '(?m)^OK .+\d+/\d+ passed; 0 engine errors'
-if ($timedOut -or $process.ExitCode -ne 0 -or $hasErrors -or -not $completed) {
+if ($timedOut -or $exitCode -ne 0 -or $hasErrors -or -not $completed) {
     if ($timedOut) { Write-Output ('[FAIL] process timeout after ' + $TimeoutSeconds + ' seconds') }
     exit 1
 }
