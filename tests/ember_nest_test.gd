@@ -52,6 +52,11 @@ func test_unlit_hides_flame() -> void:
 	if sparks != null:
 		ok(not sparks.visible, "unlit nest shows no sparks")
 		eq(sparks.get_child_count(), 0, "unlit nest has no spark children")
+	var coals := nest.get_node_or_null("Coals") as Sprite2D
+	ok(coals != null, "Coals overlay exists")
+	if coals != null:
+		ok(not coals.visible, "cold basin shows no live coals")
+	ok(not nest.is_lit())
 	var f0 := flame.frame
 	nest._process(1.0)
 	eq(flame.frame, f0, "unlit flame does not animate")
@@ -77,8 +82,12 @@ func test_lit_shows_warm_flame() -> void:
 	ok(sparks != null, "Sparks node exists")
 	if sparks != null:
 		ok(sparks.visible, "lit nest can emit sparks")
+	var coals := nest.get_node_or_null("Coals") as Sprite2D
+	ok(coals != null and coals.visible, "lit nest shows the coal bed")
+	ok(nest.is_lit())
 	nest.apply_persistent_state({"lit": false})
 	ok(not flame.visible, "relit-off hides the flame again")
+	ok(coals == null or not coals.visible, "relit-off cools the coals too")
 
 
 func test_collision_unchanged_by_flame() -> void:
@@ -96,11 +105,25 @@ func test_collision_unchanged_by_flame() -> void:
 	var shape := col.shape as RectangleShape2D
 	ok(shape != null)
 	if shape != null:
-		# 18×22 石碑 + 默认 reach_pad (10, 8)
-		eq(shape.size, Vector2(38, 38))
+		# 48×36 火盆 + 默认 reach_pad (10, 8)
+		eq(shape.size, EmberNest.BASE_SIZE + nest.reach_pad * 2.0)
 	eq(nest.collision_layer, 64)
 	eq(nest.collision_mask, 2)
-	ok(nest.get_node_or_null("Fill") != null, "tombstone sprite still named Fill")
+	var fill := nest.get_node_or_null("Fill") as Sprite2D
+	ok(fill != null, "brazier sprite still named Fill")
+	if fill != null and fill.texture != null:
+		eq(String(fill.texture.resource_path), "res://assets/env/ember_nest.png")
+		ok(fill.texture.get_width() >= 44, "nest is a readable brazier, not 18px rubble")
+		eq(fill.scale, Vector2.ONE, "world 1x: brazier is authored at size, never squeezed")
+		eq(fill.position, EmberNest.BASE_OFFSET)
+		# Level01 把巢放在地面顶上方 14px；底沿落到 +16 即埋进草皮 2px。
+		eq(fill.position.y + float(fill.texture.get_height()), 16.0,
+				"brazier feet reach 16px under the nest origin")
+	var flame := nest.get_node_or_null("Flame") as Sprite2D
+	var coals := nest.get_node_or_null("Coals") as Sprite2D
+	if flame != null and coals != null:
+		ok(flame.z_index > coals.z_index, "flame draws over the coal bed")
+		eq(flame.position, EmberNest.BOWL, "flame sits in the bowl well")
 
 
 func test_unlit_has_no_nest_light() -> void:

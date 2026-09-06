@@ -4,7 +4,8 @@ extends Interactable
 ## nest as the respawn point (the knight is fully restored here on death).
 
 const SCENE_PATH := "res://scenes/levels/Level01_Static.tscn"
-const BASE_PATH := "res://assets/env/rubble_c.png"
+const BASE_PATH := "res://assets/env/ember_nest.png"
+const COALS_PATH := "res://assets/env/ember_nest_coals.png"
 const FLAME_PATH := "res://assets/fx/shrine_flame.png"
 const SPARK_PATH := "res://assets/ui/ember_motes.png"
 const FLAME_FRAMES := 8
@@ -13,9 +14,15 @@ const LIT_FPS := 12.0
 const LIT_MOD := Color(1.0, 0.92, 0.62, 1.0)
 const LIGHT_COLOR := Color(1.0, 0.70, 0.36)
 const HALO_PATH := "res://assets/env/glow_soft.png"
+## 锈铁火盆 48×36（tools/gen_ember_nest.py），脚埋进草皮两像素。
+const BASE_SIZE := Vector2(48, 36)
+const BASE_OFFSET := Vector2(-16, -20)
+## 盆井中心 = BASE_OFFSET + 贴图里的 (WELL_CX, WELL_CY)；焰、光、晕都坐这里。
+const BOWL := Vector2(6, -12)
 
 var _lit: bool = false
 var _flame: Sprite2D
+var _coals: Sprite2D
 var _sparks: Node2D
 var _light: WorldLight
 var _beam: Sprite2D
@@ -28,10 +35,12 @@ var _headless := false
 func _ready() -> void:
 	super._ready()
 	add_to_group("persistent")
+	add_to_group("ember_nests")
 	prompt = "E 点燃余烬巢"
-	# rubble_c 原生 27x33，等比 2/3 → 18x22，脚底贴地不再横向压扁。
-	ensure_sprite(BASE_PATH, Vector2(18, 22), Vector2(-2, -2), Palette.RUST_DARK)
+	# 以前是 rubble_c 压成 18×22，在 80px 骑士旁边只是一颗石子。
+	ensure_sprite(BASE_PATH, BASE_SIZE, BASE_OFFSET, Palette.RUST_DARK)
 	_headless = DisplayServer.get_name() == "headless"
+	_ensure_coals()
 	_ensure_flame()
 	_ensure_light()
 	_ensure_halo()
@@ -55,18 +64,40 @@ func _ensure_flame() -> void:
 	spr.hframes = FLAME_FRAMES
 	spr.vframes = 1
 	spr.centered = true
-	# 18x22 石碑顶心约 (7, 0)；16x24 焰（8x12 设计格 2x）底坐碑帽，不盖碑身。
-	spr.position = Vector2(7, -8)
+	# 16×24 焰坐在盆井里，底不盖过锈铁沿。
+	spr.position = BOWL
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	spr.z_index = 1
+	spr.z_index = 2
 	add_child(spr)
 	_flame = spr
 	var sparks := Node2D.new()
 	sparks.name = "Sparks"
 	sparks.position = spr.position
-	sparks.z_index = 2
+	sparks.z_index = 3
 	add_child(sparks)
 	_sparks = sparks
+
+
+## 点燃后盆底透出的炭火（加法混合），冷盆时隐藏。
+func _ensure_coals() -> void:
+	if _coals != null or not ResourceLoader.exists(COALS_PATH):
+		return
+	var tex := load(COALS_PATH) as Texture2D
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.name = "Coals"
+	spr.texture = tex
+	spr.centered = false
+	spr.position = BASE_OFFSET
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.z_index = 1
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	spr.material = mat
+	spr.visible = false
+	add_child(spr)
+	_coals = spr
 
 
 func _exit_tree() -> void:
@@ -123,7 +154,7 @@ func _ensure_light() -> void:
 		return
 	var light := WorldLight.new()
 	light.name = "NestLight"
-	light.position = Vector2(7, -8)
+	light.position = BOWL
 	light.color = LIGHT_COLOR
 	light.follow = &"nest"
 	light.flicker = true
@@ -139,7 +170,7 @@ func _ensure_halo() -> void:
 	if ResourceLoader.exists(HALO_PATH):
 		spr.texture = load(HALO_PATH) as Texture2D
 	spr.centered = true
-	spr.position = Vector2(7, -10)
+	spr.position = BOWL + Vector2(0, -4)
 	spr.z_index = 0
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
@@ -159,8 +190,9 @@ func _sync_halo() -> void:
 		return
 	var k := clampf(WorldClock.nest_light_energy() / 2.60, 0.12, 1.0)
 	var soak := WorldClock.rain_opacity()
-	_halo.scale = Vector2(1.85, 1.65) * (0.85 + 0.25 * k) * lerpf(1.0, 0.55, soak)
-	_halo.modulate = Color(1.0, 0.62, 0.28, (0.38 + 0.28 * k) * lerpf(1.0, 0.35, soak))
+	# 抱紧盆口：48px 光晕放到 1.8x 会读成一块灰色 UI 方块。
+	_halo.scale = Vector2(0.92, 0.78) * (0.85 + 0.25 * k) * lerpf(1.0, 0.55, soak)
+	_halo.modulate = Color(1.0, 0.62, 0.28, (0.22 + 0.18 * k) * lerpf(1.0, 0.35, soak))
 
 
 func _sync_light(delta: float) -> void:
@@ -178,7 +210,7 @@ func _ensure_beam() -> void:
 	var beam := Sprite2D.new()
 	beam.name = "WarmShaft"
 	beam.centered = true
-	beam.position = Vector2(7, -48)
+	beam.position = BOWL + Vector2(0, -44)
 	beam.texture = _shaft_tex()
 	beam.modulate = Color(1.0, 0.72, 0.38, 0.0)
 	beam.visible = false
@@ -235,6 +267,8 @@ func _sync_steam_audio() -> void:
 
 
 func _apply_flame_state() -> void:
+	if _coals != null:
+		_coals.visible = _lit
 	if _flame != null:
 		_flame.visible = _lit
 		_flame.modulate = LIT_MOD
@@ -257,6 +291,10 @@ func can_interact(_actor: Node) -> bool:
 
 func get_prompt(_actor: Node) -> String:
 	return "E 点燃余烬巢" if not _lit else "余烬巢已点燃"
+
+
+func is_lit() -> bool:
+	return _lit
 
 
 func interact(actor: Node) -> void:
