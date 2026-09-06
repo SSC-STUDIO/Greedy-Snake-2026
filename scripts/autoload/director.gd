@@ -369,7 +369,10 @@ func _on_fade_out_done(scene: String, duration: float) -> void:
 		_queued_fade_path = ""
 	last_fade_target = target
 	if target != "" and not _is_test_runner():
-		get_tree().change_scene_to_file(target)
+		# Level01 must load inside GamePresentation (640×360 world).
+		# Fading straight into the authored map uses the window as the
+		# viewport and unrolls the whole graveyard beside a 1280px sky plate.
+		get_tree().change_scene_to_file(GameContext.route_scene(target))
 	fade_in(dur)
 
 

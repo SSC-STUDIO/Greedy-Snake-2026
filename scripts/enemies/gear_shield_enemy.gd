@@ -161,7 +161,10 @@ func _tick_stagger(delta: float) -> void:
 
 func _fire() -> void:
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	get_tree().current_scene.add_child(proj)
+	var host := GameContext.world_effects(self)
+	if host == null:
+		host = get_tree().current_scene
+	host.add_child(proj)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	# 帧动画机体更高大：弹体从抬手处出膛；占位机体沿用旧出膛点。
 	var origin := global_position + (Vector2(_shield_facing * 18.0, -30.0)

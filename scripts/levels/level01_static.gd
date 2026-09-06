@@ -10,8 +10,8 @@ const HUD := preload("res://scenes/ui/HUD.tscn")
 const PLATFORM := preload("res://scenes/world/Platform.tscn")
 const SIGN_TEX := "res://assets/kenney_clean/interactables/sign.png"
 
-@onready var plate: PressurePlate = $Props/PressurePlate
-@onready var door: ArenaDoor = $Props/Door
+@onready var plate: PressurePlate = get_node_or_null("Props/PressurePlate")
+@onready var door: ArenaDoor = get_node_or_null("Props/Door")
 
 const DEFAULT_SPAWN := Vector2(96, 290)
 ## GroundLeft / GroundRight / east floor 顶。单跳约 37px（v=-268, g=980）。
@@ -52,6 +52,10 @@ var _player: Player
 var _boss: ExecutionerBoss
 var _wing: Level01EastWing
 var _beats: Level01StoryBeats
+
+
+func _enter_tree() -> void:
+	add_to_group("game_world")
 
 
 func _ready() -> void:

@@ -104,3 +104,20 @@ func test_stagger_recovers_to_guarding() -> void:
 		g._tick_stagger(1.0 / 60.0)
 	ok(g._state == g.State.BLOCK, "recovers to guarding")
 	ok(g._blocking, "shield raised again")
+
+
+func test_bolt_spawns_in_the_enemy_world() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	build_floor(arena)
+	var g := await _spawn(arena, 320.0)
+	g._fire()
+	var effects := arena.get_node_or_null("WorldEffects")
+	ok(effects != null, "bolt host is the world, not current_scene")
+	var found := false
+	if effects != null:
+		for child in effects.get_children():
+			if child is Projectile:
+				found = true
+				ok(child.get_world_2d() == g.get_world_2d(), "bolt shares the enemy World2D")
+	ok(found, "bolt was parented under WorldEffects")

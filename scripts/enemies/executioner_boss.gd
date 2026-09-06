@@ -131,7 +131,10 @@ func _fire() -> void:
 		_anim.play("skill", true)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	get_tree().current_scene.add_child(proj)
+	var host := GameContext.world_effects(self)
+	if host == null:
+		host = get_tree().current_scene
+	host.add_child(proj)
 	var origin := global_position + Vector2(_shield_facing * 16.0, -38.0)
 	var aim := Vector2(_shield_facing * 40.0, -18.0)
 	if player:

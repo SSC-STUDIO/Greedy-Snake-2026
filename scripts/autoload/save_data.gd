@@ -445,7 +445,9 @@ func _normalize_saved_path(path: String) -> String:
 		return path
 	if not is_inside_tree():
 		return path
-	var scene := get_tree().current_scene
+	var scene := GameContext.world_root()
+	if scene == null or not scene.is_inside_tree():
+		scene = get_tree().current_scene
 	if scene == null or not scene.is_inside_tree():
 		return path
 	var root := String(scene.get_path())

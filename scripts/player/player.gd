@@ -444,14 +444,19 @@ func _on_died() -> void:
 	add_child(wait)
 	wait.start()
 	await wait.timeout
-	if not is_instance_valid(self) or get_tree() == null or get_tree().current_scene == null:
+	if not is_instance_valid(self) or get_tree() == null:
 		return
 	var nest := _resolve_lit_nest()
+	var reload := GameContext.world_scene_path(self)
+	if reload == "" and get_tree().current_scene != null:
+		reload = get_tree().current_scene.scene_file_path
+	if reload == "":
+		return
 	if nest != null:
 		GameEvents.player_respawned.emit()
-		SaveData.respawn(get_tree().current_scene.scene_file_path, nest.global_position)
+		SaveData.respawn(reload, nest.global_position)
 	else:
-		Director.fade_to(get_tree().current_scene.scene_file_path)
+		Director.fade_to(reload)
 
 
 ## 存档里的巢路径可能是场景相对路径或旧的绝对 NodePath。
@@ -459,7 +464,9 @@ func _resolve_lit_nest() -> Node2D:
 	var nest_path := SaveData.last_lit_nest()
 	if nest_path == "" or get_tree() == null:
 		return null
-	var scene := get_tree().current_scene
+	var scene := GameContext.world_root(self)
+	if scene == null:
+		scene = get_tree().current_scene
 	if scene == null:
 		return null
 	var nest := SaveData.resolve_saved_node(scene, nest_path)

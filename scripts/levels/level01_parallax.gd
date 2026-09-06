@@ -142,11 +142,12 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 			if USE_AUTHORED_SKY_PLATE:
 				var authored := Sprite2D.new()
 				authored.name = "AuthoredSkyPlate"
-				authored.texture = load(LEGACY_SKY_PATH) as Texture2D
+				authored.texture = _authored_sky_cover()
 				authored.centered = false
-				# The authored plate is 1280px wide; offset it by half the
-				# 1920px capture viewport so its single moon stays centered.
-				authored.position = _far_sprite.position + Vector2(-640.0, 0.0)
+				# Moon sits on the opening vista (plate center at world x≈280).
+				# The cover is edge-extended past EAST_LIMIT so walking east
+				# does not expose a second sky.
+				authored.position = Vector2(-360.0, _far_sprite.position.y)
 				authored.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				authored.texture_repeat = CanvasItem.TEXTURE_REPEAT_DISABLED
 				authored.region_enabled = false
@@ -156,11 +157,19 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 				authored_layer.motion_scale = Vector2.ZERO
 				authored_layer.motion_mirroring = Vector2.ZERO
 				backdrop.add_child(authored_layer)
+				backdrop.move_child(authored_layer, _far_layer.get_index() + 1)
 				authored_layer.add_child(authored)
 	_add_moon(backdrop, _plan["moon"])
+	_add_stars(backdrop, _plan.get("stars", []))
+	_scatter_field(_cloud_far, _plan.get("clouds_far", []), SkyPlate.cloud_units(),
+			SkyPlate.CLOUD_FAR_FIELD, 8.0)
+	_scatter_field(_cloud_low, _plan.get("clouds_low", []), SkyPlate.cloud_units(),
+			SkyPlate.CLOUD_LOW_FIELD, 68.0)
 	if USE_AUTHORED_SKY_PLATE:
 		# The authored plate already contains its large moon, clouds and stars.
 		# Keep generated nodes for tooling compatibility but prevent double images.
+		if _far_sprite != null:
+			_far_sprite.visible = false
 		var moon := backdrop.get_node_or_null("SkyMoon") as CanvasItem
 		if moon != null:
 			moon.visible = false
@@ -171,15 +180,38 @@ func _apply_stamp_sky(backdrop: ParallaxBackground) -> void:
 			_cloud_far.visible = false
 		if _cloud_low != null:
 			_cloud_low.visible = false
-	_add_stars(backdrop, _plan.get("stars", []))
-	_scatter_field(_cloud_far, _plan.get("clouds_far", []), SkyPlate.cloud_units(),
-			SkyPlate.CLOUD_FAR_FIELD, 8.0)
-	_scatter_field(_cloud_low, _plan.get("clouds_low", []), SkyPlate.cloud_units(),
-			SkyPlate.CLOUD_LOW_FIELD, 68.0)
+		var authored_layer := backdrop.get_node_or_null("LegacySkyPlateLayer")
+		if authored_layer != null and _far_layer != null:
+			backdrop.move_child(authored_layer, _far_layer.get_index() + 1)
 	if _cloud_far != null:
 		_cloud_far.modulate = Color(1.0, 0.90, 1.0, 0.78)
 	if _cloud_low != null:
 		_cloud_low.modulate = Color(0.94, 0.86, 1.0, 0.58)
+
+
+func _authored_sky_cover() -> Texture2D:
+	var src := load(LEGACY_SKY_PATH) as Texture2D
+	if src == null:
+		return null
+	var img := src.get_image()
+	if img == null:
+		return src
+	if img.is_compressed():
+		img.decompress()
+	var plate_w := img.get_width()
+	var plate_h := img.get_height()
+	# Opening moon at x≈280 plus the east wall at 2240, with slack for the camera.
+	const COVER_W := 2880
+	if plate_w >= COVER_W:
+		return src
+	var cover := Image.create(COVER_W, plate_h, false, Image.FORMAT_RGBA8)
+	cover.fill(img.get_pixel(plate_w - 1, 0))
+	cover.blit_rect(img, Rect2i(0, 0, plate_w, plate_h), Vector2i.ZERO)
+	for y in range(plate_h):
+		var edge := img.get_pixel(plate_w - 1, y)
+		for x in range(plate_w, COVER_W):
+			cover.set_pixel(x, y, edge)
+	return ImageTexture.create_from_image(cover)
 
 
 func _add_moon(backdrop: ParallaxBackground, spec: Dictionary) -> void:

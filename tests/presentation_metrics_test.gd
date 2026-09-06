@@ -35,6 +35,33 @@ func test_ui_and_world_share_the_same_final_physical_rect() -> void:
 func test_scene_routing_keeps_the_authored_save_identifier() -> void:
 	eq(GameContext.route_scene(GameContext.WORLD_PATH), "res://scenes/ui/GamePresentation.tscn")
 	eq(GameContext.route_scene("res://scenes/ui/TitleScreen.tscn"), "res://scenes/ui/TitleScreen.tscn")
+	eq(GameContext.route_scene("res://scenes/levels/Level01_Static.tscn"),
+			"res://scenes/ui/GamePresentation.tscn")
+
+
+func test_level_registers_as_the_game_world() -> void:
+	var presentation := Node.new()
+	presentation.name = "GamePresentation"
+	add_child(presentation)
+	var viewport := Node.new()
+	viewport.name = "WorldViewport"
+	presentation.add_child(viewport)
+	var level := Level01Static.new()
+	level.name = "Level01_Static"
+	viewport.add_child(level)
+	ok(level.is_in_group("game_world"), "Level01 joins game_world before children ready")
+	eq(GameContext.world_root(level), level)
+	eq(GameContext.world_scene_path(level), GameContext.WORLD_PATH)
+	eq(GameContext.route_scene(GameContext.world_scene_path(level)),
+			"res://scenes/ui/GamePresentation.tscn")
+	var props := Node2D.new()
+	props.name = "Props"
+	level.add_child(props)
+	var nest := Node2D.new()
+	nest.name = "EmberNest"
+	props.add_child(nest)
+	eq(SaveData.persist_path(nest), "Props/EmberNest",
+			"save keys stay scene-relative, not WorldViewport-prefixed")
 
 
 func test_native_ui_uses_pixel_filter_and_automatic_font_raster_size() -> void:

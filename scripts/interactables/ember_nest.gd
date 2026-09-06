@@ -268,11 +268,9 @@ func interact(actor: Node) -> void:
 		_lit = true
 		_apply_flame_state()
 		SaveData.register_lit_nest(SaveData.persist_path(self))
-		var scene_path := SCENE_PATH
-		if get_tree() != null and get_tree().current_scene != null:
-			var live := get_tree().current_scene.scene_file_path
-			if live != "":
-				scene_path = live
+		var scene_path := GameContext.world_scene_path(self)
+		if scene_path == "":
+			scene_path = SCENE_PATH
 		if SaveData.save_game(scene_path, p):
 			GameEvents.announcement.emit("余烬重新点燃 —— 进度已刻入铁锈")
 		else:

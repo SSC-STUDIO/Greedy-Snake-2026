@@ -114,7 +114,7 @@ func _on_chosen(id: StringName) -> void:
 	GameEvents.ending_chosen.emit(id)
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
-		SaveData.save_game(get_tree().current_scene.scene_file_path, player)
+		SaveData.save_game(GameContext.world_scene_path(player), player)
 	var line := "陵墓在锈里睁开眼。" if kind == "rekindle" else "余烬落回炉灰。骑士也是。"
 	Director.play([
 		{"kind": "lock"},

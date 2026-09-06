@@ -1,3704 +1,906 @@
 {
-	"capture_type": "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
-	"captured_at_utc": "2026-09-05T05:57:48",
-	"completed": true,
-	"display_server": "Windows",
-	"driver": "opengl3",
-	"errors": [],
-	"expected_capture_count": 36,
-	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
-	"gpu_vendor": "NVIDIA",
-	"passed": true,
-	"purpose": "VISUAL FIXTURES: actor placement and clock/weather overrides; NOT a playthrough or completion proof",
-	"renderer": "gl_compatibility",
-	"resolutions": [
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				640.0,
-				360.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						292.0,
-						460.0,
-						46.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				640.0,
-				360.0
-			],
-			"world_scale": 1,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				640.0,
-				360.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						292.0,
-						460.0,
-						46.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				640.0,
-				360.0
-			],
-			"world_scale": 1,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				640.0,
-				360.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				640.0,
-				360.0
-			],
-			"world_scale": 1,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				640.0,
-				360.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				640.0,
-				360.0
-			],
-			"world_scale": 1,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				720.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				720.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				720.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				720.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				720.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				720.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				17.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				720.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						14.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						274.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						330.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						12.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				720.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				50.2502593994141,
-				41.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1366.0,
-				768.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						334.5,
-						38.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						133.0,
-						298.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						349.0,
-						354.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						59.0,
-						36.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1366.0,
-				768.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				50.2502593994141,
-				41.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1366.0,
-				768.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						334.5,
-						38.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						133.0,
-						298.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						349.0,
-						354.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						59.0,
-						36.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1366.0,
-				768.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				50.2502593994141,
-				41.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1366.0,
-				768.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						334.5,
-						38.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						133.0,
-						298.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						349.0,
-						354.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						59.0,
-						36.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1366.0,
-				768.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				50.2502593994141,
-				41.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1366.0,
-				768.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						334.5,
-						38.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						133.0,
-						298.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						349.0,
-						354.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						59.0,
-						36.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1366.0,
-				768.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"actual_world_image_rect": [
-				327.250244140625,
-				197.746475219727,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1920.0,
-				1080.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						611.5,
-						194.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						410.0,
-						454.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						626.0,
-						510.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						336.0,
-						192.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1920.0,
-				1080.0
-			],
-			"world_scale": 3,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"actual_world_image_rect": [
-				327.250244140625,
-				197.746475219727,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1920.0,
-				1080.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						611.5,
-						194.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						410.0,
-						454.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						626.0,
-						510.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						336.0,
-						192.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1920.0,
-				1080.0
-			],
-			"world_scale": 3,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"actual_world_image_rect": [
-				327.250244140625,
-				197.746475219727,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1920.0,
-				1080.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						611.5,
-						194.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						410.0,
-						454.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						626.0,
-						510.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						336.0,
-						192.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1920.0,
-				1080.0
-			],
-			"world_scale": 3,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"actual_world_image_rect": [
-				327.250244140625,
-				197.746475219727,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1920.0,
-				1080.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						611.5,
-						194.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						410.0,
-						454.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						626.0,
-						510.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						336.0,
-						192.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1920.0,
-				1080.0
-			],
-			"world_scale": 3,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1440.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1440.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1440.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1440.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"actual_world_image_rect": [
-				21.7507724761963,
-				53.2394371032715,
-				3796.49853515625,
-				2053.52124023438
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3840.0,
-				2160.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						874.5,
-						42.0,
-						171.0,
-						126.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						270.0,
-						822.0,
-						1380.0,
-						192.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						918.0,
-						990.0,
-						84.0,
-						60.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						48.0,
-						36.0,
-						1008.0,
-						582.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3840.0,
-				2160.0
-			],
-			"world_scale": 6,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"actual_world_image_rect": [
-				21.7507724761963,
-				53.2394371032715,
-				3796.49853515625,
-				2053.52124023438
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3840.0,
-				2160.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						874.5,
-						42.0,
-						171.0,
-						126.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						270.0,
-						822.0,
-						1380.0,
-						192.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						918.0,
-						990.0,
-						84.0,
-						60.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						48.0,
-						36.0,
-						1008.0,
-						582.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3840.0,
-				2160.0
-			],
-			"world_scale": 6,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"actual_world_image_rect": [
-				21.7507724761963,
-				53.2394371032715,
-				3796.49853515625,
-				2053.52124023438
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3840.0,
-				2160.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						874.5,
-						42.0,
-						171.0,
-						126.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						270.0,
-						822.0,
-						1380.0,
-						192.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						918.0,
-						990.0,
-						84.0,
-						60.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						48.0,
-						36.0,
-						1008.0,
-						582.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3840.0,
-				2160.0
-			],
-			"world_scale": 6,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"actual_world_image_rect": [
-				21.7507724761963,
-				53.2394371032715,
-				3796.49853515625,
-				2053.52124023438
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3840.0,
-				2160.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						874.5,
-						42.0,
-						171.0,
-						126.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						270.0,
-						822.0,
-						1380.0,
-						192.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						918.0,
-						990.0,
-						84.0,
-						60.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						48.0,
-						36.0,
-						1008.0,
-						582.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3840.0,
-				2160.0
-			],
-			"world_scale": 6,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				57.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				800.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						54.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						314.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						370.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						52.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				800.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				57.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				800.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						54.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						314.0,
-						460.0,
-						64.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						370.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						52.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				800.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				57.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				800.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						54.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						314.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						370.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						52.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				800.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"actual_world_image_rect": [
-				7.25025749206543,
-				57.7464790344238,
-				1265.49951171875,
-				684.507080078125
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				800.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						291.5,
-						54.0,
-						57.0,
-						42.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						90.0,
-						314.0,
-						460.0,
-						64.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						306.0,
-						370.0,
-						28.0,
-						20.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						16.0,
-						52.0,
-						336.0,
-						194.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				1280.0,
-				800.0
-			],
-			"world_scale": 2,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				454.500518798828,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3440.0,
-				1440.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						1023.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						620.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						1052.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						472.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3440.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				454.500518798828,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3440.0,
-				1440.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						1023.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						620.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						1052.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						472.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3440.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				454.500518798828,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3440.0,
-				1440.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						1023.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						620.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						1052.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						472.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3440.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				454.500518798828,
-				35.4929580688477,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3440.0,
-				1440.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						1023.0,
-						28.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						620.0,
-						548.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						1052.0,
-						660.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						472.0,
-						24.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				3440.0,
-				1440.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				115.492958068848,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "start_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1600.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						108.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						628.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						740.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						104.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1600.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				115.492958068848,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "start_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "start_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1600.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						108.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						628.0,
-						920.0,
-						128.0
-					],
-					"visible": false
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						740.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						104.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1600.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				115.492958068848,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.85,
-			"fixture": "boss_night_rain",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_night_rain_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1600.0
-			],
-			"weather": 1,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						108.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						628.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						740.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						104.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1600.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		},
-		{
-			"actual_hud_root_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"actual_world_image_rect": [
-				14.5005149841309,
-				115.492958068848,
-				2530.9990234375,
-				1369.01416015625
-			],
-			"clock_time": 0.35,
-			"fixture": "boss_day",
-			"hud_design_size": [
-				640.0,
-				360.0
-			],
-			"offscreen_positioned": true,
-			"overlay_controls": [],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"physics_body_count": 69,
-			"png": "boss_day_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1600.0
-			],
-			"weather": 0,
-			"widgets": {
-				"Banner": {
-					"rect": [
-						583.0,
-						108.0,
-						114.0,
-						84.0
-					],
-					"visible": true
-				},
-				"BossBar": {
-					"rect": [
-						180.0,
-						628.0,
-						920.0,
-						128.0
-					],
-					"visible": true
-				},
-				"Prompt": {
-					"rect": [
-						612.0,
-						740.0,
-						56.0,
-						40.0
-					],
-					"visible": false
-				},
-				"StatPanel": {
-					"rect": [
-						32.0,
-						104.0,
-						672.0,
-						388.0
-					],
-					"visible": true
-				}
-			},
-			"window_position": [
-				-12000.0,
-				-12000.0
-			],
-			"window_size": [
-				2560.0,
-				1600.0
-			],
-			"world_scale": 4,
-			"world_viewport": [
-				640.0,
-				360.0
-			],
-			"wrong_world_nodes": [],
-			"zone": 0
-		}
-	],
-	"screen_size": [
-		2560.0,
-		1600.0
-	],
-	"supplement": false,
-	"timings": [
-		{
-			"fixture": "start_night_rain",
-			"note": "warmup/loading and PNG encoding excluded; timings are wall frames, not isolated GPU time",
-			"offscreen_positioned": true,
-			"requested": [
-				1920.0,
-				1080.0
-			],
-			"root_render_target": [
-				1280.0,
-				720.0
-			],
-			"samples": 180,
-			"texture_reported_size": [
-				1280.0,
-				720.0
-			],
-			"wall_frame_max_ms": 11.44,
-			"wall_frame_mean_ms": 7.00441111111111,
-			"wall_frame_median_ms": 6.832,
-			"wall_frame_p95_ms": 8.423,
-			"warmup_frames": 150,
-			"window_size": [
-				1920.0,
-				1080.0
-			],
-			"world_viewport": [
-				640,
-				360
-			]
-		},
-		{
-			"fixture": "start_night_rain",
-			"note": "warmup/loading and PNG encoding excluded; timings are wall frames, not isolated GPU time",
-			"offscreen_positioned": true,
-			"requested": [
-				2560.0,
-				1440.0
-			],
-			"root_render_target": [
-				1280.0,
-				720.0
-			],
-			"samples": 180,
-			"texture_reported_size": [
-				1280.0,
-				720.0
-			],
-			"wall_frame_max_ms": 10.986,
-			"wall_frame_mean_ms": 6.83168888888889,
-			"wall_frame_median_ms": 6.687,
-			"wall_frame_p95_ms": 7.902,
-			"warmup_frames": 150,
-			"window_size": [
-				2560.0,
-				1440.0
-			],
-			"world_viewport": [
-				640,
-				360
-			]
-		},
-		{
-			"fixture": "start_night_rain",
-			"note": "warmup/loading and PNG encoding excluded; timings are wall frames, not isolated GPU time",
-			"offscreen_positioned": true,
-			"requested": [
-				3840.0,
-				2160.0
-			],
-			"root_render_target": [
-				1280.0,
-				720.0
-			],
-			"samples": 180,
-			"texture_reported_size": [
-				1280.0,
-				720.0
-			],
-			"wall_frame_max_ms": 24.435,
-			"wall_frame_mean_ms": 8.03433888888889,
-			"wall_frame_median_ms": 7.27,
-			"wall_frame_p95_ms": 12.517,
-			"warmup_frames": 150,
-			"window_size": [
-				3840.0,
-				2160.0
-			],
-			"world_viewport": [
-				640,
-				360
-			]
-		}
-	],
-	"title_screens": [
-		{
-			"actual_title_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				640.0,
-				360.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				640.0,
-				360.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1280.0,
-				720.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				720.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				43.0,
-				24.0,
-				1280.0,
-				720.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1366.0,
-				768.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				320.0,
-				180.0,
-				1280.0,
-				720.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				1920.0,
-				1080.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1920.0,
-				1080.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1440.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				0.0,
-				3840.0,
-				2160.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3840.0,
-				2160.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				40.0,
-				1280.0,
-				720.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				1280.0,
-				800.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				440.0,
-				0.0,
-				2560.0,
-				1440.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				3440.0,
-				1440.0
-			]
-		},
-		{
-			"actual_title_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"passed": true,
-			"physical_content_rect": [
-				0.0,
-				80.0,
-				2560.0,
-				1440.0
-			],
-			"png": "title_1280x720.png",
-			"rendered_image_size": [
-				1280.0,
-				720.0
-			],
-			"requested": [
-				2560.0,
-				1600.0
-			]
-		}
-	],
-	"vsync": "disabled; wall frame timing includes driver/compositor/CPU scheduling",
-	"wing_animation": {
-		"frames": [
-			{
-				"animation": "idle",
-				"png": "wing_a_1920x1080.png",
-				"saved": true,
-				"texture": "res://assets/characters/flying_demon_px/idle/idle_2.png",
-				"wall_ms": 18899
-			},
-			{
-				"animation": "idle",
-				"png": "wing_b_1920x1080.png",
-				"saved": true,
-				"texture": "res://assets/characters/flying_demon_px/idle/idle_3.png",
-				"wall_ms": 19046
-			}
-		],
-		"note": "unmodified animation process at one frozen actor position; not combat acceptance",
-		"passed": true
-	},
-	"engine_exit_errors": []
+    "capture_type":  "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
+    "captured_at_utc":  "2026-09-05T08:13:26",
+    "completed":  true,
+    "display_server":  "Windows",
+    "driver":  "opengl3",
+    "errors":  [
+
+               ],
+    "expected_capture_count":  8,
+    "gpu":  "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "gpu_vendor":  "NVIDIA",
+    "passed":  false,
+    "purpose":  "VISUAL FIXTURES: actor placement and clock/weather overrides; NOT a playthrough or completion proof",
+    "renderer":  "gl_compatibility",
+    "resolutions":  [
+                        {
+                            "actual_hud_root_rect":  [
+                                                         43.0,
+                                                         24.0,
+                                                         1280.0,
+                                                         720.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            43.0,
+                                                            24.0,
+                                                            1280.0,
+                                                            720.0
+                                                        ],
+                            "clock_time":  0.35,
+                            "fixture":  "start_day",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          43.0,
+                                                          24.0,
+                                                          1280.0,
+                                                          720.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "start_day_1366x768.png",
+                            "rendered_image_size":  [
+                                                        1366.0,
+                                                        768.0
+                                                    ],
+                            "requested":  [
+                                              1366.0,
+                                              768.0
+                                          ],
+                            "weather":  0,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        654.500061035156,
+                                                                        37.9999961853027,
+                                                                        57.0,
+                                                                        42.0000038146973
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         452.999969482422,
+                                                                         676.0,
+                                                                         460.000030517578,
+                                                                         46.0
+                                                                     ],
+                                                            "visible":  false
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        669.000061035156,
+                                                                        714.0,
+                                                                        28.0,
+                                                                        20.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           59.0,
+                                                                           35.9999961853027,
+                                                                           336.0,
+                                                                           194.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1366.0,
+                                                768.0
+                                            ],
+                            "world_scale":  2,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         43.0,
+                                                         24.0,
+                                                         1280.0,
+                                                         720.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            43.0,
+                                                            24.0,
+                                                            1280.0,
+                                                            720.0
+                                                        ],
+                            "clock_time":  0.85,
+                            "fixture":  "start_night_rain",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          43.0,
+                                                          24.0,
+                                                          1280.0,
+                                                          720.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "start_night_rain_1366x768.png",
+                            "rendered_image_size":  [
+                                                        1366.0,
+                                                        768.0
+                                                    ],
+                            "requested":  [
+                                              1366.0,
+                                              768.0
+                                          ],
+                            "weather":  1,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        654.500061035156,
+                                                                        37.9999961853027,
+                                                                        57.0,
+                                                                        42.0000038146973
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         452.999969482422,
+                                                                         676.0,
+                                                                         460.000030517578,
+                                                                         46.0
+                                                                     ],
+                                                            "visible":  false
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        669.000061035156,
+                                                                        714.0,
+                                                                        28.0,
+                                                                        20.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           59.0,
+                                                                           35.9999961853027,
+                                                                           336.0,
+                                                                           194.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1366.0,
+                                                768.0
+                                            ],
+                            "world_scale":  2,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         43.0,
+                                                         24.0,
+                                                         1280.0,
+                                                         720.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            43.0,
+                                                            24.0,
+                                                            1280.0,
+                                                            720.0
+                                                        ],
+                            "clock_time":  0.85,
+                            "fixture":  "boss_night_rain",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          43.0,
+                                                          24.0,
+                                                          1280.0,
+                                                          720.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "boss_night_rain_1366x768.png",
+                            "rendered_image_size":  [
+                                                        1366.0,
+                                                        768.0
+                                                    ],
+                            "requested":  [
+                                              1366.0,
+                                              768.0
+                                          ],
+                            "weather":  1,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        654.500061035156,
+                                                                        37.9999961853027,
+                                                                        57.0,
+                                                                        42.0000038146973
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         452.999969482422,
+                                                                         657.999938964844,
+                                                                         460.000030517578,
+                                                                         64.0
+                                                                     ],
+                                                            "visible":  true
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        669.000061035156,
+                                                                        714.0,
+                                                                        28.0,
+                                                                        20.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           59.0,
+                                                                           35.9999961853027,
+                                                                           336.0,
+                                                                           194.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1366.0,
+                                                768.0
+                                            ],
+                            "world_scale":  2,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         43.0,
+                                                         24.0,
+                                                         1280.0,
+                                                         720.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            43.0,
+                                                            24.0,
+                                                            1280.0,
+                                                            720.0
+                                                        ],
+                            "clock_time":  0.35,
+                            "fixture":  "boss_day",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          43.0,
+                                                          24.0,
+                                                          1280.0,
+                                                          720.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "boss_day_1366x768.png",
+                            "rendered_image_size":  [
+                                                        1366.0,
+                                                        768.0
+                                                    ],
+                            "requested":  [
+                                              1366.0,
+                                              768.0
+                                          ],
+                            "weather":  0,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        654.500061035156,
+                                                                        37.9999961853027,
+                                                                        57.0,
+                                                                        42.0000038146973
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         452.999969482422,
+                                                                         657.999938964844,
+                                                                         460.000030517578,
+                                                                         64.0
+                                                                     ],
+                                                            "visible":  true
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        669.000061035156,
+                                                                        714.0,
+                                                                        28.0,
+                                                                        20.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           59.0,
+                                                                           35.9999961853027,
+                                                                           336.0,
+                                                                           194.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1366.0,
+                                                768.0
+                                            ],
+                            "world_scale":  2,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         0.0,
+                                                         0.0,
+                                                         1920.0,
+                                                         1080.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            0.0,
+                                                            0.0,
+                                                            1920.0,
+                                                            1080.0
+                                                        ],
+                            "clock_time":  0.35,
+                            "fixture":  "start_day",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          0.0,
+                                                          0.0,
+                                                          1920.0,
+                                                          1080.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "start_day_1920x1080.png",
+                            "rendered_image_size":  [
+                                                        1920.0,
+                                                        1080.0
+                                                    ],
+                            "requested":  [
+                                              1920.0,
+                                              1080.0
+                                          ],
+                            "weather":  0,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        917.25,
+                                                                        21.0,
+                                                                        85.5,
+                                                                        63.0
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         615.0,
+                                                                         951.0,
+                                                                         690.0,
+                                                                         96.0
+                                                                     ],
+                                                            "visible":  false
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        939.0,
+                                                                        1035.0,
+                                                                        42.0,
+                                                                        30.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           24.0,
+                                                                           18.0,
+                                                                           504.0,
+                                                                           291.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1920.0,
+                                                1080.0
+                                            ],
+                            "world_scale":  3,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         0.0,
+                                                         0.0,
+                                                         1920.0,
+                                                         1080.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            0.0,
+                                                            0.0,
+                                                            1920.0,
+                                                            1080.0
+                                                        ],
+                            "clock_time":  0.85,
+                            "fixture":  "start_night_rain",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          0.0,
+                                                          0.0,
+                                                          1920.0,
+                                                          1080.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "start_night_rain_1920x1080.png",
+                            "rendered_image_size":  [
+                                                        1920.0,
+                                                        1080.0
+                                                    ],
+                            "requested":  [
+                                              1920.0,
+                                              1080.0
+                                          ],
+                            "weather":  1,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        917.25,
+                                                                        21.0,
+                                                                        85.5,
+                                                                        63.0
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         615.0,
+                                                                         951.0,
+                                                                         690.0,
+                                                                         96.0
+                                                                     ],
+                                                            "visible":  false
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        939.0,
+                                                                        1035.0,
+                                                                        42.0,
+                                                                        30.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           24.0,
+                                                                           18.0,
+                                                                           504.0,
+                                                                           291.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1920.0,
+                                                1080.0
+                                            ],
+                            "world_scale":  3,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         0.0,
+                                                         0.0,
+                                                         1920.0,
+                                                         1080.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            0.0,
+                                                            0.0,
+                                                            1920.0,
+                                                            1080.0
+                                                        ],
+                            "clock_time":  0.85,
+                            "fixture":  "boss_night_rain",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          0.0,
+                                                          0.0,
+                                                          1920.0,
+                                                          1080.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "boss_night_rain_1920x1080.png",
+                            "rendered_image_size":  [
+                                                        1920.0,
+                                                        1080.0
+                                                    ],
+                            "requested":  [
+                                              1920.0,
+                                              1080.0
+                                          ],
+                            "weather":  1,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        917.25,
+                                                                        21.0,
+                                                                        85.5,
+                                                                        63.0
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         615.0,
+                                                                         951.0,
+                                                                         690.0,
+                                                                         96.0
+                                                                     ],
+                                                            "visible":  true
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        939.0,
+                                                                        1035.0,
+                                                                        42.0,
+                                                                        30.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           24.0,
+                                                                           18.0,
+                                                                           504.0,
+                                                                           291.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1920.0,
+                                                1080.0
+                                            ],
+                            "world_scale":  3,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        },
+                        {
+                            "actual_hud_root_rect":  [
+                                                         0.0,
+                                                         0.0,
+                                                         1920.0,
+                                                         1080.0
+                                                     ],
+                            "actual_world_image_rect":  [
+                                                            0.0,
+                                                            0.0,
+                                                            1920.0,
+                                                            1080.0
+                                                        ],
+                            "clock_time":  0.35,
+                            "fixture":  "boss_day",
+                            "hud_design_size":  [
+                                                    1280.0,
+                                                    720.0
+                                                ],
+                            "offscreen_positioned":  true,
+                            "overlay_controls":  [
+
+                                                 ],
+                            "passed":  true,
+                            "physical_content_rect":  [
+                                                          0.0,
+                                                          0.0,
+                                                          1920.0,
+                                                          1080.0
+                                                      ],
+                            "physics_body_count":  69,
+                            "png":  "boss_day_1920x1080.png",
+                            "rendered_image_size":  [
+                                                        1920.0,
+                                                        1080.0
+                                                    ],
+                            "requested":  [
+                                              1920.0,
+                                              1080.0
+                                          ],
+                            "weather":  0,
+                            "widgets":  {
+                                            "Banner":  {
+                                                           "rect":  [
+                                                                        917.25,
+                                                                        21.0,
+                                                                        85.5,
+                                                                        63.0
+                                                                    ],
+                                                           "visible":  true
+                                                       },
+                                            "BossBar":  {
+                                                            "rect":  [
+                                                                         615.0,
+                                                                         951.0,
+                                                                         690.0,
+                                                                         96.0
+                                                                     ],
+                                                            "visible":  true
+                                                        },
+                                            "Prompt":  {
+                                                           "rect":  [
+                                                                        939.0,
+                                                                        1035.0,
+                                                                        42.0,
+                                                                        30.0
+                                                                    ],
+                                                           "visible":  false
+                                                       },
+                                            "StatPanel":  {
+                                                              "rect":  [
+                                                                           24.0,
+                                                                           18.0,
+                                                                           504.0,
+                                                                           291.0
+                                                                       ],
+                                                              "visible":  true
+                                                          }
+                                        },
+                            "window_position":  [
+                                                    -12000.0,
+                                                    -12000.0
+                                                ],
+                            "window_size":  [
+                                                1920.0,
+                                                1080.0
+                                            ],
+                            "world_scale":  3,
+                            "world_viewport":  [
+                                                   640.0,
+                                                   360.0
+                                               ],
+                            "wrong_world_nodes":  [
+
+                                                  ],
+                            "zone":  0
+                        }
+                    ],
+    "screen_size":  [
+                        2560.0,
+                        1600.0
+                    ],
+    "supplement":  false,
+    "timings":  [
+                    {
+                        "fixture":  "start_night_rain",
+                        "note":  "warmup/loading and PNG encoding excluded; timings are wall frames, not isolated GPU time",
+                        "offscreen_positioned":  true,
+                        "requested":  [
+                                          1920.0,
+                                          1080.0
+                                      ],
+                        "root_render_target":  [
+                                                   1920.0,
+                                                   1080.0
+                                               ],
+                        "samples":  24,
+                        "texture_reported_size":  [
+                                                      2880.0,
+                                                      1620.0
+                                                  ],
+                        "wall_frame_max_ms":  7.745,
+                        "wall_frame_mean_ms":  5.40341666666667,
+                        "wall_frame_median_ms":  5.268,
+                        "wall_frame_p95_ms":  6.404,
+                        "warmup_frames":  150,
+                        "window_size":  [
+                                            1920.0,
+                                            1080.0
+                                        ],
+                        "world_viewport":  [
+                                               640,
+                                               360
+                                           ]
+                    }
+                ],
+    "title_screens":  [
+                          {
+                              "actual_title_rect":  [
+                                                        0.0,
+                                                        0.0,
+                                                        1366.0,
+                                                        768.000061035156
+                                                    ],
+                              "passed":  true,
+                              "physical_content_rect":  [
+                                                            43.0,
+                                                            24.0,
+                                                            1280.0,
+                                                            720.0
+                                                        ],
+                              "png":  "title_1366x768.png",
+                              "rendered_image_size":  [
+                                                          1366.0,
+                                                          768.0
+                                                      ],
+                              "requested":  [
+                                                1366.0,
+                                                768.0
+                                            ]
+                          },
+                          {
+                              "actual_title_rect":  [
+                                                        0.0,
+                                                        0.0,
+                                                        1920.0,
+                                                        1080.0
+                                                    ],
+                              "passed":  true,
+                              "physical_content_rect":  [
+                                                            0.0,
+                                                            0.0,
+                                                            1920.0,
+                                                            1080.0
+                                                        ],
+                              "png":  "title_1920x1080.png",
+                              "rendered_image_size":  [
+                                                          1920.0,
+                                                          1080.0
+                                                      ],
+                              "requested":  [
+                                                1920.0,
+                                                1080.0
+                                            ]
+                          }
+                      ],
+    "vsync":  "disabled; wall frame timing includes driver/compositor/CPU scheduling",
+    "wing_animation":  {
+                           "frames":  [
+                                          {
+                                              "animation":  "idle",
+                                              "png":  "wing_a_1920x1080.png",
+                                              "saved":  true,
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_5.png",
+                                              "wall_ms":  9217
+                                          },
+                                          {
+                                              "animation":  "idle",
+                                              "png":  "wing_b_1920x1080.png",
+                                              "saved":  true,
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_0.png",
+                                              "wall_ms":  9364
+                                          }
+                                      ],
+                           "note":  "unmodified animation process at one frozen actor position; not combat acceptance",
+                           "passed":  true
+                       },
+    "engine_exit_errors":  [
+
+                           ]
 }

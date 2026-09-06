@@ -657,6 +657,49 @@ func _stamp_count(layer: ParallaxLayer) -> int:
 	return n
 
 
+func test_authored_sky_covers_east_and_sits_behind_mountains() -> void:
+	var host := Node2D.new()
+	add_child(host)
+	var backdrop := ParallaxBackground.new()
+	backdrop.name = "ParallaxBackdrop"
+	host.add_child(backdrop)
+	for spec in [
+		["Far", Vector2(0.08, 0.04), Vector2(0, -24)],
+		["FarMountains", Vector2(0.14, 0.05), Vector2(-4, 128)],
+		["CloudFar", Vector2(0.10, 0.03), Vector2(0, 8)],
+		["CloudLow", Vector2(0.12, 0.04), Vector2(0, 68)],
+	]:
+		var layer := ParallaxLayer.new()
+		layer.name = String(spec[0])
+		layer.motion_scale = spec[1]
+		var spr := Sprite2D.new()
+		spr.name = "Sprite"
+		spr.centered = false
+		spr.position = spec[2]
+		layer.add_child(spr)
+		backdrop.add_child(layer)
+	var extras := Level01Parallax.new()
+	add_child(extras)
+	extras.build(host)
+	var plate := backdrop.get_node_or_null("LegacySkyPlateLayer/AuthoredSkyPlate") as Sprite2D
+	var far := backdrop.get_node("Far") as ParallaxLayer
+	var mountains := backdrop.get_node("FarMountains") as ParallaxLayer
+	ok(plate != null and plate.texture != null, "authored sky plate is present")
+	if plate != null and plate.texture != null:
+		ok(plate.position.x + float(plate.texture.get_width()) >= 2240.0,
+				"sky cover reaches the east wall")
+		ok(plate.position.x <= 0.0, "sky cover starts at or before spawn")
+		var sky_layer := plate.get_parent()
+		ok(sky_layer.get_index() == far.get_index() + 1, "sky sits just after Far")
+		ok(sky_layer.get_index() < mountains.get_index(), "mountains draw in front of the sky")
+	var far_spr := backdrop.get_node_or_null("Far/Sprite") as CanvasItem
+	ok(far_spr != null and not far_spr.visible, "generated wash stays under the authored plate")
+	var moon := backdrop.get_node_or_null("SkyMoon") as CanvasItem
+	ok(moon != null and not moon.visible, "generated moon does not stack a second disk")
+	ok(not backdrop.get_node("CloudFar").visible, "generated far clouds stay off")
+	ok(not backdrop.get_node("CloudLow").visible, "generated low clouds stay off")
+
+
 func _load_level() -> Node:
 	var packed := load(LEVEL) as PackedScene
 	ok(packed != null, "Level01_Static packs")
