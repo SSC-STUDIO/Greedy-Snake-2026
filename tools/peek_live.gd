@@ -1,0 +1,69 @@
+extends Node
+## LIVE PEEK: the real presentation with the clock running, parked at a few
+## camera spots for a few seconds each, then one PNG per spot. Unlike
+## RenderAcceptance this does not freeze WorldClock, so ambient motion (vapor,
+## leaves, sway, rain) shows up. Not an acceptance gate; no report.
+##
+##   tools/run_peek_live.ps1            (writes screenshots/peek/live_<spot>.png)
+##   ... -- --spots=start,pit --hold=6  (subset / longer settle)
+
+const PRESENTATION := preload("res://scenes/ui/GamePresentation.tscn")
+const OUT := "res://screenshots/peek"
+const SPOTS := {
+	"start": 320.0, "pit": 460.0, "mid": 800.0, "gate": 1200.0,
+	"east": 1460.0, "boss": 1920.0, "forge": 2112.0,
+}
+
+
+func _ready() -> void:
+	if DisplayServer.get_name() == "headless":
+		printerr("peek_live needs a render target; run without --headless")
+		get_tree().quit(2)
+		return
+	var spots: Array = SPOTS.keys()
+	var hold := 4.0
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--spots="):
+			spots = arg.trim_prefix("--spots=").split(",", false)
+		elif arg.begins_with("--hold="):
+			hold = maxf(0.5, float(arg.trim_prefix("--hold=")))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	var win := get_tree().root
+	win.mode = Window.MODE_WINDOWED
+	win.size = Vector2i(1920, 1080)
+	win.position = Vector2i(-12000, -12000)
+	SaveData.save_path = OUT + "/peek_save.cfg"
+	SaveData.delete_save()
+	var presentation := PRESENTATION.instantiate()
+	add_child(presentation)
+	for i in 5:
+		await RenderingServer.frame_post_draw
+	Director.abort()
+	Director.set_letterbox(false, true)
+	var player := get_tree().get_first_node_in_group("player") as Player
+	var camera := get_tree().get_first_node_in_group("game_camera") as GameCamera
+	player.set_physics_process(false)
+	player.cutscene_locked = true
+	camera.set_physics_process(false)
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		enemy.set_physics_process(false)
+		enemy.set_process(false)
+	WorldClock.set_time(0.35)
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	WorldClock._snap_wind_speed()
+	for spot in spots:
+		if not SPOTS.has(spot):
+			printerr("peek_live: unknown spot ", spot)
+			continue
+		var x: float = SPOTS[spot]
+		camera.global_position = Vector2(x, 220)
+		camera.force_update_scroll()
+		player.global_position = Vector2(x - 120.0, 320)
+		await get_tree().create_timer(hold).timeout
+		await RenderingServer.frame_post_draw
+		var image := win.get_texture().get_image()
+		var err := image.save_png("%s/live_%s.png" % [OUT, spot])
+		print("PEEK ", spot, " saved=", err == OK)
+	get_tree().quit(0)

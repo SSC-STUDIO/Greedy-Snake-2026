@@ -6,6 +6,11 @@ const PRESENTATION := preload("res://scenes/ui/GamePresentation.tscn")
 const TITLE := preload("res://scenes/ui/TitleScreen.tscn")
 const LOGGER := preload("res://tests/error_collector.gd")
 const SIZES := [Vector2i(640, 360), Vector2i(1280, 720), Vector2i(1366, 768), Vector2i(1920, 1080), Vector2i(2560, 1440), Vector2i(3840, 2160), Vector2i(1280, 800), Vector2i(3440, 1440), Vector2i(2560, 1600)]
+## Supplement walks the whole corridor west→east; keep in sync with run_render_acceptance.ps1.
+const SUPPLEMENT_PLACES := ["start", "pit", "mid", "gate", "east", "boss", "forge"]
+## 4 main-loop captures at 2560×1600 + places × 3 weathers
+## + pit_submerged + pause + controls + ending_caption + ending_choice.
+const SUPPLEMENT_CAPTURES := 4 + 7 * 3 + 5
 var _presentation: GamePresentation
 var _world: Node
 var _player: Player
@@ -82,7 +87,7 @@ func _ready() -> void:
 	if supplement:
 		sizes = [Vector2i(2560, 1600)]
 	_report["supplement"] = supplement
-	_report["expected_capture_count"] = 24 if supplement else sizes.size() * 4
+	_report["expected_capture_count"] = SUPPLEMENT_CAPTURES if supplement else sizes.size() * 4
 	for requested in sizes:
 		win.size = requested
 		win.position = Vector2i(-12000, -12000)
@@ -153,8 +158,8 @@ func _ready() -> void:
 func _fixture(place: String, night: bool, fog: bool = false) -> void:
 	Director.abort()
 	Director.set_letterbox(false, true)
-	var player_x: Dictionary = {"start": 180, "pit": 376, "east": 1470, "boss": 1770, "forge": 2052}
-	var camera_x: Dictionary = {"start": 320, "pit": 460, "east": 1460, "boss": 1920, "forge": 2112}
+	var player_x: Dictionary = {"start": 180, "pit": 376, "mid": 700, "gate": 1100, "east": 1470, "boss": 1770, "forge": 2052}
+	var camera_x: Dictionary = {"start": 320, "pit": 460, "mid": 800, "gate": 1200, "east": 1460, "boss": 1920, "forge": 2112}
 	_player.global_position = Vector2(float(player_x[place]), 320)
 	_player.velocity = Vector2.ZERO
 	_camera.global_position = Vector2(float(camera_x[place]), 220)
@@ -254,7 +259,7 @@ func _supplement_captures() -> void:
 	get_tree().root.size = size
 	get_tree().root.position = Vector2i(-12000, -12000)
 	await _frames(12)
-	for place in ["start", "pit", "east", "boss", "forge"]:
+	for place in SUPPLEMENT_PLACES:
 		for weather in ["day", "night_rain", "fog"]:
 			_fixture(place, weather == "night_rain", weather == "fog")
 			await get_tree().create_timer(0.6).timeout

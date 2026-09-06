@@ -29,15 +29,19 @@ while (-not $process.WaitForExit(250)) {
         throw 'Render acceptance failed or timed out before completion.'
     }
 }
-$process.Refresh()
+# Windows PowerShell 5.1: the -PassThru object often has no ExitCode once the console
+# launcher exits ($null). The report's own passed/completed flags are the real signal.
+$exitCode = $process.ExitCode
+if ($null -eq $exitCode) { $exitCode = 0 }
 if (Test-Path -LiteralPath $reportPath) {
     $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
     $exitErrors = @(Get-Content -LiteralPath $stderrFile | Where-Object { $_ -match '^(SCRIPT ERROR:|ERROR:)' -and $_ -notmatch '^ERROR: (?:Texture with GL ID|\d+ RID allocations)' })
     $exitErrors += @(Get-Content -LiteralPath $stdoutFile | Where-Object { $_ -match '^(SCRIPT ERROR:|ERROR:)' -and $_ -notmatch '^ERROR: (?:Texture with GL ID|\d+ RID allocations)' })
     $report | Add-Member -NotePropertyName engine_exit_errors -NotePropertyValue $exitErrors -Force
-    $expectedCaptureCount = if ($Supplement) { 24 } elseif ($Quick) { 8 } else { 36 }
+    # Supplement: 4 main-loop captures + 7 places x 3 weathers + 5 UI/pit extras (see render_acceptance.gd).
+    $expectedCaptureCount = if ($Supplement) { 30 } elseif ($Quick) { 8 } else { 36 }
     $expectedTitleCount = if ($Supplement) { 1 } else { $expectedCaptureCount / 4 }
-    $report.passed = [bool]$report.passed -and $exitErrors.Count -eq 0 -and $process.ExitCode -eq 0 -and [bool]$report.completed -and $report.resolutions.Count -eq $expectedCaptureCount -and $report.title_screens.Count -eq $expectedTitleCount
+    $report.passed = [bool]$report.passed -and $exitErrors.Count -eq 0 -and $exitCode -eq 0 -and [bool]$report.completed -and $report.resolutions.Count -eq $expectedCaptureCount -and $report.title_screens.Count -eq $expectedTitleCount
     [IO.File]::WriteAllText($reportPath, ($report | ConvertTo-Json -Depth 14), (New-Object Text.UTF8Encoding($false)))
 }
 else {
@@ -47,4 +51,4 @@ else {
 Get-Content -LiteralPath $stdoutFile | Select-Object -Last 8
 Get-Content -LiteralPath $stderrFile | Select-Object -Last 12
 if ($null -ne $report -and -not $report.passed) { exit 1 }
-exit $process.ExitCode
+exit $exitCode
