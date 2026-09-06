@@ -12,119 +12,73 @@
 [ext_resource type="PackedScene" path="res://scenes/interactables/RustyGate.tscn" id="10_gate"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/PurificationShrine.tscn" id="11_shrine"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/SpitterEnemy.tscn" id="12_spitter"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_sky_px.png" id="15_sky"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_mountains_px.png" id="16_far"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_graveyard_px.png" id="17_near"]
+[ext_resource type="Texture2D" path="res://assets/env/parallax_sky.png" id="15_sky"]
+[ext_resource type="Texture2D" path="res://assets/env/parallax_mountains.png" id="16_far"]
+[ext_resource type="Texture2D" path="res://assets/env/parallax_graveyard.png" id="17_near"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/HookAnchor.tscn" id="19_anchor"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/CorePickup.tscn" id="20_pickup"]
 [ext_resource type="Resource" path="res://assets/data/kiln_core.tres" id="21_kiln"]
 [ext_resource type="PackedScene" path="res://scenes/interactables/EmberNest.tscn" id="22_nest"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/ScrapperEnemy.tscn" id="23_scrapper"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/GearShieldEnemy.tscn" id="24_gearshield"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_far_mountains_px.png" id="25_farmt"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_mid_grove_px.png" id="26_grove"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_clouds_px.png" id="27_cloud"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_clouds_low_px.png" id="28_cloud2"]
-[ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_near_ground_px.png" id="29_near"]
 [ext_resource type="Texture2D" path="res://assets/env/normalized/parallax_foreground_px.png" id="30_fore"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/FlyingDemonEnemy.tscn" id="31_demon"]
 
 [node name="Level01_Static" type="Node2D" unique_id=445927691]
 script = ExtResource("1_level")
 
-[node name="ParallaxBackdrop" type="ParallaxBackground" parent="." unique_id=1332310230]
+[node name="ParallaxBackdrop" type="CanvasLayer" parent="." unique_id=1332310230]
 layer = -10
+follow_viewport_enabled = false
 
-[node name="Far" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1792823595]
-motion_scale = Vector2(0.08, 0.04)
-motion_mirroring = Vector2(704, 0)
+[node name="Far" type="Parallax2D" parent="ParallaxBackdrop" unique_id=1792823595]
+scroll_scale = Vector2(0.08, 0.04)
+repeat_size = Vector2(668, 0)
+repeat_times = 4
+follow_viewport = false
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Far" unique_id=934848741]
 texture_filter = 1
 position = Vector2(0, -24)
+scale = Vector2(1.9, 1.9)
 texture = ExtResource("15_sky")
 centered = false
 
-[node name="CloudFar" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1711777092]
-motion_scale = Vector2(0.1, 0.03)
-motion_mirroring = Vector2(744, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/CloudFar" unique_id=977297237]
-modulate = Color(1, 0.88, 1, 0.68)
-texture_filter = 1
-position = Vector2(0, 8)
-texture = ExtResource("27_cloud")
-centered = false
-
-[node name="CloudLow" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1880726473]
-motion_scale = Vector2(0.12, 0.04)
-motion_mirroring = Vector2(744, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/CloudLow" unique_id=92056861]
-modulate = Color(0.92, 0.82, 0.98, 0.52)
-texture_filter = 1
-position = Vector2(0, 68)
-texture = ExtResource("28_cloud2")
-centered = false
-
-[node name="FarMountains" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=675239862]
-motion_scale = Vector2(0.14, 0.05)
-motion_mirroring = Vector2(768, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/FarMountains" unique_id=72689658]
-modulate = Color(0.82, 0.78, 0.9, 1)
-texture_filter = 1
-position = Vector2(-4, 128)
-texture = ExtResource("25_farmt")
-centered = false
-
-[node name="Mid" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1125287443]
-motion_scale = Vector2(0.22, 0.06)
-motion_mirroring = Vector2(384, 0)
+[node name="Mid" type="Parallax2D" parent="ParallaxBackdrop" unique_id=1125287443]
+scroll_scale = Vector2(0.22, 0.06)
+repeat_size = Vector2(326, 0)
+repeat_times = 4
+follow_viewport = false
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Mid" unique_id=1491931592]
 texture_filter = 1
-position = Vector2(0, 154)
+position = Vector2(0, 48)
+scale = Vector2(1.7, 1.7)
 texture = ExtResource("16_far")
 centered = false
 
-[node name="MidGrove" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=2099969236]
-motion_scale = Vector2(0.35, 0.08)
-motion_mirroring = Vector2(768, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/MidGrove" unique_id=1614378617]
-texture_filter = 1
-position = Vector2(0, 168)
-texture = ExtResource("26_grove")
-centered = false
-
-[node name="Hills" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=1673364233]
-motion_scale = Vector2(0.48, 0.1)
-motion_mirroring = Vector2(768, 0)
+[node name="Hills" type="Parallax2D" parent="ParallaxBackdrop" unique_id=1673364233]
+scroll_scale = Vector2(0.48, 0.1)
+repeat_size = Vector2(710, 0)
+repeat_times = 4
+follow_viewport = false
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/Hills" unique_id=1073068007]
 texture_filter = 1
 position = Vector2(0, 168)
+scale = Vector2(1.85, 1.85)
 texture = ExtResource("17_near")
 centered = false
 
-[node name="NearGround" type="ParallaxLayer" parent="ParallaxBackdrop" unique_id=2141366703]
-motion_scale = Vector2(0.78, 0.14)
-motion_mirroring = Vector2(624, 0)
-
-[node name="Sprite" type="Sprite2D" parent="ParallaxBackdrop/NearGround" unique_id=1675764234]
-modulate = Color(0.72, 0.66, 0.8, 1)
-texture_filter = 1
-position = Vector2(0, 252)
-texture = ExtResource("29_near")
-centered = false
-
-[node name="ParallaxForeground" type="ParallaxBackground" parent="." unique_id=1686955435]
+[node name="ParallaxForeground" type="CanvasLayer" parent="." unique_id=1686955435]
 layer = 1
+follow_viewport_enabled = false
 
-[node name="Foreground" type="ParallaxLayer" parent="ParallaxForeground" unique_id=41424141]
-motion_scale = Vector2(1.22, 0.18)
-motion_mirroring = Vector2(624, 0)
+[node name="Foreground" type="Parallax2D" parent="ParallaxForeground" unique_id=41424141]
+scroll_scale = Vector2(1.22, 0.18)
+repeat_size = Vector2(624, 0)
+repeat_times = 4
+follow_viewport = false
 
 [node name="Sprite" type="Sprite2D" parent="ParallaxForeground/Foreground" unique_id=1939670683]
 modulate = Color(0.16, 0.12, 0.2, 0.78)

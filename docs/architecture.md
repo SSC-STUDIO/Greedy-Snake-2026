@@ -25,11 +25,13 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 | Script | Role |
 |---|---|
 | `scripts/levels/level01_env.gd` | Shared `plant()` — foliage sits on a foot pivot with `WindSway`; play-layer trees also get a sibling `LeafShed`. |
-| `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx` / `MoonFill`. Drift follows `wind_vector()`. |
+| `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx` / `MoonFill`. Drift follows `wind_vector()`. `cover_layer()` gives every `Parallax2D` plate `repeat_times ≥ 4`. |
 | `scripts/levels/level01_east_wing.gd` | Pit beams, `EastFloor` (`skin = "stone"` — the nave is paved, the graveyard is grass), ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
 | `scripts/levels/level01_story_beats.gd` | One-shot Director scripts from `GameEvents` + east-wing signals. |
 
 East wing is a helper node, not a PackedScene: instancing a sub-scene would reparent those nodes and break save / story lookups.
+
+Backdrop: `ParallaxBackdrop` is a `CanvasLayer` (layer −10, no viewport follow) holding three `Parallax2D` plates — the original Gothicvania `parallax_sky.png` ×1.9 (moon included), `parallax_mountains.png` ×1.7 and `parallax_graveyard.png` ×1.85 — plus runtime fog bands and the near silhouette strip. Godot 4.7's `ParallaxLayer` mirroring only ever draws one extra copy, so a 326px mountain tile showed its seam whenever the camera pushed in or shook; `Parallax2D.repeat_times` fixes that. The stacked "normalized" wash (clouds, far mountains, grove, near ground, generated moon/stars) was removed: it read flatter and greyer than the authored plates and its sky did not scroll at all. `ParallaxForeground` (layer 1) is the same construction for the near grass strip.
 
 Set dressing that is not in the `.tscn`:
 
@@ -37,8 +39,9 @@ Set dressing that is not in the `.tscn`:
 |---|---|
 | `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. |
 | `scripts/world/ruin_plate.gd` | Slices a rectangular wall plate into 8px columns with a deterministic broken crown. Used by `TorchLight` and the altar / gargoyle backdrops; arch plates keep their authored tops. |
-| `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, wind-drifted, pixel-snapped, dissolve on the foot line. |
-| `ToxinPool.Wisp` | Additive green vapor cells rising off the sludge film; rain halves the rate. |
+| `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, pixel-snapped, pendulum glide with only a few px/s of wind drift, dissolve on the foot line. |
+| `ToxinPool.Wisp` | Additive green vapor cells rising off the sludge film, clamped to the film span; rain halves the rate. |
+| `EmberNest` | Brazier art from `tools/gen_ember_nest.py`; the flame sprite is bottom-anchored at `FLAME_BASE` inside the well so it burns out of the bowl mouth and soak-shrinks / leans from its root. |
 
 Ambient effects are presentation only: they read `WorldClock` and never write physics, save data, or `Engine.time_scale`. One-shot `Fx` particles parent under the level's `WorldEffects` (via `GameContext.world_effects()`) so they render inside the 640×360 world viewport.
 

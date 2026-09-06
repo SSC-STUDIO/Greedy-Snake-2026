@@ -286,10 +286,10 @@ func test_boss_slain_unlocks_heart_and_plays() -> void:
 func test_parallax_adds_mood_tint() -> void:
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	backdrop.name = "ParallaxBackdrop"
 	host.add_child(backdrop)
-	var far := ParallaxLayer.new()
+	var far := Parallax2D.new()
 	far.name = "Far"
 	backdrop.add_child(far)
 	var extras := Level01Parallax.new()

@@ -132,11 +132,17 @@ func test_leaf_falls_with_the_wind_and_dies_on_the_ground() -> void:
 	leaf._process(0.5)
 	ok(leaf.position.y > start.y, "leaf falls")
 	ok(not leaf.landed())
-	ok(leaf.position.x > start.x - 6.0, "an east wind never blows the leaf hard west")
+	ok(absf(leaf.position.x - start.x) <= 12.0, "a leaf glides; it is not dragged sideways")
+	var min_x := leaf.position.x
+	var max_x := leaf.position.x
 	for i in 60:
 		leaf._process(0.1)
+		min_x = minf(min_x, leaf.position.x)
+		max_x = maxf(max_x, leaf.position.x)
 	ok(leaf.landed(), "leaf reaches the foot line")
 	almost(leaf.position.y, 0.0, 0.01, "landed leaves rest exactly on the feet line")
+	ok(max_x - min_x >= 4.0, "the leaf swings back and forth on the way down")
+	ok(absf(leaf.position.x - start.x) <= 30.0, "leaves land near their own tree, not down the corridor")
 	leaf._process(LeafShed.Leaf.FADE + 0.05)
 	ok(leaf.is_queued_for_deletion(), "landed leaves dissolve into the soil")
 	for i in 5:
@@ -215,16 +221,16 @@ func test_silhouette_is_background_foliage() -> void:
 func test_near_silhouette_plants_only_foliage() -> void:
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	backdrop.name = "ParallaxBackdrop"
 	host.add_child(backdrop)
-	var far := ParallaxLayer.new()
+	var far := Parallax2D.new()
 	far.name = "Far"
 	backdrop.add_child(far)
 	var extras := Level01Parallax.new()
 	add_child(extras)
 	extras.build(host)
-	var sil := backdrop.get_node_or_null("NearSilhouette") as ParallaxLayer
+	var sil := backdrop.get_node_or_null("NearSilhouette") as Parallax2D
 	if sil == null:
 		ok(true, "gothic assets missing — silhouette layer skipped")
 		return

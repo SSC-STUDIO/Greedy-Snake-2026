@@ -15,7 +15,7 @@ func teardown() -> void:
 func test_zone_transition_shares_weight_without_changing_blend_mode() -> void:
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	host.add_child(backdrop)
 	var atmosphere := WorldAtmosphere.new()
 	host.add_child(atmosphere)

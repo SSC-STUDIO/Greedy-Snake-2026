@@ -155,10 +155,10 @@ func test_parallax_follows_clock_tint() -> void:
 	WorldClock.set_weather(WorldClock.Weather.FOG, true)
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	backdrop.name = "ParallaxBackdrop"
 	host.add_child(backdrop)
-	var far := ParallaxLayer.new()
+	var far := Parallax2D.new()
 	far.name = "Far"
 	backdrop.add_child(far)
 	var extras := Level01Parallax.new()
@@ -295,7 +295,7 @@ func test_hud_stays_readable_at_night() -> void:
 	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
 	var host := Node2D.new()
 	add_child(host)
-	var backdrop := ParallaxBackground.new()
+	var backdrop := CanvasLayer.new()
 	backdrop.name = "ParallaxBackdrop"
 	host.add_child(backdrop)
 	var extras := Level01Parallax.new()

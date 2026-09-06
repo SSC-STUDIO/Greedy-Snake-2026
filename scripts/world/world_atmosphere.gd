@@ -20,7 +20,7 @@ static func for_node(node: Node) -> WorldAtmosphere:
 	return null
 
 
-func build(host: Node2D, backdrop: ParallaxBackground, foreground: ParallaxBackground = null) -> void:
+func build(host: Node2D, backdrop: CanvasLayer, foreground: CanvasLayer = null) -> void:
 	add_to_group("world_atmosphere")
 	_world_tint = _tint(host, "MoodTint")
 	_backdrop_tint = _tint(backdrop, "BackdropTint")

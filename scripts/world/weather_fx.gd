@@ -492,7 +492,9 @@ func _on_host_child_changed(_node: Node) -> void:
 func _collect_ground(n: Node) -> void:
 	if n is Light2D or n is CineFx or n is WeatherFx:
 		return
-	if n is ParallaxBackground or n is CanvasModulate:
+	if n is Parallax2D or n is CanvasModulate:
+		return
+	if n is CanvasLayer and String(n.name).begins_with("Parallax"):
 		return
 	if String(n.name) == "RainGroundFx":
 		return
