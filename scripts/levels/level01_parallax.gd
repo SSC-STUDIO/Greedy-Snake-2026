@@ -11,6 +11,18 @@ extends Node
 ## 仍是一张图的宽度，份数必须盖住视口再加一点余量。
 
 const FOG_PATH := "res://assets/env/fog_band.png"
+## 两层飘云夹在天空板和远山之间：高云薄慢，低云厚快。云量跟 WorldClock.cloud_alpha()
+## （晴天几乎无云、雨天满天阴），位置随风漂——「云是随机出现的」由天气切换给出。
+const CLOUD_HIGH_PATH := "res://assets/env/parallax_clouds_px.png"
+const CLOUD_LOW_PATH := "res://assets/env/parallax_clouds_low_px.png"
+## 云板本身是深紫，叠在品红天上要提亮成淡紫才读得出。
+const CLOUD_TINT := Color(1.22, 1.02, 1.28)
+## 地面雾：盖在玩法层前面、贴着地面线（320）滚过的一条软带，浓雾天才真正压上来。
+## 带高 64×1.1≈70px，从 276 罩到 346：齐骑士腰，不遮 HUD。
+const GROUND_FOG_Y := 276.0
+const GROUND_FOG_SCALE := Vector2(2.0, 1.1)
+## 雾幕：屏幕空间的淡紫罩层，alpha 跟 WorldClock.fog_veil_alpha()，让浓雾一眼可辨。
+const FOG_VEIL_COLOR := Color(0.80, 0.77, 0.92)
 const COVER_PAD := 128.0
 const MIN_REPEAT_TIMES := 4
 ## 近景剪影带（scroll 0.65）：一段 512px 宽的图样平铺，只种暗紫软物，
@@ -31,10 +43,14 @@ const SIL_SPAN := 512.0
 const TINT_FOLLOW := 2.8
 
 var _far_layer: Parallax2D
+var _cloud_high: Parallax2D
+var _cloud_low: Parallax2D
 var _fog_far: Parallax2D
 var _fog_near: Parallax2D
 var _sil_layer: Parallax2D
 var _foreground: Parallax2D
+var _ground_fog: Parallax2D
+var _fog_veil: ColorRect
 var _mood_tint: CanvasModulate
 var _moon_fill: DirectionalLight2D
 
@@ -49,6 +65,16 @@ func build(host: Node2D) -> void:
 	for child in backdrop.get_children():
 		if child is Parallax2D:
 			cover_layer(child as Parallax2D)
+	if _far_layer != null:
+		# Clouds sit directly behind the mountains: after Far, before Mid.
+		_cloud_high = _add_cloud_layer(backdrop, "SkyCloudsHigh", Vector2(0.10, 0.03), 6.0, CLOUD_HIGH_PATH)
+		_cloud_low = _add_cloud_layer(backdrop, "SkyCloudsLow", Vector2(0.14, 0.05), 92.0, CLOUD_LOW_PATH)
+		var slot := _far_layer.get_index() + 1
+		if _cloud_high != null:
+			backdrop.move_child(_cloud_high, slot)
+			slot += 1
+		if _cloud_low != null:
+			backdrop.move_child(_cloud_low, slot)
 	var fog_tex: Texture2D = null
 	if ResourceLoader.exists(FOG_PATH):
 		fog_tex = load(FOG_PATH) as Texture2D
@@ -65,6 +91,9 @@ func build(host: Node2D) -> void:
 		_foreground = front.get_node_or_null("Foreground") as Parallax2D
 		if _foreground != null:
 			cover_layer(_foreground)
+		if fog_tex != null:
+			_ground_fog = _add_ground_fog(front, fog_tex)
+		_fog_veil = _add_fog_veil(front)
 	# 全局微紫色调：把厚涂角色与紫色墓地轻轻拉到同一冷色轴上。
 	# CanvasModulate 与余烬巢 PointLight2D 叠在同一视口：夜里压暗，点光打出暖圈。
 	# 视差板在独立 CanvasLayer 上，不受 MoodTint 牵连，夜晚远山仍能看清剪影。
@@ -94,18 +123,28 @@ func build(host: Node2D) -> void:
 		var cine := CineFx.new()
 		cine.name = "CineFx"
 		host.add_child(cine)
+	if host.get_node_or_null("WindFx") == null:
+		var wind := WindFx.new()
+		wind.name = "WindFx"
+		host.add_child(wind)
 
 
 func _process(delta: float) -> void:
 	var drift := WorldClock.wind_vector().x
 	if _far_layer != null:
 		_far_layer.scroll_offset.x += drift * 8.0 * delta
+	if _cloud_high != null:
+		_cloud_high.scroll_offset.x += drift * 11.0 * delta
+	if _cloud_low != null:
+		_cloud_low.scroll_offset.x += drift * 17.0 * delta
 	if _fog_far != null:
 		_fog_far.scroll_offset.x += drift * 18.0 * delta
 	if _fog_near != null:
 		_fog_near.scroll_offset.x += drift * 32.0 * delta
 	if _foreground != null:
 		_foreground.scroll_offset.x += drift * 56.0 * delta
+	if _ground_fog != null:
+		_ground_fog.scroll_offset.x += drift * 24.0 * delta
 	_follow_atmosphere(delta)
 
 
@@ -127,6 +166,19 @@ func _follow_atmosphere(delta: float) -> void:
 		_sil_layer.modulate = _sil_layer.modulate.lerp(WorldClock.silhouette_modulate(), k)
 	if _far_layer != null:
 		_far_layer.modulate = _far_layer.modulate.lerp(WorldClock.sky_modulate(), k)
+	var cloud := WorldClock.cloud_alpha()
+	if _cloud_high != null:
+		var target := Color(CLOUD_TINT.r, CLOUD_TINT.g, CLOUD_TINT.b, cloud)
+		_cloud_high.modulate = _cloud_high.modulate.lerp(target, k)
+	if _cloud_low != null:
+		var target := Color(CLOUD_TINT.r, CLOUD_TINT.g, CLOUD_TINT.b, cloud * 0.8)
+		_cloud_low.modulate = _cloud_low.modulate.lerp(target, k)
+	if _ground_fog != null:
+		_ground_fog.modulate = _ground_fog.modulate.lerp(Color(1, 1, 1, WorldClock.ground_fog_alpha()), k)
+	if _fog_veil != null:
+		var veil := FOG_VEIL_COLOR
+		veil.a = WorldClock.fog_veil_alpha()
+		_fog_veil.color = _fog_veil.color.lerp(veil, k)
 	if _moon_fill != null:
 		var e := WorldClock.moon_fill_energy()
 		_moon_fill.energy = e
@@ -192,6 +244,65 @@ func _add_fog_layer(backdrop: Node, layer_name: String, motion: Vector2, y: floa
 	layer.modulate = Color(1, 1, 1, alpha)
 	backdrop.add_child(layer)
 	return layer
+
+
+func _add_cloud_layer(backdrop: Node, layer_name: String, motion: Vector2, y: float, path: String) -> Parallax2D:
+	if not ResourceLoader.exists(path):
+		return null
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return null
+	var layer := Parallax2D.new()
+	layer.name = layer_name
+	layer.scroll_scale = motion
+	layer.follow_viewport = false
+	var spr := Sprite2D.new()
+	spr.name = "Sprite"
+	spr.texture = tex
+	spr.centered = false
+	spr.position = Vector2(0, y)
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	layer.add_child(spr)
+	cover_layer(layer)
+	layer.modulate = Color(CLOUD_TINT.r, CLOUD_TINT.g, CLOUD_TINT.b, WorldClock.cloud_alpha())
+	backdrop.add_child(layer)
+	return layer
+
+
+## Ground fog lives on the foreground CanvasLayer with scroll 1:1, i.e. pinned to
+## the world and tiled: a band the knight wades through, not a screen overlay.
+func _add_ground_fog(front: Node, tex: Texture2D) -> Parallax2D:
+	var layer := Parallax2D.new()
+	layer.name = "GroundFog"
+	layer.scroll_scale = Vector2(1.0, 1.0)
+	layer.follow_viewport = false
+	var spr := Sprite2D.new()
+	spr.name = "Sprite"
+	spr.texture = tex
+	spr.centered = false
+	spr.position = Vector2(0, GROUND_FOG_Y)
+	spr.scale = GROUND_FOG_SCALE
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	layer.add_child(spr)
+	cover_layer(layer)
+	layer.modulate = Color(1, 1, 1, WorldClock.ground_fog_alpha())
+	front.add_child(layer)
+	return layer
+
+
+## The foreground CanvasLayer does not follow the viewport, so a plain full-view
+## ColorRect on it is screen-fixed: a veil over the world, still under the HUD.
+func _add_fog_veil(front: Node) -> ColorRect:
+	var veil := ColorRect.new()
+	veil.name = "FogVeil"
+	veil.position = Vector2.ZERO
+	veil.size = Vector2(PresentationMetrics.WORLD_SIZE)
+	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var c := FOG_VEIL_COLOR
+	c.a = WorldClock.fog_veil_alpha()
+	veil.color = c
+	front.add_child(veil)
+	return veil
 
 
 func _add_silhouette_layer(backdrop: Node) -> Parallax2D:

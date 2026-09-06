@@ -16,7 +16,7 @@ Do not give autoload scripts a `class_name` — the autoload name is the API.
 | `Fx` | `scripts/autoload/fx.gd` | Particles, ember attach, death puffs. |
 | `SaveData` | `scripts/autoload/save_data.gd` | `user://` save: player, inventory, persistent world, consumed paths, story `flags`, ending. |
 | `Director` | `scripts/autoload/director.gd` | Fade, sequenced cutscenes, cinematic letterbox. Never touches `Engine.time_scale`. |
-| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`、`phase`、`weather`、`zone`、`wind_*`。API：`wind_vector()` `sway_radians()` `mood_tint()` `outdoor_tint()` `indoor_tint()` `nest_light_*()` `outdoor_moon_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WorldAtmosphere` / `WindSway` / `CineFx` / `WeatherFx` / `WorldLight`。 |
+| `WorldClock` | `scripts/autoload/world_clock.gd` | Simulation only: `time_of_day`（20 分钟一昼夜）、`phase`、`weather`（haze / rain / fog / ember_wind / rust_rain / **clear**，每 50–110s 随机切换并按阶段加权）、`zone`、`wind_*`（风向 36–72s 随机翻转、阵风起伏）。API：`wind_vector()` `sway_radians()` `mood_tint()` `outdoor_tint()` `indoor_tint()` `cloud_alpha()` `ground_fog_alpha()` `fog_veil_alpha()` `wind_mote_density()` `nest_light_*()` `outdoor_moon_energy()` `indoor_fill_energy()`。不创建 Sprite / Light。演出层是 `WorldAtmosphere` / `WindSway` / `WindFx` / `CineFx` / `WeatherFx` / `WorldLight`。 |
 
 ## Level01 (`scenes/levels/Level01_Static.tscn`)
 
@@ -31,7 +31,7 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 
 East wing is a helper node, not a PackedScene: instancing a sub-scene would reparent those nodes and break save / story lookups.
 
-Backdrop: `ParallaxBackdrop` is a `CanvasLayer` (layer −10, no viewport follow) holding three `Parallax2D` plates — the original Gothicvania `parallax_sky.png` ×1.9 (moon included), `parallax_mountains.png` ×1.7 and `parallax_graveyard.png` ×1.85 — plus runtime fog bands and the near silhouette strip. Godot 4.7's `ParallaxLayer` mirroring only ever draws one extra copy, so a 326px mountain tile showed its seam whenever the camera pushed in or shook; `Parallax2D.repeat_times` fixes that. The stacked "normalized" wash (clouds, far mountains, grove, near ground, generated moon/stars) was removed: it read flatter and greyer than the authored plates and its sky did not scroll at all. `ParallaxForeground` (layer 1) is the same construction for the near grass strip.
+Backdrop: `ParallaxBackdrop` is a `CanvasLayer` (layer −10, no viewport follow) holding three `Parallax2D` plates — the original Gothicvania `parallax_sky.png` ×1.9 (moon included), `parallax_mountains.png` ×1.7 and `parallax_graveyard.png` ×1.85 — plus runtime layers: two drifting cloud plates between sky and mountains (`cloud_alpha()`: clear ≈ none, rain overcast), two fog bands and the near silhouette strip. `ParallaxForeground` (layer 1) carries the near grass strip, a world-pinned `GroundFog` band at the knight's waist (`ground_fog_alpha()`) and a screen-fixed `FogVeil` (`fog_veil_alpha()`), so 浓雾 reads as fog and not just a darker tint. Every one of these drifts with `wind_vector()`, as do `WindFx` dust flecks, leaves, rain and tree sway — one wind, many tells. Godot 4.7's `ParallaxLayer` mirroring only ever draws one extra copy, so a 326px mountain tile showed its seam whenever the camera pushed in or shook; `Parallax2D.repeat_times` fixes that. The stacked "normalized" wash (clouds, far mountains, grove, near ground, generated moon/stars) was removed: it read flatter and greyer than the authored plates and its sky did not scroll at all. `ParallaxForeground` (layer 1) is the same construction for the near grass strip.
 
 Set dressing that is not in the `.tscn`:
 
@@ -40,6 +40,7 @@ Set dressing that is not in the `.tscn`:
 | `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. |
 | `scripts/world/ruin_plate.gd` | Slices a rectangular wall plate into 8px columns with a deterministic broken crown. Used by `TorchLight` and the altar / gargoyle backdrops; arch plates keep their authored tops. |
 | `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, pixel-snapped, pendulum glide with only a few px/s of wind drift, dissolve on the foot line. |
+| `scripts/world/wind_fx.gd` | Visible wind: dust / grass / leaf flecks enter from the camera's upwind edge and cross the view at `48 + |wind| × 145` px/s; density from `wind_mote_density()`, none indoors. |
 | `ToxinPool.Wisp` | Additive green vapor cells rising off the sludge film, clamped to the film span; rain halves the rate. |
 | `EmberNest` | Brazier art from `tools/gen_ember_nest.py`; the flame sprite is bottom-anchored at `FLAME_BASE` inside the well so it burns out of the bowl mouth and soak-shrinks / leans from its root. |
 

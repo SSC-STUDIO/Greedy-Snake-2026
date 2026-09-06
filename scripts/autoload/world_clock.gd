@@ -8,7 +8,8 @@ extends Node
 ## never fights a fade or a pause overlay.
 
 enum Phase { DAWN, DAY, DUSK, NIGHT }
-enum Weather { HAZE, RAIN, FOG, EMBER_WIND, RUST_RAIN }
+## CLEAR is appended so saved integer weather ids stay valid.
+enum Weather { HAZE, RAIN, FOG, EMBER_WIND, RUST_RAIN, CLEAR }
 enum Zone { OUTDOORS, INDOORS }
 
 signal phase_changed(phase: int)
@@ -297,6 +298,8 @@ func weather_id() -> String:
 			return "ember_wind"
 		Weather.RUST_RAIN:
 			return "rust_rain"
+		Weather.CLEAR:
+			return "clear"
 		_:
 			return "haze"
 
@@ -311,6 +314,8 @@ func weather_from_id(id: String) -> int:
 			return Weather.EMBER_WIND
 		"rust_rain":
 			return Weather.RUST_RAIN
+		"clear":
+			return Weather.CLEAR
 		_:
 			return Weather.HAZE
 
@@ -329,6 +334,8 @@ func _weather_label(w: int) -> String:
 			return "余烬风"
 		Weather.RUST_RAIN:
 			return "锈雨"
+		Weather.CLEAR:
+			return "晴"
 		_:
 			return "薄雾"
 
@@ -369,12 +376,14 @@ func mood_luminance() -> float:
 	return (c.r + c.g + c.b) / 3.0
 
 
+## fog_band.png itself peaks at ~0.6 alpha, so these layer alphas read at
+## roughly 60%: thick fog needs ~0.6 here to actually look thick.
 func fog_far_alpha() -> float:
-	return _fog_alpha(0.13, 0.22, 0.34, 0.16)
+	return _fog_alpha(0.13, 0.24, 0.50, 0.16)
 
 
 func fog_near_alpha() -> float:
-	return _fog_alpha(0.20, 0.32, 0.46, 0.22)
+	return _fog_alpha(0.20, 0.34, 0.62, 0.22)
 
 
 func silhouette_modulate() -> Color:
@@ -391,6 +400,94 @@ func silhouette_modulate() -> Color:
 	if phase == Phase.NIGHT:
 		faded *= 0.82
 	return Color(1, 1, 1, clampf(faded, 0.40, 1.0))
+
+
+## Cloud cover for the drifting cloud plates (0 = clear sky). Blends across a
+## weather change like the fog bands; night thins the wisps so the moon reads.
+func cloud_alpha() -> float:
+	var a := lerpf(_weather_cloud(previous_weather), _weather_cloud(weather), clampf(weather_blend, 0.0, 1.0))
+	if phase == Phase.NIGHT:
+		a *= 0.75
+	return clampf(a, 0.0, 0.9)
+
+
+func _weather_cloud(w: int) -> float:
+	match w:
+		Weather.CLEAR:
+			return 0.16
+		Weather.RAIN:
+			return 0.88
+		Weather.RUST_RAIN:
+			return 0.82
+		Weather.FOG:
+			return 0.72
+		Weather.EMBER_WIND:
+			return 0.42
+		_:
+			return 0.62
+
+
+## Low fog rolling across the graveyard floor, in front of the play canvas.
+## Zero indoors / on the title; thick fog is the only weather that really shows it.
+func ground_fog_alpha() -> float:
+	if not weather_fx_allowed():
+		return 0.0
+	var a := lerpf(_weather_ground_fog(previous_weather), _weather_ground_fog(weather), clampf(weather_blend, 0.0, 1.0))
+	if phase == Phase.NIGHT:
+		a += 0.05
+	elif phase == Phase.DAWN:
+		a += 0.06
+	return clampf(a, 0.0, 0.8)
+
+
+func _weather_ground_fog(w: int) -> float:
+	match w:
+		Weather.CLEAR:
+			return 0.0
+		Weather.FOG:
+			return 0.62
+		Weather.RAIN:
+			return 0.18
+		Weather.RUST_RAIN:
+			return 0.20
+		Weather.EMBER_WIND:
+			return 0.05
+		_:
+			return 0.10
+
+
+## Screen-space fog veil over the whole world (below HUD): the washed-out look
+## that says "thick fog" at a glance. Bands alone only tint the ground line.
+func fog_veil_alpha() -> float:
+	if not weather_fx_allowed():
+		return 0.0
+	var a := lerpf(_weather_veil(previous_weather), _weather_veil(weather), clampf(weather_blend, 0.0, 1.0))
+	return clampf(a, 0.0, 0.35)
+
+
+func _weather_veil(w: int) -> float:
+	match w:
+		Weather.FOG:
+			return 0.22
+		Weather.RAIN:
+			return 0.05
+		Weather.RUST_RAIN:
+			return 0.06
+		Weather.EMBER_WIND:
+			return 0.03
+		Weather.CLEAR:
+			return 0.0
+		_:
+			return 0.02
+
+
+## 0..1 spawn density for wind-borne dust / leaf flecks. Calm haze barely
+## sheds anything; ember wind and storms fill the air. Gusts push it further.
+func wind_mote_density() -> float:
+	if not weather_fx_allowed() or is_frozen():
+		return 0.0
+	var d := clampf((wind_speed - 0.10) / 0.55, 0.0, 1.0)
+	return clampf(d * lerpf(0.85, 1.25, clampf((gust - 0.7) / 0.55, 0.0, 1.0)), 0.0, 1.0)
 
 
 func sky_modulate() -> Color:
@@ -570,6 +667,7 @@ func weather_wind_speed() -> float:
 	s += weather_weight(Weather.RUST_RAIN) * 0.32
 	s += weather_weight(Weather.EMBER_WIND) * 0.48
 	s -= weather_weight(Weather.FOG) * 0.10
+	s -= weather_weight(Weather.CLEAR) * 0.08
 	return clampf(s, 0.08, 0.85)
 
 
@@ -658,10 +756,12 @@ func _pick_weather() -> int:
 	var next := weather
 	match phase:
 		Phase.NIGHT:
-			if r < 0.42:
+			if r < 0.34:
 				next = Weather.FOG
-			elif r < 0.64:
+			elif r < 0.52:
 				next = Weather.HAZE
+			elif r < 0.66:
+				next = Weather.CLEAR
 			elif r < 0.86:
 				next = Weather.RUST_RAIN
 			elif r < 0.95:
@@ -669,19 +769,23 @@ func _pick_weather() -> int:
 			else:
 				next = Weather.EMBER_WIND
 		Phase.DUSK, Phase.DAWN:
-			if r < 0.30:
+			if r < 0.26:
 				next = Weather.FOG
-			elif r < 0.56:
+			elif r < 0.48:
 				next = Weather.HAZE
-			elif r < 0.78:
+			elif r < 0.62:
+				next = Weather.CLEAR
+			elif r < 0.80:
 				next = Weather.RAIN
 			elif r < 0.92:
 				next = Weather.RUST_RAIN
 			else:
 				next = Weather.EMBER_WIND
 		_:
-			if r < 0.48:
+			if r < 0.30:
 				next = Weather.HAZE
+			elif r < 0.54:
+				next = Weather.CLEAR
 			elif r < 0.76:
 				next = Weather.RAIN
 			elif r < 0.88:
@@ -691,7 +795,7 @@ func _pick_weather() -> int:
 			else:
 				next = Weather.EMBER_WIND
 	if next == weather:
-		next = Weather.HAZE if weather != Weather.HAZE else Weather.FOG
+		next = Weather.HAZE if weather != Weather.HAZE else Weather.CLEAR
 	return next
 
 
@@ -717,6 +821,8 @@ func _weather_mul(w: int) -> Color:
 			return Color(1.04, 0.92, 0.86)
 		Weather.RUST_RAIN:
 			return Color(0.90, 0.84, 0.78)
+		Weather.CLEAR:
+			return Color(1.05, 1.03, 1.0)
 		_:
 			return Color(1, 1, 1)
 
@@ -735,7 +841,7 @@ func _fog_alpha(haze: float, rain: float, fog: float, ember: float) -> float:
 		a += 0.06
 	elif phase == Phase.DUSK or phase == Phase.DAWN:
 		a += 0.03
-	return clampf(a, 0.08, 0.55)
+	return clampf(a, 0.08, 0.72)
 
 
 func _weather_fog(w: int, haze: float, rain: float, fog: float, ember: float) -> float:
@@ -748,11 +854,13 @@ func _weather_fog(w: int, haze: float, rain: float, fog: float, ember: float) ->
 			return ember
 		Weather.RUST_RAIN:
 			return rain + 0.04
+		Weather.CLEAR:
+			return haze * 0.5
 		_:
 			return haze
 
 
 func _clamp_weather(w: int) -> int:
-	if w < 0 or w > Weather.RUST_RAIN:
+	if w < 0 or w > Weather.CLEAR:
 		return Weather.HAZE
 	return w

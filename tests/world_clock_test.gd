@@ -255,6 +255,59 @@ func test_rust_rain_exposes_outdoors_only() -> void:
 	eq(WorldClock.weather_label(), "锈雨")
 
 
+func test_clear_weather_is_a_real_state() -> void:
+	WorldClock.set_time(0.30)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_weather(WorldClock.Weather.CLEAR, true)
+	eq(WorldClock.weather, WorldClock.Weather.CLEAR, "CLEAR survives the clamp")
+	eq(WorldClock.weather_label(), "晴")
+	eq(WorldClock.weather_id(), "clear")
+	eq(WorldClock.weather_from_id("clear"), WorldClock.Weather.CLEAR)
+	eq(WorldClock.hud_line(), "晴 · 白昼")
+	almost(WorldClock.rain_opacity(), 0.0, 0.001, "clear sky has no rain")
+	ok(WorldClock.cloud_alpha() < 0.25, "clear sky is nearly cloudless")
+	almost(WorldClock.ground_fog_alpha(), 0.0, 0.001, "clear sky has no ground fog")
+	ok(WorldClock.fog_near_alpha() < 0.15, "clear sky thins the far fog bands")
+	ok(WorldClock.mood_luminance() > 0.78, "clear day is the brightest outdoor mood")
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	ok(WorldClock.cloud_alpha() > 0.6, "rain is overcast")
+	ok(WorldClock.ground_fog_alpha() > 0.05)
+	WorldClock.set_weather(WorldClock.Weather.FOG, true)
+	ok(WorldClock.ground_fog_alpha() >= 0.3, "thick fog rolls on the ground")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	almost(WorldClock.ground_fog_alpha(), 0.0, 0.001, "no ground fog indoors")
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	# The picker rotates through every state without ever repeating the current one.
+	var seen := {}
+	for i in 200:
+		WorldClock.set_time(float(i % 4) * 0.25 + 0.05)
+		var next: int = WorldClock._pick_weather()
+		ok(next != WorldClock.weather, "picker never re-picks the current weather")
+		ok(next >= 0 and next <= WorldClock.Weather.CLEAR, "picked weather is a legal state")
+		seen[next] = true
+	ok(seen.has(WorldClock.Weather.CLEAR), "clear days do come around")
+	ok(seen.size() >= 5, "the picker visits most weathers over 200 rolls")
+
+
+func test_wind_mote_density_follows_wind_and_zone() -> void:
+	WorldClock.set_time(0.30)
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	WorldClock._snap_wind_speed()
+	var calm := WorldClock.wind_mote_density()
+	ok(calm > 0.0 and calm < 0.6, "a breeze sheds a little dust")
+	WorldClock.set_weather(WorldClock.Weather.EMBER_WIND, true)
+	WorldClock._snap_wind_speed()
+	ok(WorldClock.wind_mote_density() > calm + 0.3, "ember wind fills the air")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	WorldClock._snap_wind_speed()
+	almost(WorldClock.wind_mote_density(), 0.0, 0.001, "no wind dust indoors")
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.menu_hold = true
+	almost(WorldClock.wind_mote_density(), 0.0, 0.001, "title menu has no wind dust")
+	WorldClock.menu_hold = false
+
+
 func test_night_rain_upgrades_to_rust_rain() -> void:
 	WorldClock.set_time(0.80)
 	WorldClock.set_weather(WorldClock.Weather.RAIN, true)

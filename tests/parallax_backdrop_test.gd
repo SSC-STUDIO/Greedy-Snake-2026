@@ -51,7 +51,8 @@ func test_backdrop_is_a_canvas_layer_of_parallax2d_plates() -> void:
 	for child in backdrop.get_children():
 		if child is Parallax2D:
 			order.append(String(child.name))
-	eq(order.slice(0, 3), ["Far", "Mid", "Hills"], "sky behind mountains behind graveyard")
+	eq(order.slice(0, 5), ["Far", "SkyCloudsHigh", "SkyCloudsLow", "Mid", "Hills"],
+			"sky, then drifting clouds, then mountains, then graveyard")
 
 
 func test_plates_repeat_enough_copies_to_cover_the_view() -> void:
@@ -130,6 +131,76 @@ func test_extras_add_fog_silhouette_and_foreground_cover() -> void:
 	ok(level.get_node_or_null("MoonFill") is DirectionalLight2D)
 	ok(level.get_node_or_null("WeatherFx") is WeatherFx)
 	ok(level.get_node_or_null("CineFx") is CineFx)
+	ok(level.get_node_or_null("WindFx") is WindFx, "wind-borne dust emitter is attached")
+	var ground_fog := level.get_node_or_null("ParallaxForeground/GroundFog") as Parallax2D
+	ok(ground_fog != null, "ground fog rolls in front of the play canvas")
+	if ground_fog != null:
+		eq(ground_fog.scroll_scale, Vector2(1.0, 1.0), "ground fog is pinned to the world, not the screen")
+		ok(ground_fog.repeat_times >= Level01Parallax.MIN_REPEAT_TIMES)
+
+
+func test_clouds_and_ground_fog_follow_the_weather() -> void:
+	var host := Node2D.new()
+	add_child(host)
+	var backdrop := CanvasLayer.new()
+	backdrop.name = "ParallaxBackdrop"
+	host.add_child(backdrop)
+	var far := Parallax2D.new()
+	far.name = "Far"
+	backdrop.add_child(far)
+	var mid := Parallax2D.new()
+	mid.name = "Mid"
+	backdrop.add_child(mid)
+	var front := CanvasLayer.new()
+	front.name = "ParallaxForeground"
+	host.add_child(front)
+	var extras := Level01Parallax.new()
+	add_child(extras)
+	WorldClock.set_time(0.35)
+	WorldClock.set_weather(WorldClock.Weather.CLEAR, true)
+	extras.build(host)
+	var high := backdrop.get_node_or_null("SkyCloudsHigh") as Parallax2D
+	var low := backdrop.get_node_or_null("SkyCloudsLow") as Parallax2D
+	ok(high != null and low != null, "two cloud plates are planted")
+	if high == null or low == null:
+		return
+	ok(high.get_index() > far.get_index() and low.get_index() < mid.get_index(), "clouds sit between sky and mountains")
+	ok(high.repeat_times >= Level01Parallax.MIN_REPEAT_TIMES, "clouds loop like every other plate")
+	var clear_a := high.modulate.a
+	ok(clear_a < 0.25, "a clear sky is nearly cloudless")
+	WorldClock.set_weather(WorldClock.Weather.RAIN, true)
+	extras._snap_atmosphere()
+	ok(high.modulate.a > 0.6, "rain brings an overcast sky")
+	ok(low.modulate.a < high.modulate.a, "the low plate stays thinner than the high one")
+	var fog := front.get_node_or_null("GroundFog") as Parallax2D
+	ok(fog != null)
+	if fog == null:
+		return
+	WorldClock.set_weather(WorldClock.Weather.CLEAR, true)
+	extras._snap_atmosphere()
+	almost(fog.modulate.a, 0.0, 0.001, "no ground fog under a clear sky")
+	var veil := front.get_node_or_null("FogVeil") as ColorRect
+	ok(veil != null, "a screen-space veil sits on the foreground layer")
+	if veil != null:
+		almost(veil.color.a, 0.0, 0.001, "no veil under a clear sky")
+		eq(veil.size, Vector2(640, 360), "veil covers the whole world view")
+	WorldClock.set_weather(WorldClock.Weather.FOG, true)
+	extras._snap_atmosphere()
+	ok(fog.modulate.a >= 0.3, "thick fog rolls over the graveyard floor")
+	if veil != null:
+		ok(veil.color.a >= 0.15 and veil.color.a <= 0.35, "thick fog washes the view without hiding it")
+	WorldClock.set_zone(WorldClock.Zone.INDOORS)
+	extras._snap_atmosphere()
+	almost(fog.modulate.a, 0.0, 0.001, "fog stops at the door")
+	if veil != null:
+		almost(veil.color.a, 0.0, 0.001, "veil stops at the door too")
+	WorldClock.set_zone(WorldClock.Zone.OUTDOORS)
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	WorldClock._snap_wind_speed()
+	var x0 := high.scroll_offset.x
+	extras._process(0.5)
+	ok(high.scroll_offset.x > x0, "clouds drift with the wind")
 
 
 func test_sky_and_fog_follow_the_clock() -> void:

@@ -1,6 +1,6 @@
 {
     "capture_type":  "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
-    "captured_at_utc":  "2026-09-06T06:05:26",
+    "captured_at_utc":  "2026-09-06T08:00:38",
     "completed":  true,
     "display_server":  "Windows",
     "driver":  "opengl3",
@@ -1014,7 +1014,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  70,
+                            "physics_body_count":  69,
                             "png":  "mid_day_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -1111,7 +1111,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  69,
+                            "physics_body_count":  70,
                             "png":  "mid_night_rain_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -3467,7 +3467,7 @@
                             "overlay_controls":  [
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -3477,7 +3477,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@TextureRect@1547",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@TextureRect@1699",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -3487,7 +3487,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700",
                                                          "rect":  [
                                                                       69.0,
                                                                       46.5,
@@ -3497,7 +3497,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701",
                                                          "rect":  [
                                                                       120.0,
                                                                       91.5,
@@ -3507,7 +3507,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@Label@1550",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@Label@1702",
                                                          "rect":  [
                                                                       120.0,
                                                                       91.5,
@@ -3517,7 +3517,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@TextureRect@1551",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@TextureRect@1703",
                                                          "rect":  [
                                                                       120.0,
                                                                       178.5,
@@ -3527,7 +3527,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@Label@1552",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@Label@1704",
                                                          "rect":  [
                                                                       120.0,
                                                                       214.5,
@@ -3537,7 +3537,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3547,7 +3547,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1706",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3557,7 +3557,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@Panel@1555",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1706/@Panel@1707",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3567,7 +3567,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@Label@1556",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1706/@Label@1708",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3577,7 +3577,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@TextureRect@1561",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1706/@TextureRect@1713",
                                                          "rect":  [
                                                                       177.0,
                                                                       295.5,
@@ -3587,7 +3587,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1714",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3597,7 +3597,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562/@Panel@1563",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1714/@Panel@1715",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3607,7 +3607,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562/@Label@1564",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1698/ChoiceRoot/@PanelContainer@1700/@VBoxContainer@1701/@VBoxContainer@1705/@Control@1714/@Label@1716",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3732,15 +3732,15 @@
                                               "animation":  "idle",
                                               "png":  "wing_a_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_0.png",
-                                              "wall_ms":  9945
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_5.png",
+                                              "wall_ms":  12130
                                           },
                                           {
                                               "animation":  "idle",
                                               "png":  "wing_b_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_2.png",
-                                              "wall_ms":  10095
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_0.png",
+                                              "wall_ms":  12335
                                           }
                                       ],
                            "note":  "unmodified animation process at one frozen actor position; not combat acceptance",

@@ -3,7 +3,9 @@ param(
     [string]$Spots = '',
     [double]$Hold = 4.0,
     [switch]$Lit,
-    [switch]$Night
+    [switch]$Night,
+    [switch]$Active,
+    [string]$Weather = ''
 )
 # Live peek: clock running, one PNG per camera spot in screenshots/peek/.
 # Complements run_render_acceptance.ps1 (which freezes time for fixtures).
@@ -16,6 +18,8 @@ $arguments = @('--path', ('"' + $workspace + '"'), '--windowed', '--position', '
 if ($Spots) { $arguments += @('--spots=' + $Spots) }
 if ($Lit) { $arguments += @('--lit') }
 if ($Night) { $arguments += @('--night') }
+if ($Active) { $arguments += @('--active') }
+if ($Weather) { $arguments += @('--weather=' + $Weather) }
 $stdoutFile = Join-Path $outputDir 'stdout.log'
 $stderrFile = Join-Path $outputDir 'stderr.log'
 $process = Start-Process -FilePath $GodotExe -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
