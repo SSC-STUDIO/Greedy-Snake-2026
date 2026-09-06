@@ -283,6 +283,57 @@ func test_boss_slain_unlocks_heart_and_plays() -> void:
 	ok(Director.playing, "slain beat queues Director")
 
 
+## Every grounded enemy stands on a real platform top, and no enemy is drawn
+## twice: a turret hovering in the air or a second body sprite reads as a bug.
+func test_enemies_stand_on_platforms_and_are_not_duplicated() -> void:
+	var packed := load("res://scenes/levels/Level01_Static.tscn") as PackedScene
+	var level := packed.instantiate()
+	add_child(level)
+	await flush(2)
+	var platforms: Array[SolidPlatform] = []
+	for node in level.find_children("*", "SolidPlatform", true, false):
+		platforms.append(node as SolidPlatform)
+		# A `#` comment inside a .tscn node block eats the next property; Plat_760_184
+		# once lost its position this way and sat at the origin with its spitter in mid-air.
+		ok((node as Node2D).position != Vector2.ZERO or node.name == "WallLeft",
+				"%s kept its authored position (not the origin)" % node.name)
+	ok(platforms.size() > 10, "authored platforms are present")
+	var seen: Array[EnemyBase] = []
+	for node in get_tree().get_nodes_in_group("enemies"):
+		var enemy := node as EnemyBase
+		if enemy == null or not level.is_ancestor_of(enemy):
+			continue
+		var bodies := 0
+		for child in enemy.find_children("*", "FrameAnimSprite", true, false):
+			if (child as CanvasItem).is_visible_in_tree():
+				bodies += 1
+		ok(bodies <= 1, "%s draws at most one body sprite (found %d)" % [enemy.name, bodies])
+		for other in seen:
+			if other.get_script() == enemy.get_script():
+				ok(other.global_position.distance_to(enemy.global_position) > 24.0,
+						"%s and %s are not stacked on the same spot" % [other.name, enemy.name])
+		seen.append(enemy)
+		if enemy is FlyingDemonEnemy:
+			continue
+		# Turrets are authored exactly on a top; walkers settle through physics.
+		var slack := 0.5 if not enemy._mobile else 4.0
+		var footing: SolidPlatform = null
+		for plat in platforms:
+			var top := plat.global_position.y
+			var x0 := plat.global_position.x
+			var x1 := x0 + plat.size.x
+			if absf(top - enemy.global_position.y) <= slack and enemy.global_position.x >= x0 and enemy.global_position.x <= x1:
+				footing = plat
+				break
+		ok(footing != null, "%s at %s has a platform under its feet, not thin air" % [enemy.name, enemy.global_position])
+		if footing != null and enemy is SpitterEnemy:
+			var sprites := 0
+			for child in footing.get_children():
+				if child is Sprite2D and (child as Sprite2D).is_visible_in_tree():
+					sprites += 1
+			ok(sprites > 0, "%s's ledge %s is actually drawn" % [enemy.name, footing.name])
+
+
 func test_parallax_adds_mood_tint() -> void:
 	var host := Node2D.new()
 	add_child(host)

@@ -159,8 +159,6 @@ fill = Color(0.368627, 0.352941, 0.337255, 1)
 skin = "floating"
 
 [node name="Plat_760_184" parent="Platforms" unique_id=1274363156 instance=ExtResource("2_plat")]
-## First spitter ledge sits 32px above ground, within one normal jump from
-## the toxin exit. The nearby 248px platform remains a higher optional route.
 position = Vector2(760, 288)
 size = Vector2(104, 16)
 fill = Color(0.627451, 0.321569, 0.176471, 1)
