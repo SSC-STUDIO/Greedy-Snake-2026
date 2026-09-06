@@ -8,7 +8,6 @@ const PLAYER := preload("res://scenes/player/Player.tscn")
 const CAMERA := preload("res://scenes/camera/GameCamera.tscn")
 const HUD := preload("res://scenes/ui/HUD.tscn")
 const PLATFORM := preload("res://scenes/world/Platform.tscn")
-const SIGN_TEX := "res://assets/kenney_clean/interactables/sign.png"
 
 @onready var plate: PressurePlate = get_node_or_null("Props/PressurePlate")
 @onready var door: ArenaDoor = get_node_or_null("Props/Door")
@@ -21,8 +20,15 @@ const JUMP_REACH := 37.0
 const STEP_RISE := 32.0
 ## 毒坑：水面 y=336（ToxinPool.surface_rect），坑底见 Level01EastWing.PIT_FLOOR_Y。
 ## 余烬巢右侧的第一级教学台：实心抵地，人从台上过而不是从台下钻。
+## 高 48 而不是 32：底部 16px 埋进地面，用自己的土盖掉地面那行草——
+## 否则是一块草皮方砖摆在草皮上（草下面还是草），读作土丘才自然。
 const TEACH_TERRACE_POS := Vector2(228, 288)
-const TEACH_TERRACE_SIZE := Vector2(40, 32)
+const TEACH_TERRACE_SIZE := Vector2(40, 48)
+## 路牌：1x 木牌 35×35（normalized/props），字写在牌面上而不是飘在牌子上方。
+const SIGN_TEX := "res://assets/env/normalized/props/waymark_sign.png"
+## 牌面在贴图里的矩形（贴图 y 3–22；柱脚在 (17,35)）；12px 像素字体两个字 24×12 正好落在牌面里。
+const SIGN_PLANK := Rect2(0, 3, 35, 20)
+const SIGN_FONT_SIZE := 12
 ## Plat_268 降到第二级（64px），从教学台再单跳 32px 上去。
 const TEACH_MID_Y := 256.0
 const WAYMARKS := [
@@ -158,24 +164,31 @@ func _waymark(parent: Node2D, feet: Vector2, text: String) -> void:
 	root.name = "Sign_%s" % text
 	root.position = feet
 	parent.add_child(root)
+	var plank := SIGN_PLANK
+	var origin := Vector2(-17.0, -35.0)
 	if ResourceLoader.exists(SIGN_TEX):
 		var spr := Sprite2D.new()
+		spr.name = "Board"
 		spr.texture = load(SIGN_TEX) as Texture2D
 		spr.centered = false
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		var th := float(spr.texture.get_height())
-		var s := 16.0 / maxf(1.0, th)
-		spr.scale = Vector2(s, s)
-		spr.position = Vector2(-float(spr.texture.get_width()) * s * 0.5, -th * s)
+		spr.position = origin
 		root.add_child(spr)
+	# 字写在牌面上：按 12px 像素字体的实际排版尺寸在牌面矩形里居中，坐标取整。
 	var lab := Label.new()
+	lab.name = "Text"
 	lab.text = text
-	lab.position = Vector2(-12, -30)
-	lab.add_theme_font_size_override("font_size", 8)
+	lab.add_theme_font_size_override("font_size", SIGN_FONT_SIZE)
 	lab.add_theme_color_override("font_color", Palette.PALE)
 	lab.add_theme_color_override("font_outline_color", Palette.VOID)
-	lab.add_theme_constant_override("outline_size", 2)
+	lab.add_theme_constant_override("outline_size", 1)
+	lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lab.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	root.add_child(lab)
+	# Size after entering the tree: the theme resolves the font on enter and
+	# would otherwise grow the label to its pre-theme fallback minimum.
+	lab.position = (origin + plank.position).round()
+	lab.size = plank.size
 
 
 func _spawn_decor() -> void:

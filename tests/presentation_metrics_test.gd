@@ -32,6 +32,38 @@ func test_ui_and_world_share_the_same_final_physical_rect() -> void:
 		ok((canvas_rect.size * physical_scale).is_equal_approx(physical.size))
 
 
+func test_world_image_runs_the_pixel_smoothing_shader() -> void:
+	var shader := load("res://assets/shaders/pixel_smooth.gdshader") as Shader
+	ok(shader != null, "pixel_smooth shader compiles and loads")
+	if shader == null:
+		return
+	var code := shader.code
+	ok(code.contains("uniform bool smoothing"), "shader exposes the smoothing toggle")
+	ok(code.contains("uniform int scale_hint"), "shader is told the integer content scale")
+	ok(code.contains("scale_hint == 3"), "3x (1080p) uses the Scale3x rule set")
+	var was := GamePresentation.pixel_smoothing
+	GamePresentation.pixel_smoothing = true
+	var presentation := GamePresentation.new()
+	add_child(presentation)
+	await flush(2)
+	var image := presentation.world_image
+	ok(image != null and image.material is ShaderMaterial, "world image carries the smoothing material")
+	if image != null and image.material is ShaderMaterial:
+		var mat := image.material as ShaderMaterial
+		eq(mat.shader, shader)
+		eq(mat.get_shader_parameter("smoothing"), true, "on by default")
+		eq(int(mat.get_shader_parameter("scale_hint")), int(PresentationMetrics.for_window(get_tree().root)["scale"]),
+				"scale hint follows the window's integer scale")
+		eq(image.texture_filter, CanvasItem.TEXTURE_FILTER_NEAREST, "neighbour samples stay exact texels")
+		GamePresentation.set_pixel_smoothing(false)
+		eq(mat.get_shader_parameter("smoothing"), false, "pause-menu toggle reaches the live material")
+		eq(GamePresentation.pixel_smoothing_label(), "像 素 平 滑: 关")
+		GamePresentation.set_pixel_smoothing(true)
+		eq(GamePresentation.pixel_smoothing_label(), "像 素 平 滑: 开")
+	GamePresentation.pixel_smoothing = was
+	presentation.queue_free()
+
+
 func test_scene_routing_keeps_the_authored_save_identifier() -> void:
 	eq(GameContext.route_scene(GameContext.WORLD_PATH), "res://scenes/ui/GamePresentation.tscn")
 	eq(GameContext.route_scene("res://scenes/ui/TitleScreen.tscn"), "res://scenes/ui/TitleScreen.tscn")

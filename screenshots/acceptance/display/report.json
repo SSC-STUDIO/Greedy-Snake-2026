@@ -1,6 +1,6 @@
 {
     "capture_type":  "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
-    "captured_at_utc":  "2026-09-06T04:45:04",
+    "captured_at_utc":  "2026-09-06T08:25:14",
     "completed":  true,
     "display_server":  "Windows",
     "driver":  "opengl3",
@@ -10,7 +10,7 @@
     "expected_capture_count":  8,
     "gpu":  "NVIDIA GeForce RTX 4060 Laptop GPU",
     "gpu_vendor":  "NVIDIA",
-    "passed":  false,
+    "passed":  true,
     "purpose":  "VISUAL FIXTURES: actor placement and clock/weather overrides; NOT a playthrough or completion proof",
     "renderer":  "gl_compatibility",
     "resolutions":  [
@@ -460,7 +460,7 @@
                                                                          690.0,
                                                                          96.0
                                                                      ],
-                                                            "visible":  true
+                                                            "visible":  false
                                                         },
                                             "Prompt":  {
                                                            "rect":  [
@@ -814,10 +814,10 @@
                                                       2880.0,
                                                       1620.0
                                                   ],
-                        "wall_frame_max_ms":  8.2,
-                        "wall_frame_mean_ms":  5.159375,
-                        "wall_frame_median_ms":  4.968,
-                        "wall_frame_p95_ms":  7.845,
+                        "wall_frame_max_ms":  10.574,
+                        "wall_frame_mean_ms":  6.03804166666667,
+                        "wall_frame_median_ms":  5.736,
+                        "wall_frame_p95_ms":  8.601,
                         "warmup_frames":  150,
                         "window_size":  [
                                             1920.0,
@@ -886,15 +886,15 @@
                                               "animation":  "idle",
                                               "png":  "wing_a_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_4.png",
-                                              "wall_ms":  9565
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_1.png",
+                                              "wall_ms":  10093
                                           },
                                           {
                                               "animation":  "idle",
                                               "png":  "wing_b_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_5.png",
-                                              "wall_ms":  9709
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_2.png",
+                                              "wall_ms":  10242
                                           }
                                       ],
                            "note":  "unmodified animation process at one frozen actor position; not combat acceptance",

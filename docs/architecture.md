@@ -4,6 +4,8 @@ Target: **Godot 4.7** · GDScript only · zero external deps.
 
 显示边界：世界始终在 **640×360 SubViewport** 中以原生像素渲染，`GameCamera.zoom=1`；`GamePresentation` 将世界图像和 1280×720 设计单位的 UI 一起放入最大整数倍率内容矩形。`PresentationMetrics` 是内容矩形、倍率和坐标转换的唯一来源，非 16:9 窗口只增加黑边。
 
+世界图像经过 `assets/shaders/pixel_smooth.gdshader`（3x 用 Scale3x，其余倍率用 Scale2x/EPX）：只把对比色块之间的斜向台阶圆滑掉，平面、渐变和 1px 细节原样通过，所以 1080p/1440p 上不再是马赛克但仍是像素画。`GamePresentation.pixel_smoothing` 是会话级开关，暂停菜单「像素平滑」可关；`scale_hint` 随窗口整数倍率更新。
+
 ## Autoloads
 
 Do not give autoload scripts a `class_name` — the autoload name is the API.
@@ -25,6 +27,7 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 | Script | Role |
 |---|---|
 | `scripts/levels/level01_env.gd` | Shared `plant()` — foliage sits on a foot pivot with `WindSway`; play-layer trees also get a sibling `LeafShed`. |
+| `level01_static.gd` waymarks | 1x `waymark_sign.png` plank on a post; the label is a 12px pixel-font `Label` sized to the plank face (`SIGN_PLANK`), so the word is written on the board, not floating over it. |
 | `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx` / `MoonFill`. Drift follows `wind_vector()`. `cover_layer()` gives every `Parallax2D` plate `repeat_times ≥ 4`. |
 | `scripts/levels/level01_east_wing.gd` | Pit beams, `EastFloor` (`skin = "stone"` — the nave is paved, the graveyard is grass), ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
 | `scripts/levels/level01_story_beats.gd` | One-shot Director scripts from `GameEvents` + east-wing signals. |
@@ -37,7 +40,7 @@ Set dressing that is not in the `.tscn`:
 
 | Script | Role |
 |---|---|
-| `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. |
+| `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. A `ground` step standing on ground (TeachTerrace, pit lips) is authored one tile taller than its rise so its earth covers the grass row beneath it — a mound, not a turf cube on turf. |
 | `scripts/world/ruin_plate.gd` | Slices a rectangular wall plate into 8px columns with a deterministic broken crown. Used by `TorchLight` and the altar / gargoyle backdrops; arch plates keep their authored tops. |
 | `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, pixel-snapped, pendulum glide with only a few px/s of wind drift, dissolve on the foot line. |
 | `scripts/world/wind_fx.gd` | Visible wind: dust / grass / leaf flecks enter from the camera's upwind edge and cross the view at `48 + |wind| × 145` px/s; density from `wind_mote_density()`, none indoors. |

@@ -10,6 +10,7 @@ const TITLE_PATH := "res://scenes/ui/TitleScreen.tscn"
 const ID_RESUME := &"resume"
 const ID_FULLSCREEN := &"fullscreen"
 const ID_FIT_MODE := &"fit_mode"
+const ID_SMOOTH := &"pixel_smooth"
 const ID_CONTROLS := &"controls"
 const ID_TITLE := &"title"
 
@@ -17,6 +18,7 @@ var _root: Control
 var _menu: MenuList
 var _fullscreen_item: MenuItem
 var _fit_mode_item: MenuItem
+var _smooth_item: MenuItem
 var _res_label: Label
 var _controls: ControlsPanel
 
@@ -67,6 +69,7 @@ func _build() -> void:
 	_menu.add_item(ID_RESUME, "回 到 锈 墓")
 	_fullscreen_item = _menu.add_item(ID_FULLSCREEN, DisplayFit.fullscreen_label())
 	_fit_mode_item = _menu.add_item(ID_FIT_MODE, DisplayFit.fit_mode_label())
+	_smooth_item = _menu.add_item(ID_SMOOTH, GamePresentation.pixel_smoothing_label())
 	_menu.add_item(ID_CONTROLS, "操 作 说 明")
 	_menu.add_item(ID_TITLE, "返 回 标 题")
 	_menu.chosen.connect(_on_chosen)
@@ -178,6 +181,11 @@ func _on_chosen(id: StringName) -> void:
 				_fit_mode_item.set_text(label)
 			if _res_label != null:
 				_res_label.text = "视口: %s" % DisplayFit.get_resolution_string()
+			Sfx.play(&"ui_select")
+		ID_SMOOTH:
+			GamePresentation.set_pixel_smoothing(not GamePresentation.pixel_smoothing)
+			if _smooth_item != null:
+				_smooth_item.set_text(GamePresentation.pixel_smoothing_label())
 			Sfx.play(&"ui_select")
 		ID_CONTROLS:
 			_menu.active = false

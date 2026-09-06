@@ -34,6 +34,16 @@ func test_teach_terrace_is_a_single_jump() -> void:
 	if terrace != null:
 		eq(terrace.position, Level01Static.TEACH_TERRACE_POS)
 		eq(terrace.size, Level01Static.TEACH_TERRACE_SIZE)
+		# A turf cube standing on turf shows grass under grass; the mound sinks a
+		# whole tile row into the ground so its earth covers the ground's grass.
+		ok(terrace.position.y + terrace.size.y >= Level01Static.GROUND_TOP + 16.0,
+				"terrace skirt reaches at least one tile below the ground top")
+		var rows := int(terrace.size.y / 16.0)
+		var skirt := 0
+		for child in terrace.get_children():
+			if child is Sprite2D and (child as Sprite2D).position.y >= float(rows - 1) * 16.0:
+				skirt += 1
+		ok(skirt >= 2, "the buried row is drawn (dirt over the ground's grass), not left empty")
 	level.free()
 
 
@@ -181,6 +191,29 @@ func test_waymarks_name_the_route() -> void:
 	ok(labels.has("东翼"))
 	ok(labels.has("压板"))
 	ok(labels.has("余烬"))
+	# The words are written on the plank, not floating above the post.
+	var packed := load("res://scenes/levels/Level01_Static.tscn") as PackedScene
+	var level := packed.instantiate()
+	add_child(level)
+	await flush(1)
+	var sign := level.get_node_or_null("Waymarks/Sign_余烬") as Node2D
+	ok(sign != null, "waymark node exists")
+	if sign == null:
+		return
+	var board := sign.get_node_or_null("Board") as Sprite2D
+	var text := sign.get_node_or_null("Text") as Label
+	ok(board != null and text != null)
+	if board == null or text == null:
+		return
+	eq(String(board.texture.resource_path), Level01Static.SIGN_TEX, "1x waymark plank, not the 70px Kenney sign")
+	eq(board.scale, Vector2.ONE, "plank is drawn at world 1x")
+	almost(board.position.y + float(board.texture.get_height()), 0.0, 0.01, "post foot on the ground line")
+	var plank := Rect2(board.position + Level01Static.SIGN_PLANK.position, Level01Static.SIGN_PLANK.size)
+	var text_rect := Rect2(text.position, text.size)
+	ok(plank.encloses(text_rect), "label rect sits inside the plank face")
+	eq(text.get_theme_font_size("font_size"), Level01Static.SIGN_FONT_SIZE, "pixel font at its native 12px")
+	eq(text.horizontal_alignment, HORIZONTAL_ALIGNMENT_CENTER)
+	eq(text.position, text.position.round(), "label origin is on the pixel grid")
 
 
 func test_east_constants_stay_aligned() -> void:

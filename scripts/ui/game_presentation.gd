@@ -1,9 +1,17 @@
 class_name GamePresentation
 extends Control
 ## Only the world is rasterized at 640x360. Root-window UI is drawn at native size.
+## The world image goes through pixel_smooth.gdshader (Scale2x/3x) so the 3–4x
+## blow-up on 1080p/1440p rounds its stair-steps instead of reading as a mosaic;
+## `pixel_smoothing` is a session toggle exposed in the pause menu.
+
+const SMOOTH_SHADER := preload("res://assets/shaders/pixel_smooth.gdshader")
+
+static var pixel_smoothing := true
 
 var world_viewport: SubViewport
 var world_image: TextureRect
+var _smooth_material: ShaderMaterial
 
 
 func _enter_tree() -> void:
@@ -41,6 +49,10 @@ func _ready() -> void:
 	world_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	world_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	world_image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_smooth_material = ShaderMaterial.new()
+	_smooth_material.shader = SMOOTH_SHADER
+	_smooth_material.set_shader_parameter("smoothing", pixel_smoothing)
+	world_image.material = _smooth_material
 	add_child(world_image)
 	var packed := load(GameContext.WORLD_PATH) as PackedScene
 	world_viewport.add_child(packed.instantiate())
@@ -50,9 +62,28 @@ func _ready() -> void:
 
 
 func _layout() -> void:
-	var rect: Rect2 = PresentationMetrics.for_window(get_tree().root)["canvas_rect"]
+	var metrics := PresentationMetrics.for_window(get_tree().root)
+	var rect: Rect2 = metrics["canvas_rect"]
 	world_image.position = rect.position
 	world_image.size = rect.size
+	if _smooth_material != null:
+		_smooth_material.set_shader_parameter("scale_hint", int(metrics["scale"]))
+
+
+## Session toggle (pause menu). Applies to every live presentation at once.
+static func set_pixel_smoothing(on: bool) -> void:
+	pixel_smoothing = on
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	for node in tree.get_nodes_in_group("game_presentation"):
+		var presentation := node as GamePresentation
+		if presentation != null and presentation._smooth_material != null:
+			presentation._smooth_material.set_shader_parameter("smoothing", on)
+
+
+static func pixel_smoothing_label() -> String:
+	return "像 素 平 滑: 开" if pixel_smoothing else "像 素 平 滑: 关"
 
 
 func _unhandled_input(event: InputEvent) -> void:
