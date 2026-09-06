@@ -59,11 +59,20 @@ func leaf_count() -> int:
 
 
 ## 一片叶：两块多边形交替显示模拟翻转（3×1 扁 / 1×2 竖），不旋转 2px 方块。
+## 运动以下落为主，横向是钟摆式来回滑翔（±SWING_AMP），风只加很小的侧漂——
+## 之前风给到 26px/s，叶子像被拖着一路横着走。
 class Leaf extends Node2D:
 	const FADE := 0.5
+	const SWING_AMP_MIN := 4.0
+	const SWING_AMP_MAX := 7.0
+	const SWING_RATE := 2.4
+	const WIND_DRIFT := 6.0
+	const WIND_DRIFT_MAX := 4.0
 
 	var _pos := Vector2.ZERO
+	var _anchor_x := 0.0
 	var _vy := 16.0
+	var _amp := 5.0
 	var _phase := 0.0
 	var _t := 0.0
 	var _landed := -1.0
@@ -72,7 +81,8 @@ class Leaf extends Node2D:
 
 
 	func _init() -> void:
-		_vy = randf_range(12.0, 20.0)
+		_vy = randf_range(14.0, 22.0)
+		_amp = randf_range(SWING_AMP_MIN, SWING_AMP_MAX)
 		_phase = randf() * TAU
 		var tint := LeafShed.LEAF_TINTS[randi_range(0, LeafShed.LEAF_TINTS.size() - 1)]
 		_flat = Polygon2D.new()
@@ -92,6 +102,8 @@ class Leaf extends Node2D:
 
 	func _ready() -> void:
 		_pos = position
+		# Start the pendulum exactly where the leaf was spawned (no first-frame jump).
+		_anchor_x = position.x - sin(_phase) * _amp
 		position = _pos.round()
 
 
@@ -108,8 +120,10 @@ class Leaf extends Node2D:
 				return
 			modulate.a = 1.0 - k
 			return
-		var wind := WorldClock.wind_vector().x * 26.0
-		_pos.x += (wind + sin(_t * 3.1 + _phase) * 9.0) * delta
+		var wind := clampf(WorldClock.wind_vector().x * WIND_DRIFT, -WIND_DRIFT_MAX, WIND_DRIFT_MAX)
+		_anchor_x += wind * delta
+		var swing := _t * SWING_RATE + _phase
+		_pos.x = _anchor_x + sin(swing) * _amp
 		_pos.y += _vy * delta
 		if _pos.y >= 0.0:
 			_pos.y = 0.0
@@ -117,7 +131,8 @@ class Leaf extends Node2D:
 			_flat.visible = true
 			_tall.visible = false
 		else:
-			var flat := fmod(_t * 4.0 + _phase, 2.0) < 1.0
+			# Gliding sideways shows the flat face; at the turnarounds it tips edge-on.
+			var flat := absf(cos(swing)) > 0.45
 			_flat.visible = flat
 			_tall.visible = not flat
 		position = _pos.round()

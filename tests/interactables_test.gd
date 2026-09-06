@@ -170,6 +170,15 @@ func test_toxin_pool_breathes_vapor_off_the_film() -> void:
 	ok(wisp.position.y < y0, "vapor rises")
 	ok(wisp.modulate.a > 0.0, "wisp fades in")
 	eq(wisp.position, wisp.position.round(), "wisp itself is pixel snapped")
+	# A gale must not carry the fog onto the bank: x stays inside the film span.
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	WorldClock._snap_wind_speed()
+	wisp._pos.x = r.size.x - 5.0
+	for i in 20:
+		wisp._process(0.1)
+	ok(wisp.position.x <= r.size.x - 4.0 + 0.5, "vapor is clamped to the pool span")
+	ok(wisp.position.x >= 4.0 - 0.5)
 	wisp._process(10.0)
 	ok(wisp.is_queued_for_deletion(), "wisps die after their lifetime")
 	Director.abort()

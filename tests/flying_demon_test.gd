@@ -45,6 +45,43 @@ func test_flying_demon_drops_aggro_when_target_invalid() -> void:
 		"aggro returns to patrol when target becomes invincible")
 
 
+func test_hovering_over_the_knight_does_not_spin() -> void:
+	var arena := Node2D.new()
+	add_child(arena)
+	var player := await spawn_player(arena)
+	var demon := DEMON_SCENE.instantiate() as FlyingDemonEnemy
+	demon.position = player.global_position + Vector2(4.0, -90.0)
+	arena.add_child(demon)
+	await flush(2)
+	demon.set_physics_process(false)
+	demon._state = FlyingDemonEnemy.State.AGGRO
+	demon._target_player = player
+	demon._shoot_timer = 999.0
+	var flips := 0
+	var last := demon._dir
+	# Straddle the knight: dx alternates sign every tick, as it does in play.
+	for i in 60:
+		demon.global_position.x = player.global_position.x + (6.0 if i % 2 == 0 else -6.0)
+		demon._tick_state(1.0 / 60.0)
+		demon._after_move()
+		if demon._dir != last:
+			flips += 1
+			last = demon._dir
+	eq(flips, 0, "inside the facing dead zone the demon holds its heading")
+	ok(absf(demon.velocity.x) < 1.0, "overhead it hovers instead of hunting the sign of dx")
+	# Far to one side it does turn — once, then respects the cooldown.
+	demon.global_position.x = player.global_position.x - 80.0
+	demon._tick_state(1.0 / 60.0)
+	eq(demon._dir, 1.0, "demon turns to face the knight on its right")
+	demon.global_position.x = player.global_position.x + 80.0
+	demon._tick_state(1.0 / 60.0)
+	eq(demon._dir, 1.0, "a second flip within the cooldown is ignored")
+	demon._tick_state(FlyingDemonEnemy.FLIP_COOLDOWN + 0.01)
+	eq(demon._dir, -1.0, "after the cooldown it turns to face the knight again")
+	demon._after_move()
+	eq(demon.visual.scale.x, 1.0, "visual mirrors the heading")
+
+
 func test_wings_keep_looping_after_attack_without_spray_projectiles() -> void:
 	var arena := Node2D.new()
 	add_child(arena)

@@ -186,6 +186,7 @@ func _tick_vapor(delta: float) -> void:
 		return
 	var wisp := Wisp.new()
 	wisp.position = Vector2(randf_range(6.0, _pool_size.x - 6.0), 1.0)
+	wisp.span = Vector2(4.0, _pool_size.x - 4.0)
 	_vapor.add_child(wisp)
 
 
@@ -237,9 +238,17 @@ func _bubble_rect() -> Rect2:
 	)
 
 
-## 一缕毒雾：3–5 个 2px 方点松散成簇，整体上升、随风侧漂、点间慢慢散开；
+## 一缕毒雾：3–5 个方点松散成簇，几乎垂直上升，只轻微摇摆；风只推一点点，
+## 且 x 被夹在池面 `span` 内——雾不会飘到岸上，看起来像是池子在往外扩。
 ## 坐标取整以免 NEAREST 发糊。alpha 先起后落，寿命 2.4–3.6s。
 class Wisp extends Node2D:
+	const WIND_DRIFT := 5.0
+	const WOBBLE := 1.6
+	const CELL_SPREAD := 1.1
+
+	## Pool-local x range the wisp may occupy (set by the pool on spawn).
+	var span := Vector2(-INF, INF)
+
 	var _age := 0.0
 	var _life := 3.0
 	var _rise := 9.0
@@ -270,7 +279,7 @@ class Wisp extends Node2D:
 			add_child(cell)
 			_cells.append(cell)
 			_cell_pos.append(p)
-			_spread.append(Vector2(randf_range(-2.2, 2.2), randf_range(-1.6, 0.4)))
+			_spread.append(Vector2(randf_range(-CELL_SPREAD, CELL_SPREAD), randf_range(-1.2, 0.3)))
 		modulate = Color(1.0, 1.0, 1.0, 0.0)
 
 
@@ -285,9 +294,10 @@ class Wisp extends Node2D:
 			return
 		var k := _age / _life
 		var drift := Vector2(
-			WorldClock.wind_vector().x * 22.0 + sin(_age * 1.6 + _phase) * 3.0,
+			WorldClock.wind_vector().x * WIND_DRIFT + sin(_age * 1.6 + _phase) * WOBBLE,
 			-_rise * (1.0 - 0.35 * k))
 		_pos += drift * delta
+		_pos.x = clampf(_pos.x, span.x, span.y)
 		position = _pos.round()
 		for i in _cells.size():
 			_cell_pos[i] += _spread[i] * delta

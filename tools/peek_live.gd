@@ -6,6 +6,8 @@ extends Node
 ##
 ##   tools/run_peek_live.ps1            (writes screenshots/peek/live_<spot>.png)
 ##   ... -- --spots=start,pit --hold=6  (subset / longer settle)
+##   ... -- --lit                       (light every EmberNest first)
+##   ... -- --night                     (night + rain instead of hazy day)
 
 const PRESENTATION := preload("res://scenes/ui/GamePresentation.tscn")
 const OUT := "res://screenshots/peek"
@@ -22,11 +24,17 @@ func _ready() -> void:
 		return
 	var spots: Array = SPOTS.keys()
 	var hold := 4.0
+	var lit := false
+	var night := false
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--spots="):
 			spots = arg.trim_prefix("--spots=").split(",", false)
 		elif arg.begins_with("--hold="):
 			hold = maxf(0.5, float(arg.trim_prefix("--hold=")))
+		elif arg == "--lit":
+			lit = true
+		elif arg == "--night":
+			night = true
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var win := get_tree().root
 	win.mode = Window.MODE_WINDOWED
@@ -48,11 +56,15 @@ func _ready() -> void:
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		enemy.set_physics_process(false)
 		enemy.set_process(false)
-	WorldClock.set_time(0.35)
-	WorldClock.set_weather(WorldClock.Weather.HAZE, true)
+	WorldClock.set_time(0.85 if night else 0.35)
+	WorldClock.set_weather(WorldClock.Weather.RAIN if night else WorldClock.Weather.HAZE, true)
 	WorldClock.wind_heading = 1.0
 	WorldClock._heading_target = 1.0
 	WorldClock._snap_wind_speed()
+	if lit:
+		for nest in get_tree().get_nodes_in_group("ember_nests"):
+			nest.apply_persistent_state({"lit": true})
+	var suffix := ("_lit" if lit else "") + ("_night" if night else "")
 	for spot in spots:
 		if not SPOTS.has(spot):
 			printerr("peek_live: unknown spot ", spot)
@@ -64,6 +76,6 @@ func _ready() -> void:
 		await get_tree().create_timer(hold).timeout
 		await RenderingServer.frame_post_draw
 		var image := win.get_texture().get_image()
-		var err := image.save_png("%s/live_%s.png" % [OUT, spot])
-		print("PEEK ", spot, " saved=", err == OK)
+		var err := image.save_png("%s/live_%s%s.png" % [OUT, spot, suffix])
+		print("PEEK ", spot, suffix, " saved=", err == OK)
 	get_tree().quit(0)

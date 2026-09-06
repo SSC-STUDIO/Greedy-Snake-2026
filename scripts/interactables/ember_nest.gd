@@ -17,8 +17,13 @@ const HALO_PATH := "res://assets/env/glow_soft.png"
 ## 锈铁火盆 48×36（tools/gen_ember_nest.py），脚埋进草皮两像素。
 const BASE_SIZE := Vector2(48, 36)
 const BASE_OFFSET := Vector2(-16, -20)
-## 盆井中心 = BASE_OFFSET + 贴图里的 (WELL_CX, WELL_CY)；焰、光、晕都坐这里。
+## 盆井中心 = BASE_OFFSET + 贴图里的 (WELL_CX, WELL_CY)；炭火铺在这里。
 const BOWL := Vector2(6, -12)
+## 火根：16×24 火焰以底边中心为原点立在灰井里（-14），火舌烧到 -38，出盆口。
+## 以前以 BOWL 为中心画，整团火盖住盆身还垂到三脚架上，像泼在盆上的黄漆；
+## 雨天按中心缩小时还会缩成一团悬在盆口上。底边锚定后缩放、倾斜都以火根为轴。
+const FLAME_BASE := Vector2(6, -14)
+const FLAME_SIZE := Vector2(16, 24)
 
 var _lit: bool = false
 var _flame: Sprite2D
@@ -63,16 +68,16 @@ func _ensure_flame() -> void:
 	spr.texture = tex
 	spr.hframes = FLAME_FRAMES
 	spr.vframes = 1
-	spr.centered = true
-	# 16×24 焰坐在盆井里，底不盖过锈铁沿。
-	spr.position = BOWL
+	spr.centered = false
+	spr.offset = Vector2(-FLAME_SIZE.x * 0.5, -FLAME_SIZE.y)
+	spr.position = FLAME_BASE
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	spr.z_index = 2
 	add_child(spr)
 	_flame = spr
 	var sparks := Node2D.new()
 	sparks.name = "Sparks"
-	sparks.position = spr.position
+	sparks.position = FLAME_BASE + Vector2(0, -FLAME_SIZE.y * 0.5)
 	sparks.z_index = 3
 	add_child(sparks)
 	_sparks = sparks
@@ -154,7 +159,7 @@ func _ensure_light() -> void:
 		return
 	var light := WorldLight.new()
 	light.name = "NestLight"
-	light.position = BOWL
+	light.position = FLAME_BASE + Vector2(0, -8)
 	light.color = LIGHT_COLOR
 	light.follow = &"nest"
 	light.flicker = true
@@ -170,7 +175,7 @@ func _ensure_halo() -> void:
 	if ResourceLoader.exists(HALO_PATH):
 		spr.texture = load(HALO_PATH) as Texture2D
 	spr.centered = true
-	spr.position = BOWL + Vector2(0, -4)
+	spr.position = FLAME_BASE + Vector2(0, -10)
 	spr.z_index = 0
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
@@ -210,7 +215,7 @@ func _ensure_beam() -> void:
 	var beam := Sprite2D.new()
 	beam.name = "WarmShaft"
 	beam.centered = true
-	beam.position = BOWL + Vector2(0, -44)
+	beam.position = FLAME_BASE + Vector2(0, -46)
 	beam.texture = _shaft_tex()
 	beam.modulate = Color(1.0, 0.72, 0.38, 0.0)
 	beam.visible = false

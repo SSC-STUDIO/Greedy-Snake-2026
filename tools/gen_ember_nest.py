@@ -3,8 +3,9 @@
 
 The checkpoint used to be rubble_c squeezed to 18×22 — a pebble next to the
 80px knight. This is a rusted iron grave-brazier: flared bowl, riveted hoop,
-splayed tripod, ash well with bone chips. Lit coals are a second sheet so
-the basin can sit cold until the player lights it.
+splayed tripod, a dark ash well. Lit coals are a second sheet so the basin
+can sit cold until the player lights it; the flame sprite then rises out of
+the well (EmberNest.FLAME_POS), not over the bowl body.
 
 Run:  python3 tools/gen_ember_nest.py
 """
@@ -163,14 +164,11 @@ def _bowl(g: Grid) -> None:
     ):
         if g[x, y] in ("8", "9"):
             g[x, y] = "7" if g[x, y] == "8" else "8"
-    # Bone chips + a small jaw in the ash (cemetery nest, not a kitchen stove).
+    # No bone chips / jaw in the well: two pale dots in a dark oval read as a
+    # face on a signboard from three metres away. Darker ash lumps only.
     _put(g, [
-        (16, 7, "e"), (17, 7, "e"), (16, 8, "7"),
-        (27, 8, "e"), (28, 8, "7"),
-        (21, 6, "e"), (22, 6, "e"), (23, 6, "e"),
-        (21, 7, "e"), (23, 7, "e"),
-        (22, 8, "7"),
-        (19, 9, "7"), (25, 9, "v"),
+        (16, 8, "7"), (28, 8, "7"), (22, 8, "7"),
+        (19, 9, "7"), (25, 9, "1"),
     ])
 
 
@@ -188,28 +186,13 @@ def _hoop(g: Grid) -> None:
     g[22, 14] = "9"
 
 
-def _chain_and_charm(g: Grid) -> None:
-    """Rusty chain off the right rim with a hanging bone — welded to the lip."""
-    _put(g, [
-        (39, 5, "2"), (39, 6, "1"),
-        (40, 7, "2"), (40, 8, "1"),
-        (39, 9, "2"), (39, 10, "1"),
-        (40, 11, "8"), (40, 12, "1"),
-        (39, 13, "2"), (39, 14, "1"),
-        (40, 15, "8"), (40, 16, "1"),
-        (39, 17, "e"), (40, 17, "e"), (41, 17, "e"),
-        (40, 18, "e"),
-        (39, 19, "e"), (41, 19, "e"),
-        (40, 20, "7"),
-    ])
-
-
 def build_nest() -> Grid:
+    # No chain-and-skull charm off the rim: a dangling rope on one side made the
+    # basin read as a hung signboard rather than a standing brazier.
     g = Grid(W, H, ".")
     _legs(g)
     _bowl(g)
     _hoop(g)
-    _chain_and_charm(g)
     outline(g, "0")
     return g
 

@@ -123,7 +123,16 @@ func test_collision_unchanged_by_flame() -> void:
 	var coals := nest.get_node_or_null("Coals") as Sprite2D
 	if flame != null and coals != null:
 		ok(flame.z_index > coals.z_index, "flame draws over the coal bed")
-		eq(flame.position, EmberNest.BOWL, "flame sits in the bowl well")
+		eq(flame.position, EmberNest.FLAME_BASE, "flame stands on its root")
+		ok(not flame.centered, "flame is bottom-anchored so soak scaling and lean pivot at the root")
+		eq(flame.offset, Vector2(-8, -24))
+		# Root inside the well (below the rim at BASE_OFFSET.y = -20) but above the
+		# well centre; the tongue burns well clear of the rim.
+		var flame_bottom := EmberNest.FLAME_BASE.y
+		var flame_top := EmberNest.FLAME_BASE.y - EmberNest.FLAME_SIZE.y
+		ok(flame_bottom > EmberNest.BASE_OFFSET.y, "flame root sits inside the bowl, not floating")
+		ok(flame_bottom < EmberNest.BOWL.y, "flame root does not sink to the well centre")
+		ok(flame_top < EmberNest.BASE_OFFSET.y - 12.0, "most of the flame burns above the rim")
 
 
 func test_unlit_has_no_nest_light() -> void:

@@ -1,6 +1,6 @@
 {
     "capture_type":  "native root render-target PNG from a window positioned offscreen; not a desktop screenshot",
-    "captured_at_utc":  "2026-09-06T05:16:55",
+    "captured_at_utc":  "2026-09-06T06:05:26",
     "completed":  true,
     "display_server":  "Windows",
     "driver":  "opengl3",
@@ -1014,7 +1014,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  69,
+                            "physics_body_count":  70,
                             "png":  "mid_day_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -1208,7 +1208,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  70,
+                            "physics_body_count":  69,
                             "png":  "mid_fog_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -1402,7 +1402,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  69,
+                            "physics_body_count":  70,
                             "png":  "gate_night_rain_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -1596,7 +1596,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  70,
+                            "physics_body_count":  69,
                             "png":  "east_day_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -1693,7 +1693,7 @@
                                                           1920.0,
                                                           1080.0
                                                       ],
-                            "physics_body_count":  70,
+                            "physics_body_count":  69,
                             "png":  "east_night_rain_1920x1080.png",
                             "rendered_image_size":  [
                                                         1920.0,
@@ -2559,7 +2559,7 @@
                             "overlay_controls":  [
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -2569,7 +2569,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/Veil",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/Veil",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -2579,7 +2579,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/@TextureRect@1083",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/@TextureRect@1085",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -2589,7 +2589,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame",
                                                          "rect":  [
                                                                       180.0,
                                                                       54.0,
@@ -2599,7 +2599,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086",
                                                          "rect":  [
                                                                       231.0,
                                                                       99.0,
@@ -2609,7 +2609,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@Label@1085",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@Label@1087",
                                                          "rect":  [
                                                                       231.0,
                                                                       151.5,
@@ -2619,7 +2619,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@TextureRect@1086",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@TextureRect@1088",
                                                          "rect":  [
                                                                       231.0,
                                                                       238.5,
@@ -2629,7 +2629,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089",
                                                          "rect":  [
                                                                       645.0,
                                                                       274.5,
@@ -2639,7 +2639,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1088",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1090",
                                                          "rect":  [
                                                                       645.0,
                                                                       274.5,
@@ -2649,7 +2649,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1088/@Panel@1089",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1090/@Panel@1091",
                                                          "rect":  [
                                                                       645.0,
                                                                       274.5,
@@ -2659,7 +2659,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1088/@Label@1090",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1090/@Label@1092",
                                                          "rect":  [
                                                                       645.0,
                                                                       274.5,
@@ -2669,7 +2669,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1088/@TextureRect@1095",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1090/@TextureRect@1097",
                                                          "rect":  [
                                                                       702.0,
                                                                       292.5,
@@ -2679,7 +2679,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1096",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1098",
                                                          "rect":  [
                                                                       645.0,
                                                                       367.5,
@@ -2689,7 +2689,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1096/@Panel@1097",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1098/@Panel@1099",
                                                          "rect":  [
                                                                       645.0,
                                                                       367.5,
@@ -2699,7 +2699,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1096/@Label@1098",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1098/@Label@1100",
                                                          "rect":  [
                                                                       645.0,
                                                                       367.5,
@@ -2709,7 +2709,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1104",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1106",
                                                          "rect":  [
                                                                       645.0,
                                                                       460.5,
@@ -2719,7 +2719,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1104/@Panel@1105",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1106/@Panel@1107",
                                                          "rect":  [
                                                                       645.0,
                                                                       460.5,
@@ -2729,7 +2729,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1104/@Label@1106",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1106/@Label@1108",
                                                          "rect":  [
                                                                       645.0,
                                                                       460.5,
@@ -2739,7 +2739,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1112",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1114",
                                                          "rect":  [
                                                                       645.0,
                                                                       553.5,
@@ -2749,7 +2749,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1112/@Panel@1113",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1114/@Panel@1115",
                                                          "rect":  [
                                                                       645.0,
                                                                       553.5,
@@ -2759,7 +2759,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1112/@Label@1114",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1114/@Label@1116",
                                                          "rect":  [
                                                                       645.0,
                                                                       553.5,
@@ -2769,7 +2769,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1120",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1122",
                                                          "rect":  [
                                                                       645.0,
                                                                       646.5,
@@ -2779,7 +2779,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1120/@Panel@1121",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1122/@Panel@1123",
                                                          "rect":  [
                                                                       645.0,
                                                                       646.5,
@@ -2789,7 +2789,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@VBoxContainer@1087/@Control@1120/@Label@1122",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@VBoxContainer@1089/@Control@1122/@Label@1124",
                                                          "rect":  [
                                                                       645.0,
                                                                       646.5,
@@ -2799,7 +2799,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1130",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1132",
                                                          "rect":  [
                                                                       706.5,
                                                                       739.5,
@@ -2809,7 +2809,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1130/@Label@1128",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1132/@Label@1130",
                                                          "rect":  [
                                                                       706.5,
                                                                       739.5,
@@ -2819,7 +2819,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1130/@HSlider@1129",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1132/@HSlider@1131",
                                                          "rect":  [
                                                                       853.5,
                                                                       739.5,
@@ -2829,7 +2829,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1133",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1135",
                                                          "rect":  [
                                                                       706.5,
                                                                       802.5,
@@ -2839,7 +2839,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1133/@Label@1131",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1135/@Label@1133",
                                                          "rect":  [
                                                                       706.5,
                                                                       802.5,
@@ -2849,7 +2849,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@HBoxContainer@1133/@HSlider@1132",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@HBoxContainer@1135/@HSlider@1134",
                                                          "rect":  [
                                                                       853.5,
                                                                       802.5,
@@ -2859,7 +2859,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@Label@1134",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@Label@1136",
                                                          "rect":  [
                                                                       231.0,
                                                                       865.5,
@@ -2869,7 +2869,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1082/PauseFrame/@VBoxContainer@1084/@Label@1135",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@Control@1084/PauseFrame/@VBoxContainer@1086/@Label@1137",
                                                          "rect":  [
                                                                       231.0,
                                                                       904.5,
@@ -2975,7 +2975,7 @@
                             "overlay_controls":  [
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -2985,7 +2985,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@TextureRect@1137",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@TextureRect@1139",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -2995,7 +2995,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140",
                                                          "rect":  [
                                                                       210.0,
                                                                       60.0,
@@ -3005,7 +3005,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141",
                                                          "rect":  [
                                                                       261.0,
                                                                       105.0,
@@ -3015,7 +3015,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@Label@1140",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@Label@1142",
                                                          "rect":  [
                                                                       261.0,
                                                                       145.5,
@@ -3025,7 +3025,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@TextureRect@1141",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@TextureRect@1143",
                                                          "rect":  [
                                                                       261.0,
                                                                       232.5,
@@ -3035,7 +3035,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144",
                                                          "rect":  [
                                                                       511.5,
                                                                       268.5,
@@ -3045,7 +3045,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1143",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1145",
                                                          "rect":  [
                                                                       511.5,
                                                                       268.5,
@@ -3055,7 +3055,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1144",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1146",
                                                          "rect":  [
                                                                       832.5,
                                                                       268.5,
@@ -3065,7 +3065,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1145",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1147",
                                                          "rect":  [
                                                                       511.5,
                                                                       328.5,
@@ -3075,7 +3075,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1146",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1148",
                                                          "rect":  [
                                                                       832.5,
                                                                       328.5,
@@ -3085,7 +3085,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1147",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1149",
                                                          "rect":  [
                                                                       511.5,
                                                                       388.5,
@@ -3095,7 +3095,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1148",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1150",
                                                          "rect":  [
                                                                       832.5,
                                                                       388.5,
@@ -3105,7 +3105,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1149",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1151",
                                                          "rect":  [
                                                                       511.5,
                                                                       448.5,
@@ -3115,7 +3115,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1150",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1152",
                                                          "rect":  [
                                                                       832.5,
                                                                       448.5,
@@ -3125,7 +3125,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1151",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1153",
                                                          "rect":  [
                                                                       511.5,
                                                                       508.5,
@@ -3135,7 +3135,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1152",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1154",
                                                          "rect":  [
                                                                       832.5,
                                                                       508.5,
@@ -3145,7 +3145,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1153",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1155",
                                                          "rect":  [
                                                                       511.5,
                                                                       568.5,
@@ -3155,7 +3155,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1154",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1156",
                                                          "rect":  [
                                                                       832.5,
                                                                       568.5,
@@ -3165,7 +3165,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1155",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1157",
                                                          "rect":  [
                                                                       511.5,
                                                                       628.5,
@@ -3175,7 +3175,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1156",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1158",
                                                          "rect":  [
                                                                       832.5,
                                                                       628.5,
@@ -3185,7 +3185,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1157",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1159",
                                                          "rect":  [
                                                                       511.5,
                                                                       688.5,
@@ -3195,7 +3195,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1158",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1160",
                                                          "rect":  [
                                                                       832.5,
                                                                       688.5,
@@ -3205,7 +3205,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1159",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1161",
                                                          "rect":  [
                                                                       511.5,
                                                                       748.5,
@@ -3215,7 +3215,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@GridContainer@1142/@Label@1160",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@GridContainer@1144/@Label@1162",
                                                          "rect":  [
                                                                       832.5,
                                                                       748.5,
@@ -3225,7 +3225,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@TextureRect@1161",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@TextureRect@1163",
                                                          "rect":  [
                                                                       261.0,
                                                                       811.5,
@@ -3235,7 +3235,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@Label@1162",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@Label@1164",
                                                          "rect":  [
                                                                       261.0,
                                                                       847.5,
@@ -3245,7 +3245,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1136/Root/@PanelContainer@1138/@VBoxContainer@1139/@Label@1163",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/UiHost/HUD/PauseMenu/@CanvasLayer@1138/Root/@PanelContainer@1140/@VBoxContainer@1141/@Label@1165",
                                                          "rect":  [
                                                                       261.0,
                                                                       886.5,
@@ -3467,7 +3467,7 @@
                             "overlay_controls":  [
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -3477,7 +3477,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@TextureRect@1523",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@TextureRect@1547",
                                                          "rect":  [
                                                                       0.0,
                                                                       0.0,
@@ -3487,7 +3487,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548",
                                                          "rect":  [
                                                                       69.0,
                                                                       46.5,
@@ -3497,7 +3497,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549",
                                                          "rect":  [
                                                                       120.0,
                                                                       91.5,
@@ -3507,7 +3507,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@Label@1526",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@Label@1550",
                                                          "rect":  [
                                                                       120.0,
                                                                       91.5,
@@ -3517,7 +3517,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@TextureRect@1527",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@TextureRect@1551",
                                                          "rect":  [
                                                                       120.0,
                                                                       178.5,
@@ -3527,7 +3527,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@Label@1528",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@Label@1552",
                                                          "rect":  [
                                                                       120.0,
                                                                       214.5,
@@ -3537,7 +3537,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3547,7 +3547,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1530",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3557,7 +3557,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1530/@Panel@1531",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@Panel@1555",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3567,7 +3567,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1530/@Label@1532",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@Label@1556",
                                                          "rect":  [
                                                                       120.0,
                                                                       277.5,
@@ -3577,7 +3577,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1530/@TextureRect@1537",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1554/@TextureRect@1561",
                                                          "rect":  [
                                                                       177.0,
                                                                       295.5,
@@ -3587,7 +3587,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1538",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3597,7 +3597,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1538/@Panel@1539",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562/@Panel@1563",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3607,7 +3607,7 @@
                                                      },
                                                      {
                                                          "inside_content":  true,
-                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1522/ChoiceRoot/@PanelContainer@1524/@VBoxContainer@1525/@VBoxContainer@1529/@Control@1538/@Label@1540",
+                                                         "node":  "/root/RenderAcceptance/GamePresentation/WorldViewport/Level01_Static/Props/ForgeHeart/@CanvasLayer@1546/ChoiceRoot/@PanelContainer@1548/@VBoxContainer@1549/@VBoxContainer@1553/@Control@1562/@Label@1564",
                                                          "rect":  [
                                                                       120.0,
                                                                       370.5,
@@ -3732,15 +3732,15 @@
                                               "animation":  "idle",
                                               "png":  "wing_a_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_2.png",
-                                              "wall_ms":  10705
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_0.png",
+                                              "wall_ms":  9945
                                           },
                                           {
                                               "animation":  "idle",
                                               "png":  "wing_b_1920x1080.png",
                                               "saved":  true,
-                                              "texture":  "res://assets/characters/flying_demon/idle/idle_3.png",
-                                              "wall_ms":  10847
+                                              "texture":  "res://assets/characters/flying_demon/idle/idle_2.png",
+                                              "wall_ms":  10095
                                           }
                                       ],
                            "note":  "unmodified animation process at one frozen actor position; not combat acceptance",

@@ -14,6 +14,10 @@ enum State { PATROL, AGGRO, ATTACK, SWOOP, RECOVERY }
 @export var aggro_range: float = 240.0
 @export var attack_interval: float = 2.4
 @export var swoop_speed: float = 120.0
+## 追踪时人在正下方，dx 每帧变号，翅膀就左右乱翻。死区内只悬停不转向，
+## 且两次转向至少隔 FLIP_COOLDOWN。
+const FACE_DEADZONE := 16.0
+const FLIP_COOLDOWN := 0.35
 
 var _state: State = State.PATROL
 var _state_timer: float = 0.0
@@ -22,6 +26,7 @@ var _origin_y: float = 0.0
 var _hover_t: float = 0.0
 var _target_player: Player = null
 var _swoop_direction := Vector2.DOWN
+var _flip_cooldown: float = 0.0
 
 @onready var visual: Node2D = $Visual
 @onready var hitbox: Hitbox = $Hitbox
@@ -70,6 +75,7 @@ func _physics_process(delta: float) -> void:
 
 func _tick_state(delta: float) -> void:
 	_hover_t += delta * 2.5
+	_flip_cooldown = maxf(0.0, _flip_cooldown - delta)
 	var hover_offset := sin(_hover_t) * 14.0
 	_poll_player()
 
@@ -85,10 +91,13 @@ func _tick_state(delta: float) -> void:
 				_state = State.PATROL
 				velocity = Vector2.ZERO
 				return
-			_dir = signf(_target_player.global_position.x - global_position.x)
-			if _dir == 0.0:
-				_dir = 1.0
-			velocity.x = move_toward(velocity.x, _dir * fly_speed * 0.8, 160.0 * delta)
+			var dx := _target_player.global_position.x - global_position.x
+			if absf(dx) > FACE_DEADZONE:
+				_face(signf(dx))
+				velocity.x = move_toward(velocity.x, _dir * fly_speed * 0.8, 160.0 * delta)
+			else:
+				# Overhead: hold position instead of hunting the sign of dx.
+				velocity.x = move_toward(velocity.x, 0.0, 200.0 * delta)
 			velocity.y = ((_origin_y + hover_offset - 20.0) - global_position.y) * 4.0
 			_shoot_timer -= delta
 			if _shoot_timer <= 0.0:
@@ -104,6 +113,8 @@ func _tick_state(delta: float) -> void:
 				_state = State.SWOOP
 				_state_timer = 0.85
 				_swoop_direction = (_target_player.global_position + Vector2(0, -14) - global_position).normalized()
+				if absf(_swoop_direction.x) > 0.2:
+					_face(signf(_swoop_direction.x), true)
 				hitbox.arm(_swoop_direction * 75.0)
 		State.SWOOP:
 			velocity = _swoop_direction * swoop_speed
@@ -126,6 +137,17 @@ func _tick_state(delta: float) -> void:
 func _after_move() -> void:
 	if visual != null:
 		visual.scale.x = -_dir if _dir != 0.0 else 1.0
+
+
+## Turn only when the heading really changed and the last turn has settled.
+## `force` is for the swoop commit, which must face where it dives.
+func _face(dir: float, force: bool = false) -> void:
+	if dir == 0.0 or dir == _dir:
+		return
+	if _flip_cooldown > 0.0 and not force:
+		return
+	_dir = dir
+	_flip_cooldown = FLIP_COOLDOWN
 
 
 func _poll_player() -> void:
