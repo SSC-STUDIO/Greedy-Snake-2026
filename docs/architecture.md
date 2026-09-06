@@ -24,12 +24,23 @@ The `.tscn` stays the authored map (platforms, props, three parallax plates). `l
 
 | Script | Role |
 |---|---|
-| `scripts/levels/level01_env.gd` | Shared `plant()` — foliage sits on a foot pivot with `WindSway`. |
+| `scripts/levels/level01_env.gd` | Shared `plant()` — foliage sits on a foot pivot with `WindSway`; play-layer trees also get a sibling `LeafShed`. |
 | `scripts/levels/level01_parallax.gd` | Fog / silhouette / MoodTint / `WeatherFx` / `CineFx` / `MoonFill`. Drift follows `wind_vector()`. |
-| `scripts/levels/level01_east_wing.gd` | Pit beams, east floor, ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
+| `scripts/levels/level01_east_wing.gd` | Pit beams, `EastFloor` (`skin = "stone"` — the nave is paved, the graveyard is grass), ember ledge, Executioner, ForgeHeart, BossGate, ForgeShelter indoor zone. |
 | `scripts/levels/level01_story_beats.gd` | One-shot Director scripts from `GameEvents` + east-wing signals. |
 
 East wing is a helper node, not a PackedScene: instancing a sub-scene would reparent those nodes and break save / story lookups.
+
+Set dressing that is not in the `.tscn`:
+
+| Script | Role |
+|---|---|
+| `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. |
+| `scripts/world/ruin_plate.gd` | Slices a rectangular wall plate into 8px columns with a deterministic broken crown. Used by `TorchLight` and the altar / gargoyle backdrops; arch plates keep their authored tops. |
+| `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, wind-drifted, pixel-snapped, dissolve on the foot line. |
+| `ToxinPool.Wisp` | Additive green vapor cells rising off the sludge film; rain halves the rate. |
+
+Ambient effects are presentation only: they read `WorldClock` and never write physics, save data, or `Engine.time_scale`. One-shot `Fx` particles parent under the level's `WorldEffects` (via `GameContext.world_effects()`) so they render inside the 640×360 world viewport.
 
 ## Lighting
 

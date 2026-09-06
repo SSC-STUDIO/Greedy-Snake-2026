@@ -7,6 +7,9 @@ extends StaticBody2D
 ##   left/right ends, ragged hanging underside that shows sky through the
 ##   gaps. For airborne steps, which must never show a raw dirt
 ##   cross-section nor a boxy filled bottom.
+## - "stone": cathedral paving — two rows of cracked flagstone cut from the
+##   48px church slabs, then the same cemetery earth underneath. Marks the
+##   Executioner's nave apart from the graveyard grass without new art.
 ## Missing art falls back to a ColorRect (headless/tests).
 
 @export var size: Vector2 = Vector2(64, 16)
@@ -19,7 +22,7 @@ extends StaticBody2D
 ## Multiplied onto every tile; pits/interiors can sit darker than open ground.
 @export var tone: Color = Color.WHITE
 ## "auto": thin, wide platforms count as floating; everything else is ground.
-@export_enum("auto", "ground", "floating") var skin: String = "auto"
+@export_enum("auto", "ground", "floating", "stone") var skin: String = "auto"
 
 const TOP_A := "res://assets/env/tile_top_a.png"
 const TOP_B := "res://assets/env/tile_top_b.png"
@@ -44,6 +47,16 @@ const FLOAT_MIDS: Array[String] = [
 ]
 ## 悬浮石台整体略偏冷灰，和草顶暖土在同一色板里拉开对比。
 const FLOAT_TONE := Color(0.82, 0.8, 0.95)
+## 48×48 教堂石板：上 16px 带亮沿的板面，16–32px 是裂纹石身，下面是残缺底。
+const STONE_SLABS: Array[String] = [
+	"res://assets/env/slab_a.png",
+	"res://assets/env/slab_b.png",
+	"res://assets/env/slab_c.png",
+]
+## 石板行数：板面 + 石身；再往下回到墓园深土，铺路只是压在坟土上。
+const STONE_ROWS := 2
+## 铺路略偏冷紫，和柱子/拱门同一族，草地暖土留给墓园。
+const STONE_TONE := Color(0.88, 0.84, 0.98)
 const WORLD := 16.0
 ## Row brightness: surface row full, then darken toward DEPTH_FLOOR by row 4.
 const DEPTH_FLOOR := 0.4
@@ -74,6 +87,8 @@ func _build_visual() -> void:
 	var floating := skin == "floating" \
 			or (skin == "auto" and size.y <= WORLD + 0.5 and size.x > WORLD + 0.5)
 	if floating and _build_floating():
+		return
+	if skin == "stone" and _build_stone():
 		return
 	var tops: Array[Texture2D] = []
 	for path in [TOP_A, TOP_B]:
@@ -221,6 +236,67 @@ func _add_float_piece(tex: Texture2D, x: float, width: float) -> void:
 		tone.r * FLOAT_TONE.r, tone.g * FLOAT_TONE.g, tone.b * FLOAT_TONE.b, tone.a
 	)
 	add_child(spr)
+
+
+## 教堂铺路：前两行从三块 48px 石板上随机切 16px 段（列位、板号、镜像都随机，
+## 长地板才不会按 48px 打拍子），第三行起沿用墓园深土与行深压暗。
+func _build_stone() -> bool:
+	var slabs: Array[Texture2D] = []
+	for path in STONE_SLABS:
+		var t := _load_tex(path)
+		if t != null:
+			slabs.append(t)
+	if slabs.is_empty():
+		return false
+	var fills: Array[Texture2D] = []
+	for path in [FILL_PLAIN, FILL_PLAIN_B]:
+		var t := _load_tex(path)
+		if t != null:
+			fills.append(t)
+	var deep := _load_tex(FILL_DEEP)
+	if fills.is_empty() and deep == null:
+		fills = slabs
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(Vector4(position.x, position.y, size.x, size.y)) ^ 0x5710
+	var cols := maxi(1, int(ceil(size.x / WORLD)))
+	var rows := maxi(1, int(ceil(size.y / WORLD)))
+	var slab_cols := int(float(slabs[0].get_width()) / WORLD)
+	for r in rows:
+		for c in cols:
+			var remain_x := size.x - c * WORLD
+			var remain_y := size.y - r * WORLD
+			var w := minf(WORLD, remain_x)
+			var h := minf(WORLD, remain_y)
+			var spr := Sprite2D.new()
+			spr.centered = false
+			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			spr.position = Vector2(c * WORLD, r * WORLD)
+			spr.z_index = -1
+			if r < STONE_ROWS:
+				spr.texture = slabs[rng.randi_range(0, slabs.size() - 1)]
+				spr.region_enabled = true
+				var sx := float(rng.randi_range(0, maxi(0, slab_cols - 1))) * WORLD
+				spr.region_rect = Rect2(sx, r * WORLD, w, h)
+				spr.flip_h = rng.randf() < 0.5
+				var k := _row_tint(r, rows, true)
+				spr.modulate = Color(k.r * STONE_TONE.r, k.g * STONE_TONE.g, k.b * STONE_TONE.b, k.a)
+			else:
+				var tex: Texture2D
+				if deep != null and (fills.is_empty() or rng.randf() < 0.72):
+					tex = deep
+				else:
+					tex = fills[rng.randi_range(0, fills.size() - 1)]
+				spr.texture = tex
+				spr.flip_h = rng.randf() < 0.5
+				var src := float(tex.get_width())
+				var s := WORLD / maxf(1.0, src)
+				spr.scale = Vector2(s, s)
+				if w < WORLD - 0.01 or h < WORLD - 0.01:
+					spr.region_enabled = true
+					spr.region_rect = Rect2(0, 0, minf(src, w / s), minf(float(tex.get_height()), h / s))
+				spr.modulate = _row_tint(r, rows, true)
+			add_child(spr)
+	return true
 
 
 ## Surface stays bright; each row below sinks toward DEPTH_FLOOR by row 4.

@@ -89,7 +89,9 @@ func build(host: Node2D) -> ExecutionerBoss:
 		wall.position.x = float(EAST_LIMIT)
 	var floor_rect := east_floor_rect()
 	var floor := PLATFORM.instantiate()
-	floor.skin = "ground"
+	floor.name = "EastFloor"
+	# 墓园草皮到此为止：刽子手的中殿铺的是教堂石板，脚下换材质就是换区。
+	floor.skin = "stone"
 	floor.position = floor_rect.position
 	floor.size = floor_rect.size
 	floor.cap_left = false
@@ -163,10 +165,10 @@ func _decorate_cathedral(host: Node2D) -> void:
 
 	# 3. 骷髅柱与石像鬼 (Gargoyle on Ember Ledge & Skull Pillars)
 	_plant_env_sprite(decor, "res://assets/env/bg_column_skulls.png", Vector2(1820, 128), Vector2(0.8, 0.8), Color(0.55, 0.5, 0.65, 0.75))
-	_plant_env_sprite(decor, "res://assets/env/bg_gargoyle.png", Vector2(1500, 48), Vector2(0.55, 0.55), Color(0.68, 0.62, 0.78, 0.9))
+	_plant_ruin_plate(decor, "res://assets/env/bg_gargoyle.png", Vector2(1500, 48), Vector2(0.55, 0.55), Color(0.68, 0.62, 0.78, 0.9))
 
-	# 4. 锻炉残室祭坛与背景 (Altar behind Forge Heart)
-	_plant_env_sprite(decor, "res://assets/env/bg_altar.png", Vector2(2004, 128), Vector2(1, 1), Color(0.85, 0.75, 0.7, 0.88))
+	# 4. 锻炉残室祭坛与背景 (Altar behind Forge Heart)。顶 64px 是素墙，可以塌。
+	_plant_ruin_plate(decor, "res://assets/env/bg_altar.png", Vector2(2004, 128), Vector2(1, 1), Color(0.85, 0.75, 0.7, 0.88))
 
 	# 5. 地面断碑碎石 (Ground Rubble & Slabs)
 	_plant_env_sprite(decor, "res://assets/env/slab_a.png", Vector2(1710, 296), Vector2(1, 1), Color(0.7, 0.65, 0.75, 0.9))
@@ -194,6 +196,24 @@ func _plant_env_sprite(parent: Node2D, path: String, pos: Vector2, scl: Vector2 
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	parent.add_child(spr)
 	return spr
+
+
+## Same footprint as _plant_env_sprite (top-left at pos, scaled, tinted), but the
+## plate goes through RuinPlate so its crown is broken instead of a ruler edge.
+func _plant_ruin_plate(parent: Node2D, path: String, pos: Vector2, scl: Vector2 = Vector2.ONE, tint: Color = Color.WHITE) -> Node2D:
+	if not ResourceLoader.exists(path):
+		return null
+	var tex := load(path) as Texture2D
+	if tex == null:
+		return null
+	var root := Node2D.new()
+	root.name = "Ruin_%s" % path.get_file().get_basename()
+	root.position = pos
+	root.scale = scl
+	root.modulate = tint
+	parent.add_child(root)
+	RuinPlate.build(root, tex, pos)
+	return root
 
 
 func _plant_torch(parent: Node2D, pos: Vector2) -> void:

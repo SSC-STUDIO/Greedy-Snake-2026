@@ -49,3 +49,44 @@ func test_decorative_torch_uses_shared_local_light() -> void:
 	ok(light != null, "torch uses the same local-light presentation")
 	eq(light.follow, &"torch")
 	ok(not light.shadow_enabled, "decorative torches do not add full shadow passes")
+
+
+func test_torch_wall_has_a_broken_crown_not_a_box() -> void:
+	var torch := TorchLight.new()
+	torch.position = Vector2(1296, 230)
+	add_child(torch)
+	var wall := torch.get_node_or_null("TorchSprite") as Node2D
+	ok(wall != null, "wall plate container exists")
+	if wall == null:
+		return
+	eq(wall.position, Vector2(-32, -96), "container keeps the old centered 64×192 footprint")
+	var strips: Array[Sprite2D] = []
+	for child in wall.get_children():
+		if child is Sprite2D:
+			strips.append(child)
+	eq(strips.size(), 8, "64px plate is sliced into 8px columns")
+	var tops := PackedFloat32Array()
+	var bottoms := PackedFloat32Array()
+	for s in strips:
+		ok(s.region_enabled, "each column is a region of the shared plate")
+		almost(s.region_rect.size.x, 8.0, 0.01)
+		tops.append(s.position.y)
+		bottoms.append(s.position.y + s.region_rect.size.y)
+		ok(s.region_rect.position.y <= 48.0, "crown never cuts into the torch flame (y≈96+)")
+		ok(s.region_rect.position.y + s.region_rect.size.y == 192.0, "columns keep the full lower wall")
+	var distinct := {}
+	for t in tops:
+		distinct[t] = true
+	ok(distinct.size() >= 3, "crown is jagged, not a straight top edge")
+	for b in bottoms:
+		almost(b, 192.0, 0.01, "all columns share one footing")
+	ok(strips[0].region_rect.position.y >= 8.0 and strips[7].region_rect.position.y >= 8.0,
+			"outer corners have crumbled")
+	var again := TorchLight.new()
+	again.position = Vector2(1296, 230)
+	add_child(again)
+	eq(again.crown_profile(8), torch.crown_profile(8), "profile is deterministic per placement")
+	var elsewhere := TorchLight.new()
+	elsewhere.position = Vector2(1730, 230)
+	add_child(elsewhere)
+	ok(elsewhere.crown_profile(8) != torch.crown_profile(8), "different placements break differently")

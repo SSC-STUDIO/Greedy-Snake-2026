@@ -32,17 +32,21 @@ const WAYMARKS := [
 	[Vector2(1624, 320), "东翼"],
 ]
 ## 硬物只在玩法层：scale=1，脚钉 GROUND_TOP，无 WindSway。近景视差条不画碑。
+## 坟从余烬巢一路排到 x≈1580 就断了——石板路（EastFloor 1600 起）之后再无墓碑。
 const PLAY_DECOR := [
 	[Level01Env.DECOR_BUSH_L, Vector2(78, 320), 0.65],
 	[Level01Env.DECOR_STONE_1, Vector2(210, 320), 1.0],
 	[Level01Env.DECOR_TREE_2, Vector2(268, 320), 0.46],
 	[Level01Env.DECOR_STONE_3, Vector2(360, 320), 1.0],
+	[Level01Env.DECOR_STONE_4, Vector2(596, 320), 1.0],
 	[Level01Env.DECOR_BUSH_S, Vector2(620, 320), 1.0],
+	[Level01Env.DECOR_GRAVE_CROSS, Vector2(690, 320), 1.0],
 	[Level01Env.DECOR_STATUE, Vector2(880, 320), 1.0],
 	[Level01Env.DECOR_STONE_2, Vector2(1020, 320), 1.0],
 	[Level01Env.DECOR_TREE_1, Vector2(1210, 320), 0.48],
 	[Level01Env.DECOR_BUSH_L, Vector2(1440, 320), 0.62],
 	[Level01Env.DECOR_STONE_1, Vector2(1540, 320), 1.0],
+	[Level01Env.DECOR_STONE_4, Vector2(1580, 320), 1.0],
 ]
 
 const EAST_LIMIT := Level01EastWing.EAST_LIMIT
@@ -180,7 +184,7 @@ func _spawn_decor() -> void:
 	layer.z_index = -2
 	add_child(layer)
 	for item in PLAY_DECOR:
-		Level01Env.plant(layer, String(item[0]), item[1] as Vector2, float(item[2]))
+		Level01Env.plant(layer, String(item[0]), item[1] as Vector2, float(item[2]), Color.WHITE, true)
 
 
 const STELE_SCENE := preload("res://scenes/interactables/LoreStele.tscn")

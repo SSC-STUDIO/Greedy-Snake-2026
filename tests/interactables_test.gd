@@ -139,6 +139,42 @@ func test_toxin_pool_hints_on_repeat_dip() -> void:
 	Director.abort()
 
 
+func test_toxin_pool_breathes_vapor_off_the_film() -> void:
+	var pool := ToxinPool.new()
+	add_child(pool)
+	eq(pool.vapor_count(), 0, "cold start: no wisps yet")
+	# Headless skips spawning (nothing renders); drive the emitter directly.
+	pool._headless = false
+	for i in 40:
+		pool._tick_vapor(0.1)
+	ok(pool.vapor_count() >= 1, "the film exhales wisps over time")
+	ok(pool.vapor_count() <= ToxinPool.VAPOR_MAX, "wisp count is capped")
+	var vapor := pool.get_node_or_null("Vapor") as Node2D
+	ok(vapor != null and vapor.z_index > 0, "vapor draws above the scum")
+	var wisp := vapor.get_child(0) as ToxinPool.Wisp
+	ok(wisp != null)
+	if wisp == null:
+		return
+	var r := pool.surface_rect()
+	ok(wisp.position.x >= 0.0 and wisp.position.x <= r.size.x, "wisps start inside the pool span")
+	almost(wisp.position.y, 1.0, 0.01, "wisps start at the film surface")
+	var cells := 0
+	for c in wisp.get_children():
+		if c is Polygon2D:
+			cells += 1
+			ok((c as Polygon2D).material is CanvasItemMaterial, "cells are additive so night cannot crush them")
+			eq((c as Polygon2D).position, (c as Polygon2D).position.round(), "cells sit on the pixel grid")
+	ok(cells >= 3 and cells <= 5, "a wisp is a loose 3-5 cell cluster")
+	var y0 := wisp.position.y
+	wisp._process(0.5)
+	ok(wisp.position.y < y0, "vapor rises")
+	ok(wisp.modulate.a > 0.0, "wisp fades in")
+	eq(wisp.position, wisp.position.round(), "wisp itself is pixel snapped")
+	wisp._process(10.0)
+	ok(wisp.is_queued_for_deletion(), "wisps die after their lifetime")
+	Director.abort()
+
+
 func test_toxin_pool_does_not_zero_velocity_or_cap_the_pit() -> void:
 	Director.abort()
 	var arena := Node2D.new()

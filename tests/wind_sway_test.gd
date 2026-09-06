@@ -89,6 +89,61 @@ func test_plant_sways_trees_not_stones() -> void:
 		almost(statue.rotation, 0.0, 0.0001, "statue rotation stays 0")
 
 
+func test_play_trees_shed_leaves_beside_the_sway_pivot() -> void:
+	var layer := Node2D.new()
+	add_child(layer)
+	var quiet := Level01Env.plant(layer, Level01Env.DECOR_TREE_2, Vector2(0, 80), 0.5)
+	var tree := Level01Env.plant(layer, Level01Env.DECOR_TREE_1, Vector2(200, 80), 0.5, Color.WHITE, true)
+	var bush := Level01Env.plant(layer, Level01Env.DECOR_BUSH_L, Vector2(400, 80), 0.65, Color.WHITE, true)
+	if quiet == null or tree == null or bush == null:
+		ok(true, "gothic assets missing — skip leaf assert")
+		return
+	var sheds: Array[LeafShed] = []
+	for child in layer.get_children():
+		if child is LeafShed:
+			sheds.append(child)
+	eq(sheds.size(), 1, "only trees asked to shed get a LeafShed; bushes and silhouettes never do")
+	if sheds.is_empty():
+		return
+	var shed := sheds[0]
+	var pivot := tree.get_parent() as Node2D
+	ok(shed.get_parent() == layer, "shed is a sibling of the pivot, so leaves fall straight while the crown leans")
+	eq(shed.position, pivot.position, "shed stands on the tree's feet")
+	almost(shed.canopy.x, float(tree.texture.get_width()) * 0.5, 0.01, "canopy width follows the planted scale")
+	almost(shed.canopy.y, float(tree.texture.get_height()) * 0.5, 0.01)
+	ok(layer.get_children().find(shed) > layer.get_children().find(pivot), "leaves draw in front of their trunk")
+
+
+func test_leaf_falls_with_the_wind_and_dies_on_the_ground() -> void:
+	WorldClock.wind_heading = 1.0
+	WorldClock._heading_target = 1.0
+	WorldClock._snap_wind_speed()
+	var shed := LeafShed.new()
+	shed.canopy = Vector2(80, 60)
+	add_child(shed)
+	var leaf := shed.spawn_leaf()
+	ok(leaf != null, "spawn_leaf hands back the leaf")
+	if leaf == null:
+		return
+	ok(leaf.position.y <= -30.0 and leaf.position.y >= -54.0, "leaves start in the upper crown")
+	ok(absf(leaf.position.x) <= 28.0, "leaves start inside the canopy width")
+	eq(leaf.position, leaf.position.round(), "leaf sits on the pixel grid")
+	var start := leaf.position
+	leaf._process(0.5)
+	ok(leaf.position.y > start.y, "leaf falls")
+	ok(not leaf.landed())
+	ok(leaf.position.x > start.x - 6.0, "an east wind never blows the leaf hard west")
+	for i in 60:
+		leaf._process(0.1)
+	ok(leaf.landed(), "leaf reaches the foot line")
+	almost(leaf.position.y, 0.0, 0.01, "landed leaves rest exactly on the feet line")
+	leaf._process(LeafShed.Leaf.FADE + 0.05)
+	ok(leaf.is_queued_for_deletion(), "landed leaves dissolve into the soil")
+	for i in 5:
+		shed.spawn_leaf()
+	ok(shed.leaf_count() <= LeafShed.MAX_LEAVES, "a tree never rains more than %d leaves" % LeafShed.MAX_LEAVES)
+
+
 func test_hard_plant_lands_on_opaque_bottom() -> void:
 	var layer := Node2D.new()
 	add_child(layer)

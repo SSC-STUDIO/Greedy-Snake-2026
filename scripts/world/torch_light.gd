@@ -1,15 +1,19 @@
 class_name TorchLight
 extends Node2D
 ## Gothic wall torch with atmospheric flickering point light and embers.
+## The 64×192 wall plate goes through RuinPlate (8px columns, broken crown)
+## so the bastion reads as ruined masonry instead of a hard-edged dark box.
 
 const TORCH_TEX := "res://assets/env/bg_wall_torch.png"
+## 火把在贴图 y≈96–150；切口最深 6 档 × 8px = 48px，不会碰到火焰。
+const CROWN_MAX_STEPS := 6
 
 @export var light_color: Color = Color(1.0, 0.65, 0.32, 1.0)
 @export var base_energy: float = 0.60
 @export var light_radius: float = 64.0
 
 var _light: WorldLight
-var _sprite: Sprite2D
+var _sprite: Node2D
 var _time: float = 0.0
 var _seed: float = 0.0
 
@@ -22,13 +26,21 @@ func _ready() -> void:
 
 
 func _setup_sprite() -> void:
-	if ResourceLoader.exists(TORCH_TEX):
-		_sprite = Sprite2D.new()
-		_sprite.name = "TorchSprite"
-		_sprite.texture = load(TORCH_TEX) as Texture2D
-		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_sprite.centered = true
-		add_child(_sprite)
+	if not ResourceLoader.exists(TORCH_TEX):
+		return
+	var tex := load(TORCH_TEX) as Texture2D
+	if tex == null:
+		return
+	_sprite = Node2D.new()
+	_sprite.name = "TorchSprite"
+	# Keep the old centered-sprite footprint: plate top-left at (-w/2, -h/2).
+	_sprite.position = -Vector2(float(tex.get_width()), float(tex.get_height())) * 0.5
+	add_child(_sprite)
+	RuinPlate.build(_sprite, tex, global_position, CROWN_MAX_STEPS)
+
+
+func crown_profile(strips: int) -> PackedInt32Array:
+	return RuinPlate.crown_profile(strips, global_position, CROWN_MAX_STEPS)
 
 
 func _setup_light() -> void:

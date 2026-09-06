@@ -25,6 +25,16 @@ var _scum_frames: Array[Texture2D] = []
 var _scum_time := 0.0
 var _hinted := false
 
+## 毒雾丝：从液面缓升、随风偏移、加法混合的 2px 绿点簇。纯表现，不进物理。
+const VAPOR_INTERVAL := 0.45
+const VAPOR_MAX := 8
+const VAPOR_TINT := Color(0.55, 0.95, 0.62)
+## 峰值透明度：加法混合下 0.42 在夜里几乎读不出，0.62 是一缕能看见的雾。
+const VAPOR_PEAK_ALPHA := 0.62
+var _vapor: Node2D
+var _vapor_accum := 0.0
+var _headless := false
+
 
 func _ready() -> void:
 	# Sensor only — never a solid lid. Player mask is layer 1; this stays on 128.
@@ -34,6 +44,7 @@ func _ready() -> void:
 	monitorable = true
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+	_headless = DisplayServer.get_name() == "headless"
 	_rebuild_visual()
 
 
@@ -69,6 +80,7 @@ func _rebuild_visual() -> void:
 		child.queue_free()
 	_scum_sprites.clear()
 	_scum_frames.clear()
+	_vapor = null
 	var sludge := _load_tex(SLUDGE_PATH)
 	var scum := _load_tex(SCUM_PATH)
 	var scum_b := _load_tex(SCUM_B_PATH)
@@ -140,6 +152,7 @@ func _load_tex(path: String) -> Texture2D:
 
 
 func _process(delta: float) -> void:
+	_tick_vapor(delta)
 	if _scum_sprites.is_empty():
 		return
 	_scum_time += delta
@@ -153,6 +166,33 @@ func _process(delta: float) -> void:
 		if _scum_frames.size() > 1 and spr.texture != _scum_frames[frame]:
 			spr.texture = _scum_frames[frame]
 		spr.position.y = sin(_scum_time * 1.7 + float(i) * 0.9) * SCUM_BOB - 0.5
+
+
+## 液面持续呼出毒雾；下雨时雨点压住液面，雾丝少一半。
+func _tick_vapor(delta: float) -> void:
+	if _headless:
+		return
+	if _vapor == null or not is_instance_valid(_vapor):
+		_vapor = Node2D.new()
+		_vapor.name = "Vapor"
+		_vapor.z_index = 2
+		add_child(_vapor)
+	_vapor_accum += delta
+	var interval := VAPOR_INTERVAL * lerpf(1.0, 2.0, WorldClock.rain_opacity())
+	if _vapor_accum < interval:
+		return
+	_vapor_accum = 0.0
+	if _vapor.get_child_count() >= VAPOR_MAX:
+		return
+	var wisp := Wisp.new()
+	wisp.position = Vector2(randf_range(6.0, _pool_size.x - 6.0), 1.0)
+	_vapor.add_child(wisp)
+
+
+func vapor_count() -> int:
+	if _vapor == null or not is_instance_valid(_vapor):
+		return 0
+	return _vapor.get_child_count()
 
 
 func _physics_process(delta: float) -> void:
@@ -195,3 +235,61 @@ func _bubble_rect() -> Rect2:
 		Vector2(4.0, _pool_size.y * 0.15),
 		Vector2(_pool_size.x - 8.0, _pool_size.y * 0.55)
 	)
+
+
+## 一缕毒雾：3–5 个 2px 方点松散成簇，整体上升、随风侧漂、点间慢慢散开；
+## 坐标取整以免 NEAREST 发糊。alpha 先起后落，寿命 2.4–3.6s。
+class Wisp extends Node2D:
+	var _age := 0.0
+	var _life := 3.0
+	var _rise := 9.0
+	var _phase := 0.0
+	## Sub-pixel state; node positions are snapped from these.
+	var _pos := Vector2.ZERO
+	var _cells: Array[Polygon2D] = []
+	var _cell_pos: Array[Vector2] = []
+	var _spread: Array[Vector2] = []
+
+
+	func _init() -> void:
+		_life = randf_range(2.4, 3.6)
+		_rise = randf_range(7.0, 11.0)
+		_phase = randf() * TAU
+		var n := randi_range(3, 5)
+		for i in n:
+			var cell := Polygon2D.new()
+			# 2px 与 3px 方点混合：全 2px 在 640×360 上只剩噼里啪啦的噪点。
+			var half := 1.0 if randf() < 0.5 else 1.5
+			cell.polygon = PackedVector2Array([
+				Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
+			])
+			cell.color = ToxinPool.VAPOR_TINT.lerp(Palette.FOG, randf() * 0.4)
+			cell.material = Fx.additive_mat()
+			var p := Vector2(randf_range(-4.0, 4.0), randf_range(-3.0, 1.0))
+			cell.position = p.round()
+			add_child(cell)
+			_cells.append(cell)
+			_cell_pos.append(p)
+			_spread.append(Vector2(randf_range(-2.2, 2.2), randf_range(-1.6, 0.4)))
+		modulate = Color(1.0, 1.0, 1.0, 0.0)
+
+
+	func _ready() -> void:
+		_pos = position
+
+
+	func _process(delta: float) -> void:
+		_age += delta
+		if _age >= _life:
+			queue_free()
+			return
+		var k := _age / _life
+		var drift := Vector2(
+			WorldClock.wind_vector().x * 22.0 + sin(_age * 1.6 + _phase) * 3.0,
+			-_rise * (1.0 - 0.35 * k))
+		_pos += drift * delta
+		position = _pos.round()
+		for i in _cells.size():
+			_cell_pos[i] += _spread[i] * delta
+			_cells[i].position = _cell_pos[i].round()
+		modulate.a = minf(k * 4.0, 1.0) * (1.0 - k) * ToxinPool.VAPOR_PEAK_ALPHA

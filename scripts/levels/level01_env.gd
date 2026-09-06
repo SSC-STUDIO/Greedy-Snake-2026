@@ -11,7 +11,10 @@ const DECOR_BUSH_S := "res://assets/external/gothicvania_cemetery/PNG/Environmen
 const DECOR_STONE_1 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/stone-1.png"
 const DECOR_STONE_2 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/stone-2.png"
 const DECOR_STONE_3 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/stone-3.png"
+const DECOR_STONE_4 := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/stone-4.png"
 const DECOR_STATUE := "res://assets/external/gothicvania_cemetery/PNG/Environment/sliced-objects/statue.png"
+## 十字 + 草冢（objects.png 372,127 77×65 裁片）：一座有人埋过的坟。
+const DECOR_GRAVE_CROSS := "res://assets/env/grave_cross.png"
 
 enum Hardness { STEEL, STONE, TREE, BUSH }
 
@@ -91,16 +94,18 @@ static func find_sway(host: Node) -> WindSway:
 	return null
 
 
-static func plant(parent: Node2D, path: String, feet: Vector2, scale: float, tint: Color = Color.WHITE) -> Sprite2D:
+## `shed_leaves`: play-layer trees drop the odd dead leaf (LeafShed sits beside
+## the sway pivot so leaves fall straight while the crown leans).
+static func plant(parent: Node2D, path: String, feet: Vector2, scale: float, tint: Color = Color.WHITE, shed_leaves: bool = false) -> Sprite2D:
 	if not ResourceLoader.exists(path):
 		return null
 	var tex := load(path) as Texture2D
 	if tex == null:
 		return null
-	return plant_texture(parent, tex, path, feet, scale, tint)
+	return plant_texture(parent, tex, path, feet, scale, tint, shed_leaves)
 
 
-static func plant_texture(parent: Node2D, tex: Texture2D, path: String, feet: Vector2, scale: float, tint: Color = Color.WHITE) -> Sprite2D:
+static func plant_texture(parent: Node2D, tex: Texture2D, path: String, feet: Vector2, scale: float, tint: Color = Color.WHITE, shed_leaves: bool = false) -> Sprite2D:
 	if tex == null:
 		return null
 	var spr := Sprite2D.new()
@@ -124,6 +129,12 @@ static func plant_texture(parent: Node2D, tex: Texture2D, path: String, feet: Ve
 		sway.amplitude = sway_amplitude(path)
 		sway.freq = sway_freq(path)
 		pivot.add_child(sway)
+		if shed_leaves and hardness == Hardness.TREE:
+			var shed := LeafShed.new()
+			shed.name = "Leaves_%s" % path.get_file().get_basename()
+			shed.position = pivot.position
+			shed.canopy = Vector2(w, h)
+			parent.add_child(shed)
 		return spr
 	var land := float(opaque_bottom_px(tex) + 1) * scale
 	spr.position = Vector2(feet.x, feet.y - land)
