@@ -93,6 +93,7 @@ func _ready() -> void:
 	GameEvents.boss_defeated.connect(_on_boss_defeated)
 	WorldClock.phase_changed.connect(_on_atmosphere)
 	WorldClock.weather_changed.connect(_on_atmosphere)
+	WorldClock.zone_changed.connect(_on_atmosphere)
 	_refresh_atmosphere()
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player:
@@ -483,6 +484,8 @@ func _exit_tree() -> void:
 		WorldClock.phase_changed.disconnect(_on_atmosphere)
 	if WorldClock.weather_changed.is_connected(_on_atmosphere):
 		WorldClock.weather_changed.disconnect(_on_atmosphere)
+	if WorldClock.zone_changed.is_connected(_on_atmosphere):
+		WorldClock.zone_changed.disconnect(_on_atmosphere)
 
 
 func _on_atmosphere(_value: int = 0) -> void:

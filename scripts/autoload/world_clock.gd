@@ -341,6 +341,9 @@ func _weather_label(w: int) -> String:
 
 
 func hud_line() -> String:
+	# 室内看不见天，也没有天气；HUD 只报「地下」，时钟仍在背后走。
+	if zone == Zone.INDOORS:
+		return "地下 · %s" % phase_label()
 	return "%s · %s" % [weather_label(), phase_label()]
 
 

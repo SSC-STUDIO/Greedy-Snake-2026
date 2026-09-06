@@ -122,6 +122,13 @@ func _run() -> void:
 		_ui(&"ui_down")
 		await _frames(2)
 	_ui(&"ui_accept")
+	if _ending == "rekindle":
+		# 复燃不回标题：陵墓醒来，骑士落进第二关。走到第一个存档点、过第一段毒水。
+		if not await _descend_into_undercroft(): return
+		print("[WALKTHROUGH PASS] %s; %d deaths; normal input only" % [_ending, _deaths])
+		_write_result(true)
+		get_tree().quit(0)
+		return
 	for i in 600:
 		await _frames(1)
 		var current := get_tree().current_scene
@@ -141,6 +148,55 @@ func _run() -> void:
 
 func _player() -> Player:
 	return get_tree().get_first_node_in_group("player") as Player
+
+
+func _descend_into_undercroft() -> bool:
+	_step = "descend_level02"
+	var arrived := false
+	for i in 900:
+		await _frames(1)
+		var player := _player()
+		if player != null and player.health.current > 0 \
+				and GameContext.world_scene_path(player) == GameContext.LEVEL02_PATH \
+				and GameContext.gameplay_input_enabled():
+			arrived = true
+			break
+	if not _require(arrived, "rekindle drops the knight into Level02"): return false
+	_record("descend_level02")
+	for i in 120:
+		if _player().is_on_floor():
+			break
+		await _frames(1)
+	if not _require(_player().is_on_floor() and absf(_player().position.y - 320.0) < 2.0, "knight lands on FloorA"): return false
+	if not await _walk_to(176.0, false): return false
+	await _tap(&"interact")
+	if not _require(SaveData.last_lit_nest() == "level02:Props/EmberNestShaft", "undercroft checkpoint lit under its namespace"): return false
+	_record("undercroft_checkpoint")
+	if not await _walk_to(430.0, false): return false
+	if not await _walk_to(760.0, true): return false
+	if not _require(absf(_player().position.y - 320.0) < 2.0, "knight stands on FloorB after the toxin pit"): return false
+	_record("undercroft_pit_crossed")
+	# Save/continue round trip: pause → title → continue must come back here.
+	_ui(&"ui_cancel")
+	await _frames(3)
+	_ui(&"ui_up")
+	await _frames(3)
+	_ui(&"ui_accept")
+	for i in 600:
+		await _frames(1)
+		if get_tree().current_scene != null and get_tree().current_scene.scene_file_path == TITLE:
+			await _frames(6)
+			_ui(&"ui_down")
+			await _frames(3)
+			_ui(&"ui_accept")
+			if not await _wait_world(): return false
+			var player := _player()
+			if not _require(GameContext.world_scene_path(player) == GameContext.LEVEL02_PATH, "continue reopens Level02"): return false
+			if not _require(absf(player.position.x - 176.0) < 12.0, "continue restores the undercroft checkpoint"): return false
+			_record("undercroft_continue_verified")
+			return true
+	_fail("pause menu did not return to title from Level02")
+	return false
 
 
 func _wait_world() -> bool:

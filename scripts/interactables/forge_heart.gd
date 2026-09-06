@@ -119,10 +119,24 @@ func _on_chosen(id: StringName) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		SaveData.save_game(GameContext.world_scene_path(player), player)
-	var line := "陵墓在锈里睁开眼。" if kind == "rekindle" else "余烬落回炉灰。骑士也是。"
+	if kind == "rekindle":
+		# 复燃不是终点：陵墓醒来，炉心下面的石板松开，骑士落进沉钟地窟（第二关）。
+		Director.play([
+			{"kind": "lock"},
+			{"kind": "caption", "text": "陵墓在锈里睁开眼。", "hold": 2.2},
+			{"kind": "caption", "text": "炉心底下的石板松开了。下面有钟声。", "hold": 2.2},
+			{"kind": "wait", "seconds": 0.2},
+			{"kind": "unlock"},
+		])
+		await Director.finished
+		if player is Player:
+			LevelExit.travel(GameContext.LEVEL02_PATH, Level02Undercroft.ENTRY_SPAWN, player as Player)
+		else:
+			Director.fade_to(GameContext.LEVEL02_PATH)
+		return
 	Director.play([
 		{"kind": "lock"},
-		{"kind": "caption", "text": line, "hold": 2.2},
+		{"kind": "caption", "text": "余烬落回炉灰。骑士也是。", "hold": 2.2},
 		{"kind": "wait", "seconds": 0.2},
 		{"kind": "unlock"},
 	])

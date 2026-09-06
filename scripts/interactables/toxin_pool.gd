@@ -5,6 +5,9 @@ extends Area2D
 ## bob, so it reads as "the ground broke open into acid", not a green slab.
 
 @export var toxin_per_second: float = 36.0
+## 液面与浮沫的整体着色。墓园里默认原色；地窟的青砖和苔盖本身就是绿的，
+## 要把池子调成更酸的黄绿，液体才不会被读成又一层苔地。
+@export var tint: Color = Color.WHITE
 
 var _bodies: Array = []
 var _pool_size := Vector2(112, 32)
@@ -109,7 +112,7 @@ func _rebuild_visual() -> void:
 					spr.region_rect = Rect2(0, 0, minf(src, remain_x / s), minf(float(sludge.get_height()), remain_y / s))
 				# Liquid darkens with depth; texture already fades, rows push further.
 				var k := lerpf(0.9, 0.45, float(r) / maxf(1.0, float(rows - 1)))
-				spr.modulate = Color(k, k, k)
+				spr.modulate = Color(k * tint.r, k * tint.g, k * tint.b, tint.a)
 				add_child(spr)
 		if scum != null:
 			_scum_frames.append(scum)
@@ -126,6 +129,7 @@ func _rebuild_visual() -> void:
 				if remain_x < WORLD - 0.01:
 					spr.region_enabled = true
 					spr.region_rect = Rect2(0, 0, minf(float(scum.get_width()), remain_x), scum_h)
+				spr.modulate = tint
 				add_child(spr)
 				_scum_sprites.append(spr)
 	else:

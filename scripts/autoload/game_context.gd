@@ -2,7 +2,19 @@ class_name GameContext
 extends RefCounted
 ## The authored level owns physics and save paths; presentation owns screen UI.
 
+const PRESENTATION_PATH := "res://scenes/ui/GamePresentation.tscn"
+## First level; also the fallback whenever a save names an unknown scene.
 const WORLD_PATH := "res://scenes/levels/Level01_Static.tscn"
+const LEVEL02_PATH := "res://scenes/levels/Level02_Undercroft.tscn"
+## Every authored level keyed by its save id. Level01 predates ids, so its
+## save paths stay bare ("Props/EmberNest"); later levels prefix theirs
+## ("level02:Props/EmberNest") so identical node names never collide.
+const LEVELS := {
+	"level01": WORLD_PATH,
+	"level02": LEVEL02_PATH,
+}
+## Level the presentation shell instantiates next. route_scene() sets it.
+static var pending_world_path: String = WORLD_PATH
 static var _blocked_through_frame: int = -1
 
 
@@ -29,6 +41,26 @@ static func world_root(node: Node = null) -> Node:
 static func world_scene_path(node: Node = null) -> String:
 	var world := world_root(node)
 	return world.scene_file_path if world != null and world.scene_file_path != "" else WORLD_PATH
+
+
+static func is_world_scene(path: String) -> bool:
+	return LEVELS.values().has(path)
+
+
+## Save-namespace id for a level scene path; "" for Level01 and for unknown
+## scenes (unit-test hosts), which keep the legacy bare paths.
+static func level_id(path: String) -> String:
+	for id in LEVELS:
+		if LEVELS[id] == path and id != "level01":
+			return id
+	return ""
+
+
+static func level_id_of(node: Node) -> String:
+	var world := world_root(node)
+	if world == null or world.scene_file_path == "":
+		return ""
+	return level_id(world.scene_file_path)
 
 
 static func world_effects(node: Node = null) -> Node:
@@ -63,5 +95,10 @@ static func gameplay_input_enabled() -> bool:
 			and Engine.get_physics_frames() > _blocked_through_frame
 
 
+## Authored levels always load inside the presentation shell (640×360 world
+## viewport). Remember which level so GamePresentation can instantiate it.
 static func route_scene(path: String) -> String:
-	return "res://scenes/ui/GamePresentation.tscn" if path == WORLD_PATH else path
+	if is_world_scene(path):
+		pending_world_path = path
+		return PRESENTATION_PATH
+	return path

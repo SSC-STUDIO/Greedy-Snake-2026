@@ -10,6 +10,9 @@ extends StaticBody2D
 ## - "stone": cathedral paving — two rows of cracked flagstone cut from the
 ##   48px church slabs, then the same cemetery earth underneath. Marks the
 ##   Executioner's nave apart from the graveyard grass without new art.
+## - "moss" / "moss_float": Level02 undercroft — moss-capped teal brick cut
+##   from the Old Dark Castle interior set; the float variant is the small
+##   mossy block split into end/mid/end pieces.
 ## Missing art falls back to a ColorRect (headless/tests).
 
 @export var size: Vector2 = Vector2(64, 16)
@@ -22,7 +25,7 @@ extends StaticBody2D
 ## Multiplied onto every tile; pits/interiors can sit darker than open ground.
 @export var tone: Color = Color.WHITE
 ## "auto": thin, wide platforms count as floating; everything else is ground.
-@export_enum("auto", "ground", "floating", "stone") var skin: String = "auto"
+@export_enum("auto", "ground", "floating", "stone", "moss", "moss_float") var skin: String = "auto"
 
 const TOP_A := "res://assets/env/tile_top_a.png"
 const TOP_B := "res://assets/env/tile_top_b.png"
@@ -57,6 +60,18 @@ const STONE_SLABS: Array[String] = [
 const STONE_ROWS := 2
 ## 铺路略偏冷紫，和柱子/拱门同一族，草地暖土留给墓园。
 const STONE_TONE := Color(0.88, 0.84, 0.98)
+## 地窟苔砖：48×48，上 16px 苔盖 + 两行青砖；再往下是同色系的暗砖填充。
+const MOSS_SLABS: Array[String] = [
+	"res://assets/env/moss_slab_a.png",
+	"res://assets/env/moss_slab_b.png",
+	"res://assets/env/moss_slab_c.png",
+]
+const MOSS_ROWS := 3
+const MOSS_FILL := "res://assets/env/moss_fill.png"
+const MOSS_TONE := Color(0.96, 1.0, 0.94)
+const MOSS_FLOAT_LEFT := "res://assets/env/moss_float_left.png"
+const MOSS_FLOAT_MID := "res://assets/env/moss_float_mid.png"
+const MOSS_FLOAT_RIGHT := "res://assets/env/moss_float_right.png"
 const WORLD := 16.0
 ## Row brightness: surface row full, then darken toward DEPTH_FLOOR by row 4.
 const DEPTH_FLOOR := 0.4
@@ -86,9 +101,16 @@ func _ready() -> void:
 func _build_visual() -> void:
 	var floating := skin == "floating" \
 			or (skin == "auto" and size.y <= WORLD + 0.5 and size.x > WORLD + 0.5)
-	if floating and _build_floating():
+	if floating and _build_floating(FLOAT_LEFT, FLOAT_RIGHT, FLOAT_MIDS, FLOAT_TONE):
 		return
-	if skin == "stone" and _build_stone():
+	if skin == "moss_float" and _build_floating(MOSS_FLOAT_LEFT, MOSS_FLOAT_RIGHT,
+			[MOSS_FLOAT_MID] as Array[String], MOSS_TONE):
+		return
+	if skin == "stone" and _build_slabs(STONE_SLABS, STONE_ROWS, STONE_TONE, FILL_DEEP,
+			[FILL_PLAIN, FILL_PLAIN_B] as Array[String], 0x5710):
+		return
+	if skin == "moss" and _build_slabs(MOSS_SLABS, MOSS_ROWS, MOSS_TONE, MOSS_FILL,
+			[] as Array[String], 0x3055):
 		return
 	var tops: Array[Texture2D] = []
 	for path in [TOP_A, TOP_B]:
@@ -194,11 +216,12 @@ func _build_visual() -> void:
 
 ## 悬浮石台：左右端头 + 随机中段，顶面与碰撞体顶对齐，薄石板 + 短垂岩（透明）。
 ## 端头永远画完整 16px（非整数宽度时右端头向左回收对齐 size.x，盖在中段上）。
-func _build_floating() -> bool:
-	var lcap := _load_tex(FLOAT_LEFT)
-	var rcap := _load_tex(FLOAT_RIGHT)
+func _build_floating(left_path: String, right_path: String, mid_paths: Array[String],
+		float_tone: Color) -> bool:
+	var lcap := _load_tex(left_path)
+	var rcap := _load_tex(right_path)
 	var mids: Array[Texture2D] = []
-	for path in FLOAT_MIDS:
+	for path in mid_paths:
 		var t := _load_tex(path)
 		if t != null:
 			mids.append(t)
@@ -215,14 +238,14 @@ func _build_floating() -> bool:
 		if i == prev and mids.size() > 1:
 			i = (i + 1 + rng.randi_range(0, mids.size() - 2)) % mids.size()
 		prev = i
-		_add_float_piece(mids[i], x, minf(WORLD, size.x - WORLD - x))
+		_add_float_piece(mids[i], x, minf(WORLD, size.x - WORLD - x), float_tone)
 		x += WORLD
-	_add_float_piece(lcap, 0.0, WORLD)
-	_add_float_piece(rcap, size.x - WORLD, WORLD)
+	_add_float_piece(lcap, 0.0, WORLD, float_tone)
+	_add_float_piece(rcap, size.x - WORLD, WORLD, float_tone)
 	return true
 
 
-func _add_float_piece(tex: Texture2D, x: float, width: float) -> void:
+func _add_float_piece(tex: Texture2D, x: float, width: float, float_tone: Color) -> void:
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
@@ -233,34 +256,37 @@ func _add_float_piece(tex: Texture2D, x: float, width: float) -> void:
 		spr.region_rect = Rect2(0, 0, width, float(tex.get_height()))
 	spr.z_index = -1
 	spr.modulate = Color(
-		tone.r * FLOAT_TONE.r, tone.g * FLOAT_TONE.g, tone.b * FLOAT_TONE.b, tone.a
+		tone.r * float_tone.r, tone.g * float_tone.g, tone.b * float_tone.b, tone.a
 	)
 	add_child(spr)
 
 
-## 教堂铺路：前两行从三块 48px 石板上随机切 16px 段（列位、板号、镜像都随机，
-## 长地板才不会按 48px 打拍子），第三行起沿用墓园深土与行深压暗。
-func _build_stone() -> bool:
+## 石板铺面（教堂铺路 / 地窟苔砖）：前 slab_rows 行从三块 48px 石板上随机切 16px 段
+## （列位、板号、镜像都随机，长地板才不会按 48px 打拍子），之后的行用 deep_path
+## 的暗填充压深。deep_path 缺失时回落到墓园土块。
+func _build_slabs(slab_paths: Array[String], slab_rows: int, slab_tone: Color,
+		deep_path: String, fill_paths: Array[String], seed_salt: int) -> bool:
 	var slabs: Array[Texture2D] = []
-	for path in STONE_SLABS:
+	for path in slab_paths:
 		var t := _load_tex(path)
 		if t != null:
 			slabs.append(t)
 	if slabs.is_empty():
 		return false
+	var deep := _load_tex(deep_path)
 	var fills: Array[Texture2D] = []
-	for path in [FILL_PLAIN, FILL_PLAIN_B]:
+	for path in fill_paths:
 		var t := _load_tex(path)
 		if t != null:
 			fills.append(t)
-	var deep := _load_tex(FILL_DEEP)
 	if fills.is_empty() and deep == null:
 		fills = slabs
 	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(Vector4(position.x, position.y, size.x, size.y)) ^ 0x5710
+	rng.seed = hash(Vector4(position.x, position.y, size.x, size.y)) ^ seed_salt
 	var cols := maxi(1, int(ceil(size.x / WORLD)))
 	var rows := maxi(1, int(ceil(size.y / WORLD)))
 	var slab_cols := int(float(slabs[0].get_width()) / WORLD)
+	var slab_max_rows := int(float(slabs[0].get_height()) / WORLD)
 	for r in rows:
 		for c in cols:
 			var remain_x := size.x - c * WORLD
@@ -272,14 +298,14 @@ func _build_stone() -> bool:
 			spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			spr.position = Vector2(c * WORLD, r * WORLD)
 			spr.z_index = -1
-			if r < STONE_ROWS:
+			if r < mini(slab_rows, slab_max_rows):
 				spr.texture = slabs[rng.randi_range(0, slabs.size() - 1)]
 				spr.region_enabled = true
 				var sx := float(rng.randi_range(0, maxi(0, slab_cols - 1))) * WORLD
 				spr.region_rect = Rect2(sx, r * WORLD, w, h)
 				spr.flip_h = rng.randf() < 0.5
 				var k := _row_tint(r, rows, true)
-				spr.modulate = Color(k.r * STONE_TONE.r, k.g * STONE_TONE.g, k.b * STONE_TONE.b, k.a)
+				spr.modulate = Color(k.r * slab_tone.r, k.g * slab_tone.g, k.b * slab_tone.b, k.a)
 			else:
 				var tex: Texture2D
 				if deep != null and (fills.is_empty() or rng.randf() < 0.72):

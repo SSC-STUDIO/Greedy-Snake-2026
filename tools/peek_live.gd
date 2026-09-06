@@ -10,12 +10,17 @@ extends Node
 ##   ... -- --night                     (night + rain instead of hazy day)
 ##   ... -- --weather=fog               (haze / rain / fog / ember_wind / rust_rain / clear)
 ##   ... -- --active                    (leave enemy AI / physics running)
+##   ... -- --level=level02             (peek Level02; spots: shaft,pitb,ledge,hall,lift,nest2,bell)
 
 const PRESENTATION := preload("res://scenes/ui/GamePresentation.tscn")
 const OUT := "res://screenshots/peek"
 const SPOTS := {
 	"start": 320.0, "pit": 460.0, "mid": 800.0, "gate": 1200.0,
 	"east": 1460.0, "boss": 1920.0, "forge": 2112.0,
+}
+const SPOTS_L2 := {
+	"shaft": 240.0, "pitb": 600.0, "ledge": 960.0, "hall": 1260.0,
+	"lift": 1490.0, "nest2": 1760.0, "gallery": 2080.0, "bell": 2360.0,
 }
 
 
@@ -24,7 +29,12 @@ func _ready() -> void:
 		printerr("peek_live needs a render target; run without --headless")
 		get_tree().quit(2)
 		return
-	var spots: Array = SPOTS.keys()
+	var level_id := "level01"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--level="):
+			level_id = arg.trim_prefix("--level=")
+	var table: Dictionary = SPOTS_L2 if level_id == "level02" else SPOTS
+	var spots: Array = table.keys()
 	var hold := 4.0
 	var lit := false
 	var night := false
@@ -43,6 +53,8 @@ func _ready() -> void:
 			night = true
 		elif arg == "--active":
 			active = true
+	if GameContext.LEVELS.has(level_id):
+		GameContext.pending_world_path = GameContext.LEVELS[level_id]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var win := get_tree().root
 	win.mode = Window.MODE_WINDOWED
@@ -79,11 +91,13 @@ func _ready() -> void:
 	var suffix := ("_lit" if lit else "") + ("_night" if night else "") + ("_active" if active else "")
 	if weather_id != "":
 		suffix += "_" + weather_id
+	if level_id != "level01":
+		suffix = "_" + level_id + suffix
 	for spot in spots:
-		if not SPOTS.has(spot):
+		if not table.has(spot):
 			printerr("peek_live: unknown spot ", spot)
 			continue
-		var x: float = SPOTS[spot]
+		var x: float = table[spot]
 		camera.global_position = Vector2(x, 220)
 		camera.force_update_scroll()
 		player.global_position = Vector2(x - 120.0, 320)

@@ -50,8 +50,13 @@ func _ready() -> void:
 func has_save() -> bool:
 	return FileAccess.file_exists(save_path) or FileAccess.file_exists(_backup_path())
 
-func save_game(scene_path: String, player: Node) -> bool:
+## `spawn_override`: where the knight should stand when this save is loaded —
+## used by level exits, whose save names the *next* scene while the knight is
+## still standing in the old one.
+func save_game(scene_path: String, player: Node, spawn_override: Vector2 = Vector2.INF) -> bool:
 	var player_state := _collect_player(player)
+	if spawn_override != Vector2.INF:
+		player_state["pos"] = spawn_override
 	var inv_state := _collect_inventory(player)
 	player_state["pouch"] = inv_state["pouch"]
 	player_state["sockets"] = inv_state["sockets"]
@@ -378,6 +383,16 @@ func resolve_saved_node(root: Node, saved_path: String) -> Node:
 	if root == null or not is_instance_valid(root) or saved_path == "":
 		return null
 	saved_path = saved_path.strip_edges()
+	# Level namespace: "level02:Props/Door" only resolves inside level02, and a
+	# bare Level01 path never resolves inside another level.
+	var expected := _level_prefix_for(root)
+	var colon := saved_path.find(":")
+	if colon > 0 and not saved_path.begins_with("/"):
+		if saved_path.substr(0, colon + 1) != expected:
+			return null
+		saved_path = saved_path.substr(colon + 1)
+	elif expected != "":
+		return null
 	if saved_path == ".":
 		return root
 	# Walk by each `/` name. Do not feed the raw string to get_node — test
@@ -454,8 +469,24 @@ func _normalize_saved_path(path: String) -> String:
 	if path == root:
 		return "."
 	if path.begins_with(root + "/"):
-		return path.substr(root.length() + 1)
+		return _level_prefix_for(scene) + path.substr(root.length() + 1)
 	return path
+
+
+## "level02:" for levels registered after Level01, "" otherwise (Level01 keeps
+## the bare paths older saves already contain).
+func _level_prefix_for(scene: Node) -> String:
+	if scene == null or not is_instance_valid(scene):
+		return ""
+	var id := GameContext.level_id(String(scene.scene_file_path))
+	return id + ":" if id != "" else ""
+
+
+## Scene recorded by the last save, or `fallback` when it is not a known level.
+func saved_scene(fallback: String = GameContext.WORLD_PATH) -> String:
+	var meta: Dictionary = data.get("meta", {})
+	var scene := String(meta.get("scene", ""))
+	return scene if GameContext.is_world_scene(scene) else fallback
 
 
 func _collect_named(node: Node, leaf: String, hits: Array[Node]) -> void:

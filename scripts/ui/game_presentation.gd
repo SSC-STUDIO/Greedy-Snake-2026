@@ -54,7 +54,9 @@ func _ready() -> void:
 	_smooth_material.set_shader_parameter("smoothing", pixel_smoothing)
 	world_image.material = _smooth_material
 	add_child(world_image)
-	var packed := load(GameContext.WORLD_PATH) as PackedScene
+	var packed := load(GameContext.pending_world_path) as PackedScene
+	if packed == null:
+		packed = load(GameContext.WORLD_PATH) as PackedScene
 	world_viewport.add_child(packed.instantiate())
 	get_tree().root.size_changed.connect(_layout)
 	_layout()

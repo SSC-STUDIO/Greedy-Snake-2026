@@ -170,12 +170,14 @@ func _start(continue_game: bool) -> void:
 	# 标题进关不沿用上一局死亡排队：继续走存档坐标，新开清档。
 	SaveData.pending_spawn = Vector2.INF
 	SaveData.entering_from_checkpoint = false
+	var target := LEVEL_PATH
 	if continue_game:
 		SaveData.load_game()
+		target = SaveData.saved_scene(LEVEL_PATH)
 	else:
 		SaveData.delete_save()
 	Sfx.play(&"gate")
-	Director.fade_to(LEVEL_PATH, FADE_OUT)
+	Director.fade_to(target, FADE_OUT)
 
 
 func _exit_tree() -> void:

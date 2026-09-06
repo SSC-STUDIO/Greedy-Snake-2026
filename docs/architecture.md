@@ -40,7 +40,7 @@ Set dressing that is not in the `.tscn`:
 
 | Script | Role |
 |---|---|
-| `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth). Collision never changes with the skin. A `ground` step standing on ground (TeachTerrace, pit lips) is authored one tile taller than its rise so its earth covers the grass row beneath it — a mound, not a turf cube on turf. |
+| `scripts/world/solid_platform.gd` | Skins: `ground` (grass + cemetery earth), `floating` (church slabs), `stone` (two flagstone rows cut from `slab_a/b/c` over the same earth), `moss` / `moss_float` (Level02). Collision never changes with the skin. A `ground` step standing on ground (TeachTerrace, pit lips) is authored one tile taller than its rise so its earth covers the grass row beneath it — a mound, not a turf cube on turf. |
 | `scripts/world/ruin_plate.gd` | Slices a rectangular wall plate into 8px columns with a deterministic broken crown. Used by `TorchLight` and the altar / gargoyle backdrops; arch plates keep their authored tops. |
 | `scripts/world/leaf_shed.gd` | Dead leaves from play-layer trees: 2px, pixel-snapped, pendulum glide with only a few px/s of wind drift, dissolve on the foot line. |
 | `scripts/world/wind_fx.gd` | Visible wind: dust / grass / leaf flecks enter from the camera's upwind edge and cross the view at `48 + |wind| × 145` px/s; density from `wind_mote_density()`, none indoors. |
@@ -48,6 +48,29 @@ Set dressing that is not in the `.tscn`:
 | `EmberNest` | Brazier art from `tools/gen_ember_nest.py`; the flame sprite is bottom-anchored at `FLAME_BASE` inside the well so it burns out of the bowl mouth and soak-shrinks / leans from its root. |
 
 Ambient effects are presentation only: they read `WorldClock` and never write physics, save data, or `Engine.time_scale`. One-shot `Fx` particles parent under the level's `WorldEffects` (via `GameContext.world_effects()`) so they render inside the 640×360 world viewport.
+
+## Levels and routing
+
+`GameContext.LEVELS` registers every authored level (`level01` → `Level01_Static.tscn`, `level02` → `Level02_Undercroft.tscn`). `Director.fade_to(<level path>)` goes through `GameContext.route_scene()`, which records `pending_world_path` and loads `GamePresentation`; the shell instantiates whatever level is pending. `SaveData.meta.scene` names the level; the title's 继续 boots `SaveData.saved_scene()` (unknown scene → Level01).
+
+Save paths are namespaced per level: Level01 keeps its legacy bare paths (`Props/EmberNest`), every later level prefixes its id (`level02:Props/EmberNestShaft`). `SaveData.resolve_saved_node()` refuses to resolve a path from another level, so same-named nodes never collide and a Level01 checkpoint is not a respawn point underground. `SaveData.save_game(scene, player, spawn_override)` lets `LevelExit.travel()` write the *next* level and its arrival point while the knight still stands in the old one (the knight also arrives healed — a chapter break is a rest).
+
+Chapter flow: the forge heart's 复燃 choice no longer returns to the title — the tomb wakes, the floor under the heart gives way and the knight drops into Level02. 熄灭 is still the closing ending.
+
+## Level02 (`scenes/levels/Level02_Undercroft.tscn`, 锈墓・贰 — 沉钟地窟)
+
+The `.tscn` is only the root and five empty groups; `Level02Layout.build(host)` places everything from constants so tests can build the level on a bare host without the scene's `_ready`. `level02_undercroft.gd` handles load/spawn/camera/HUD and the one-shot title beat. Entirely indoors: `WorldClock.set_zone(INDOORS)` plus a level-wide `AtmosphereZone`; the HUD line reads `地下 · <phase>`.
+
+| Piece | Role |
+|---|---|
+| `SolidPlatform` `moss` / `moss_float` | Moss-capped teal brick cut from the Old Dark Castle interior set (`tools/gen_moss_tiles.py` → `assets/env/moss_*.png`). `_build_slabs()` is shared with `stone`. |
+| `scripts/world/moving_platform.gd` | `MovingPlatform` (AnimatableBody2D, `sync_to_physics`): cosine shuttle between `position` and `position + travel`, two chains drawn up to `chain_top_y`. LiftC crosses pit C horizontally; LiftD rises to the hidden alcove above the rust gate. |
+| `scripts/enemies/ghost_enemy.gd` | `GhostEnemy`: dormant → `appear` when the knight is within `wake_range` → drifts through walls toward the knight, lunges within `attack_range` → after `haunt_time` it vanishes and re-forms `REPHASE_OFFSET` behind the knight. Only tangible while haunting/attacking; 2 HP. Frames from `assets/characters/ghost/`. |
+| `scripts/interactables/level_exit.gd` | `LevelExit`: a door. Captions → flag → `travel()` to `target_scene`, or (empty target) a chapter finale that saves in place and fades to the title. `BellDoor` ends Level02 with `undercroft_done`. |
+| `scripts/levels/level02_backdrop.gd` | No sky: solid void colour, the castle interior wall (`scroll 0.42`), column silhouettes (`0.66`), a fixed cool `MoodTint` that breathes ±3%. `CineFx` only — no weather, wind or moon layers. |
+| `ToxinPool.tint` | Level02 pools are tinted acid yellow-green (`TOXIN_TINT`) — against moss caps the default liquid read as another moss floor. |
+
+Layout (floor y = 320, every step ≤ 32px rise): shaft drop + `EmberNestShaft` + stele + sign → pit B on three moss stones (ghost wakes on landing) → spitter ledge whose pressure plate opens the hall door → scrapper hall → pit C by LiftC → `EmberNestHall` → rust gate (heat forge) → LiftD / alcove stele → gallery, second ghost, gear-shield guard → `BellDoor`.
 
 ## Lighting
 
